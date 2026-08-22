@@ -553,9 +553,9 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 // DONNÉES
 // ═══════════════════════════════════════════════════════
 const AIRCRAFT_DATA = {
-  C750:{ name:'Citation X', reg:'F-EVOK', pax_max:8, range_nm:3460, cruise_kt:470, cruise_fl:'FL430', fuel_burn_kgh:1800, fuel_taxi:150, fuel_reserve:480, mtow:16375, fuel_cap:6000 },
-  C700:{ name:'Citation Longitude', reg:'F-EXZA', pax_max:8, range_nm:3500, cruise_kt:440, cruise_fl:'FL450', fuel_burn_kgh:1600, fuel_taxi:130, fuel_reserve:420, mtow:16920, fuel_cap:5800 },
-  B738:{ name:'Boeing BBJ2', reg:'F-LIMB', pax_max:28, range_nm:6600, cruise_kt:450, cruise_fl:'FL410', fuel_burn_kgh:4500, fuel_taxi:400, fuel_reserve:1200, mtow:79015, fuel_cap:26000 },
+  C750:{ name:'Citation X', reg:'F-EVOK', pax_max:8, range_nm:3460, cruise_kt:470, cruise_fl:'FL430', fuel_burn_kgh:1100, fuel_taxi:150, fuel_reserve:480, mtow:16375, fuel_cap:6000 },
+  C700:{ name:'Citation Longitude', reg:'F-EXZA', pax_max:8, range_nm:3500, cruise_kt:440, cruise_fl:'FL450', fuel_burn_kgh:950, fuel_taxi:130, fuel_reserve:420, mtow:16920, fuel_cap:5800 },
+  B738:{ name:'Boeing BBJ2', reg:'F-LIMB', pax_max:28, range_nm:6600, cruise_kt:450, cruise_fl:'FL410', fuel_burn_kgh:3000, fuel_taxi:400, fuel_reserve:1200, mtow:79015, fuel_cap:39000 },
 };
 
 const AIRPORTS = [
@@ -644,21 +644,53 @@ const AIRPORTS = [
   {icao:'EFHK',city:'Helsinki',country:'Finlande',lat:60.317,lon:24.963,handling:'Airpro',parking:'GA'},
   {icao:'ENBR',city:'Bergen',country:'Norvège',lat:60.294,lon:5.218,handling:'Aviator Bergen',parking:'GA',notes:'Météo maritime changeante.'},
   {icao:'BIKF',city:'Keflavík',country:'Islande',lat:63.985,lon:-22.606,handling:'Southair',parking:'GA',notes:'Vents forts possibles.'},
+  {icao:'LPAZ',city:'Santa Maria',country:'Açores',lat:36.971,lon:-25.171,handling:'SATA Handling',parking:'GA',notes:'Escale technique Atlantique. Météo océanique.'},
+  {icao:'CYQX',city:'Gander',country:'Canada',lat:48.937,lon:-54.568,handling:'Gander Aviation',parking:'GA',notes:'Escale technique transatlantique. Douanes à coordonner.'},
+  {icao:'CYYR',city:'Goose Bay',country:'Canada',lat:53.319,lon:-60.426,handling:'Woodward Aviation',parking:'GA',notes:'Escale technique. Météo froide et dégivrage possibles.'},
+  {icao:'KBGR',city:'Bangor',country:'USA',lat:44.807,lon:-68.828,handling:'Bangor Aviation Services',parking:'GA',notes:'Escale technique et point d entrée USA. APIS et douanes requis.'},
   {icao:'GCTS',city:'Tenerife Sud',country:'Espagne',lat:28.044,lon:-16.572,handling:'Aviapartner TFS',parking:'GA'},
   {icao:'GCLP',city:'Gran Canaria',country:'Espagne',lat:27.932,lon:-15.386,handling:'Groundforce LPA',parking:'GA'},
   {icao:'DAAG',city:'Alger',country:'Algérie',lat:36.691,lon:3.215,handling:'Air Algérie Handling',parking:'GA',notes:'Non-Schengen.'},
   {icao:'DTTA',city:'Tunis',country:'Tunisie',lat:36.851,lon:10.227,handling:'Tunisair Handling',parking:'GA',notes:'Non-Schengen.'},
   {icao:'HECA',city:'Le Caire',country:'Égypte',lat:30.122,lon:31.406,handling:'EgyptAir Ground Services',parking:'GA',notes:'Non-Schengen.'},
   {icao:'OERK',city:'Riyad',country:'Arabie saoudite',lat:24.958,lon:46.699,handling:'Saudi Ground Services',parking:'Royal Terminal',notes:'Non-Schengen.'},
+  {icao:'GVAC',city:'Sal',country:'Cap-Vert',lat:16.742,lon:-22.949,handling:'ASA Cabo Verde',parking:'GA',notes:'Escale technique et douanes à coordonner. Vents et poussières possibles.'},
+  {icao:'GOBD',city:'Dakar',country:'Sénégal',lat:14.670,lon:-17.073,handling:'2AS Handling',parking:'GA',notes:'Douanes, immigration et handling à coordonner.'},
+  {icao:'DGAA',city:'Accra',country:'Ghana',lat:5.605,lon:-0.167,handling:'Aviance Ghana',parking:'GA',notes:'Douanes, visas et handling à coordonner.'},
+  {icao:'HKJK',city:'Nairobi',country:'Kenya',lat:-1.319,lon:36.928,handling:'Tradewinds Aviation',parking:'GA',notes:'Haute altitude. Douanes, visas et handling à coordonner.'},
   {icao:'KTEB',city:'New York',country:'USA',lat:40.850,lon:-74.061,handling:'Signature Aviation TEB',parking:'Signature',notes:'APIS requis 60min. Non-Schengen. MTOW 100 000lbs.'},
   {icao:'KMIA',city:'Miami',country:'USA',lat:25.796,lon:-80.287,handling:'Signature MIA',parking:'GA',notes:'Non-Schengen. APIS requis.'},
 ];
 
 const ROUTES = {
-  C750:AIRPORTS.map(a=>a.icao).filter(icao=>!['KTEB','KMIA'].includes(icao)),
-  C700:AIRPORTS.map(a=>a.icao).filter(icao=>!['KTEB','KMIA'].includes(icao)),
+  C750:AIRPORTS.map(a=>a.icao),
+  C700:AIRPORTS.map(a=>a.icao),
   B738:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGMK','LGST','LIRQ'].includes(icao)),
 };
+
+const AIRCRAFT_ROUTE_POLICY={
+  C750:{usableLegNm:1900,longMissionChance:.14,maxTechStops:3},
+  C700:{usableLegNm:2050,longMissionChance:.16,maxTechStops:3},
+  B738:{usableLegNm:5000,longMissionChance:.22,maxTechStops:1},
+};
+const TECH_STOP_AIRPORTS=[
+  'EINN','BIKF','LPAZ','CYQX','CYYR','KBGR',
+  'GCTS','GCLP','GMMN','GVAC','GOBD','DGAA',
+  'LIRF','LGAV','LCLK','HECA','OERK'
+];
+// Terrains considérés comme capables de coordonner douanes/immigration dans la
+// simulation. Disponibilité réelle, préavis et horaires à vérifier avant le vol.
+const SIM_CUSTOMS_AIRPORTS=new Set([
+  'LFRS','EINN','BIKF','LPAZ','CYQX','CYYR','KBGR',
+  'GCTS','GCLP','GMMN','GVAC','GOBD','DGAA',
+  'LIRF','LGAV','LCLK','HECA','OERK',
+  'KTEB','KMIA','OMDB','OMAA','OTBD','HKJK'
+]);
+const LONG_RANGE_DESTINATIONS=[
+  'KTEB','KMIA',                    // Ouest
+  'OMDB','OMAA','OTBD','OERK',      // Est / Golfe
+  'GOBD','DGAA','HKJK'              // Sud / Afrique
+];
 
 const PAX_POOL = [
   ['François Dumont','PDG',true],['Sophie Martin','DG',true],
@@ -935,7 +967,7 @@ function buildFlight(dep,dest,existing={}){
     special:Math.random()>.6?SPECIALS[Math.floor(Math.random()*SPECIALS.length)]:null
   }));
   // Flight no
-  const isIntl=['OMDB','OMAA','OTBD','GMMN','KTEB','KMIA'].includes(dest);
+  const isIntl=arrAp.country!=='France';
   const prefix=isIntl?'4':'3';
   let num;
   const usedNos=S.sessionFlights.map(f=>f.flightNo).concat(existing.flightNo||[]);
@@ -949,7 +981,8 @@ function buildFlight(dep,dest,existing={}){
   const turnaroundMin=existing.turnaroundMin??(missionRole.includes('POSITIONING')?45:international?90:65);
   return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depDate,arrDate,
     depMinuteOfDay:depMin,arrMinuteOfDay:arrMin,turnaroundMin,fl,alt,fuel,
-    pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole};
+    pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole,
+    groundReason:existing.groundReason||null};
 }
 
 function generateRotation(destination=null){
@@ -963,8 +996,9 @@ function generateRotation(destination=null){
     return d>=70&&d<=ac.range_nm*0.9;
   });
   if(!pool.length)pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==dep);
-  // Écarte les routes dont l'estimation simplifiée excède la capacité déclarée.
-  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  // Écarte les routes dont l'estimation simplifiée excède la capacité déclarée,
+  // puis favorise les destinations cohérentes avec l aviation d affaires.
+  const shuffled=weightedBusinessCandidates(dep,pool);
   for(const candidate of shuffled){
     const flight=buildFlight(dep,candidate.icao);
     if(flight&&!flight.fuel.overCapacity)return flight;
@@ -972,12 +1006,57 @@ function generateRotation(destination=null){
   return buildFlight(dep,shuffled[0]?.icao);
 }
 
+const BUSINESS_FOCUSED_AIRPORTS=new Set([
+  'LFPB','EGLF','EGKB','EGGW','EGSS','LSGG','LSZH','LSZA','LSZB','LSZS',
+  'LIML','LIEO','LFMQ','LFLB','LFBZ','EBAW','ELLX','LOWI','LEIB','LGMK'
+]);
+const BUSINESS_CITY_AIRPORTS=new Set([
+  'LFMN','LFBD','LFBO','LFLL','LEMD','LEBL','LEPA','LEMG','LIMC','LIRA',
+  'EDDM','EDDL','EDDH','LKPR','LOWW','LPPT','EIDW','GMMN','OMDB','OMAA','OTBD'
+]);
+const LEISURE_SEASONAL_AIRPORTS=new Set(['LEIB','LEPA','LIEO','LGMK','LGST','LDSP','LDDU','LIPZ','LFKJ','LFKB','LFMQ']);
+
+function businessDestinationWeight(origin,airport){
+  const originAp=getAP(origin);if(!originAp)return 0;
+  const distance=distNM(originAp.lat,originAp.lon,airport.lat,airport.lon);
+  let weight=1;
+  if(BUSINESS_FOCUSED_AIRPORTS.has(airport.icao))weight*=2.7;
+  else if(BUSINESS_CITY_AIRPORTS.has(airport.icao))weight*=1.65;
+  if(TECH_STOP_AIRPORTS.includes(airport.icao))weight*=.08;
+  // Les grandes plateformes de ligne restent possibles mais moins naturelles en jet privé.
+  if(['LFPO','LIRF','EHAM','EDDF','EDDB','ESSA','EKCH'].includes(airport.icao))weight*=.38;
+  // Un Citation est rarement engagé sur un très court trajet domestique au départ de Nantes.
+  if(S.aircraft!=='B738'&&distance<180)weight*=.035;
+  else if(S.aircraft!=='B738'&&distance<260)weight*=.22;
+  if(S.aircraft==='B738'&&distance<350)weight*=.08;
+  if(originAp.country==='France'&&airport.country==='France'&&distance<300)weight*=.35;
+  // Nantes-Orly demeure un cas exceptionnel, sans être rendu impossible.
+  if((origin==='LFRS'&&airport.icao==='LFPO')||(origin==='LFPO'&&airport.icao==='LFRS'))weight*=.025;
+  const month=Number((S.dutyDate||new Date().toISOString().slice(0,10)).slice(5,7));
+  if(LEISURE_SEASONAL_AIRPORTS.has(airport.icao))weight*=month>=5&&month<=9?1.8:.55;
+  // Cœur d utilisation efficace des Citation : environ 350 à 1 500 NM.
+  if(S.aircraft!=='B738'&&distance>=350&&distance<=1500)weight*=1.45;
+  if(S.aircraft==='B738'&&distance>=900)weight*=1.5;
+  return Math.max(.0001,weight);
+}
+
+function weightedBusinessCandidates(origin,candidates){
+  const remaining=[...candidates],ordered=[];
+  while(remaining.length){
+    const weights=remaining.map(ap=>businessDestinationWeight(origin,ap));
+    let draw=Math.random()*weights.reduce((sum,w)=>sum+w,0),index=0;
+    for(;index<remaining.length-1;index++){draw-=weights[index];if(draw<=0)break;}
+    ordered.push(remaining.splice(index,1)[0]);
+  }
+  return ordered;
+}
+
 function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
   const allowed=new Set(ROUTES[S.aircraft]||[]);
-  const candidates=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==origin&&!excluded.includes(a.icao))
-    .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;})
-    .sort(()=>Math.random()-.5);
+  const pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==origin&&!excluded.includes(a.icao))
+    .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;});
+  const candidates=weightedBusinessCandidates(origin,pool);
   for(const ap of candidates){
     const test=buildFlight(origin,ap.icao);
     if(test&&!test.fuel.overCapacity&&test.durMin<=maxDurationMin)return ap.icao;
@@ -985,11 +1064,134 @@ function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   return null;
 }
 
+function planTechnicalRoute(origin,destination){
+  const policy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750;
+  const destinationAp=getAP(destination);if(!destinationAp||!SIM_CUSTOMS_AIRPORTS.has(destination))return null;
+  const availableStops=TECH_STOP_AIRPORTS
+    .filter(icao=>(ROUTES[S.aircraft]||[]).includes(icao)&&SIM_CUSTOMS_AIRPORTS.has(icao)&&icao!==destination);
+  const routes=[];
+  const explore=(path,totalDistance)=>{
+    const last=path[path.length-1],lastAp=getAP(last);if(!lastAp)return;
+    const directDistance=distNM(lastAp.lat,lastAp.lon,destinationAp.lat,destinationAp.lon);
+    if(directDistance<=policy.usableLegNm){
+      routes.push({path:[...path,destination],distance:totalDistance+directDistance});
+    }
+    const stopCount=path.length-1;
+    if(stopCount>=policy.maxTechStops)return;
+    const candidates=availableStops
+      .filter(icao=>!path.includes(icao))
+      .map(icao=>({icao,ap:getAP(icao)}))
+      .filter(item=>{
+        if(!item.ap)return false;
+        const leg=distNM(lastAp.lat,lastAp.lon,item.ap.lat,item.ap.lon);
+        const remaining=distNM(item.ap.lat,item.ap.lon,destinationAp.lat,destinationAp.lon);
+        // Autorise un léger détour météo/opérationnel, mais évite les zigzags absurdes.
+        return leg<=policy.usableLegNm&&remaining<=directDistance+450;
+      })
+      .sort(()=>Math.random()-.5);
+    for(const item of candidates){
+      const leg=distNM(lastAp.lat,lastAp.lon,item.ap.lat,item.ap.lon);
+      explore([...path,item.icao],totalDistance+leg);
+      if(routes.length>80)break;
+    }
+  };
+  explore([origin],0);
+  if(!routes.length)return null;
+  const shortest=Math.min(...routes.map(r=>r.distance));
+  const plausible=routes.filter(r=>r.distance<=shortest*1.32+150);
+  const weights=plausible.map(r=>{
+    const stops=r.path.length-2;
+    return (1/Math.pow(r.distance/1000,1.4))*(stops===0?.9:1/(1+stops*.35));
+  });
+  let draw=Math.random()*weights.reduce((sum,w)=>sum+w,0),selected=plausible[0];
+  for(let i=0;i<plausible.length;i++){draw-=weights[i];if(draw<=0){selected=plausible[i];break;}}
+  return selected.path;
+}
+
+function generateLongRangeMission(base,firstDeparture,dutyLimit){
+  const destinations=[...LONG_RANGE_DESTINATIONS].sort(()=>Math.random()-.5);
+  for(const destination of destinations){
+    const route=planTechnicalRoute(base,destination);
+    if(!route||route.length<2)continue;
+    const plan=[];let departure=firstDeparture,passengers=null,valid=true;
+    for(let i=1;i<route.length;i++){
+      const finalLeg=i===route.length-1;
+      const role=finalLeg?'CLIENT — DESTINATION FINALE':`CLIENT — ESCALE TECHNIQUE ${i}/${route.length-2} · DOUANES À COORDONNER`;
+      const leg=buildFlight(route[i-1],route[i],{
+        depMinuteOfDay:departure,
+        pax:passengers||undefined,
+        missionRole:role,
+        turnaroundMin:finalLeg?120:70
+      });
+      if(!leg||leg.fuel.overCapacity||leg.arrMinuteOfDay+30>dutyLimit){valid=false;break;}
+      if(!passengers)passengers=leg.pax;
+      plan.push(leg);departure=leg.arrMinuteOfDay+leg.turnaroundMin;
+    }
+    if(!valid||!plan.length)continue;
+    S.rotationPlan=plan;S.rotationIndex=0;
+    S.rotationType=plan.length===1?'MISSION LONG-COURRIER DIRECTE':`MISSION LONG-COURRIER · ${plan.length-1} ESCALE(S) TECHNIQUE(S)`;
+    S.rotationRevision=0;
+    S.rotationHistory=[{revision:0,at:utcNow(),reason:'ÉMISSION INITIALE — PLAN DE ROUTE LONG-COURRIER'}];
+    saveSession();return plan[0];
+  }
+  return null;
+}
+
+function generatePositioningPickupMission(base,firstDeparture,dutyLimit){
+  const pickup=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),180);
+  if(!pickup)return null;
+  const positioningWait=45+Math.floor(Math.random()*46);
+  const positioning=buildFlight(base,pickup,{
+    depMinuteOfDay:firstDeparture,pax:[],missionRole:'POSITIONING À VIDE',
+    turnaroundMin:positioningWait,groundReason:'PRISE EN CHARGE CLIENT ET PRÉPARATION CABINE'
+  });
+  if(!positioning||positioning.fuel.overCapacity)return null;
+  const clientDeparture=positioning.arrMinuteOfDay+positioning.turnaroundMin;
+  const clientDestination=chooseBusinessDestination(pickup,[base,pickup],Math.max(60,dutyLimit-clientDeparture-90));
+  if(!clientDestination)return null;
+  const appointmentWait=120+Math.floor(Math.random()*181);
+  const clientOut=buildFlight(pickup,clientDestination,{
+    depMinuteOfDay:clientDeparture,missionRole:'CLIENT — ALLER',
+    turnaroundMin:appointmentWait,groundReason:'ATTENTE CLIENT — RENDEZ-VOUS / PROGRAMME PRIVÉ'
+  });
+  if(!clientOut||clientOut.fuel.overCapacity||clientOut.arrMinuteOfDay+30>dutyLimit)return null;
+  const plan=[positioning,clientOut];
+  // Lorsque le duty le permet, le même équipage attend le client puis le ramène.
+  const clientReturn=buildFlight(clientDestination,pickup,{
+    depMinuteOfDay:clientOut.arrMinuteOfDay+clientOut.turnaroundMin,
+    pax:clientOut.pax,missionRole:'CLIENT — RETOUR',turnaroundMin:45,
+    groundReason:'DÉPOSE CLIENT ET REMISE EN ÉTAT CABINE'
+  });
+  if(clientReturn&&!clientReturn.fuel.overCapacity&&clientReturn.arrMinuteOfDay+30<=dutyLimit){
+    plan.push(clientReturn);
+    const home=buildFlight(pickup,base,{
+      depMinuteOfDay:clientReturn.arrMinuteOfDay+clientReturn.turnaroundMin,
+      pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30
+    });
+    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit)plan.push(home);
+  }
+  S.rotationPlan=plan;S.rotationIndex=0;
+  S.rotationType=plan.length>=3?'MISE EN PLACE + MISSION CLIENT AVEC ATTENTE':'MISE EN PLACE + PRISE EN CHARGE CLIENT';
+  S.rotationRevision=0;
+  S.rotationHistory=[{revision:0,at:utcNow(),reason:'ÉMISSION INITIALE — MISE EN PLACE À VIDE'}];
+  saveSession();return plan[0];
+}
+
 function generateBusinessRotation(){
   const base=S.position||'LFRS';
   const dutyStartAbs=timeToMinutes(S.dutyStart);
   const dutyLimit=dutyStartAbs+S.dutyMinutes;
   const firstDeparture=dutyStartAbs+45;
+  const routePolicy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750;
+  if(S.dutyMinutes>=8*60&&Math.random()<routePolicy.longMissionChance){
+    const longMission=generateLongRangeMission(base,firstDeparture,dutyLimit);
+    if(longMission)return longMission;
+  }
+  // En aviation d affaires, l avion rejoint souvent le lieu de prise en charge à vide.
+  if(S.dutyMinutes>=6*60&&Math.random()<.55){
+    const positioningMission=generatePositioningPickupMission(base,firstDeparture,dutyLimit);
+    if(positioningMission)return positioningMission;
+  }
   const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),Math.max(60,dutyLimit-firstDeparture-30));
   const first=firstDest&&buildFlight(base,firstDest,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT'});
   if(!first||first.arrMinuteOfDay+30>dutyLimit){
@@ -1000,14 +1202,15 @@ function generateBusinessRotation(){
     return fallback;
   }
   const roll=Math.random();
+  const returnThreshold=first.dist>=250?.38:.06;
   const plan=[first];
-  if(roll<.45){
+  if(roll<returnThreshold){
     const availableWait=dutyLimit-first.arrMinuteOfDay-30;
     const wait=Math.min(210,Math.max(90,availableWait-180));
     const back=buildFlight(first.arr,base,{depMinuteOfDay:first.arrMinuteOfDay+wait,missionRole:'RETOUR CLIENT'});
     if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan.push(back);
     S.rotationType='ALLER-RETOUR CLIENT';
-  }else if(roll<.75){
+  }else if(roll<.72){
     const nextDeparture=first.arrMinuteOfDay+first.turnaroundMin;
     const repoDest=chooseBusinessDestination(first.arr,[base,first.arr],Math.max(45,dutyLimit-nextDeparture-30));
     const repo=repoDest&&buildFlight(first.arr,repoDest,{depMinuteOfDay:nextDeparture,pax:[],missionRole:'POSITIONING À VIDE'});
@@ -1089,13 +1292,24 @@ function renderRotationPlan(){
     const route=document.createElement('div');route.className='rot-route';route.textContent=`${leg.dep} → ${leg.arr}`;
     const meta=document.createElement('div');meta.className='rot-meta';
     const dateTag=leg.depDate&&leg.depDate!==S.dutyDate?formatDateFr(leg.depDate)+' · ':'';
-    meta.textContent=`${dateTag}${leg.depT}–${leg.arrT} · ESCALE ${leg.turnaroundMin||60}MIN · ${leg.missionRole} · ${leg.pax.length} PAX`;
+    meta.textContent=`${dateTag}${leg.depT}–${leg.arrT} · ${leg.missionRole} · ${leg.pax.length} PAX`;
     info.append(route,meta);
     const status=document.createElement('div');
     const state=index<S.rotationIndex?'done':(index===S.rotationIndex&&S.currentFlight)?'current':'planned';
     status.className='rot-status '+state;
     status.textContent=state==='done'?'TERMINÉ':state==='current'?'EN COURS':'PLANIFIÉ';
     row.append(num,info,status);host.appendChild(row);
+    const next=S.rotationPlan[index+1];
+    if(next){
+      const wait=Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay);
+      if(wait>0){
+        const ground=document.createElement('div');
+        ground.style.cssText='margin:0 0 0 13px;padding:7px 8px 7px 22px;border-left:1px dashed var(--gold);font:700 8px var(--font-m);color:var(--gold);line-height:1.5';
+        const reason=leg.groundReason||(leg.missionRole.includes('ESCALE TECHNIQUE')?'CARBURANT · HANDLING · DOUANES À COORDONNER':'ATTENTE OPÉRATIONNELLE / CLIENT');
+        ground.textContent=`⏳ AU SOL ${fmtDur(wait).toUpperCase()} · ${leg.arr} · ${reason}`;
+        host.appendChild(ground);
+      }
+    }
   });
   const history=$('rotation-history');
   if(history){
@@ -1411,7 +1625,11 @@ async function initiateCall(type){
 
 function makeSpokenBriefing(f,d,lang='fr'){
   const remaining=S.rotationPlan.slice(S.rotationIndex);
-  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, départ ${leg.depT}, arrivée ${leg.arrT}, ${leg.missionRole.toLowerCase()}`).join('. ');
+  const sequence=remaining.map((leg,i)=>{
+    const next=remaining[i+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
+    const ground=wait?`, puis attente au sol de ${fmtDur(wait)} à ${leg.arr}`:'';
+    return `secteur ${i+1}, ${leg.dep} vers ${leg.arr}, départ ${leg.depT}, arrivée ${leg.arrT}, ${leg.missionRole.toLowerCase()}${ground}`;
+  }).join('. ');
   if(lang==='en')return `Good day ${S.rank} ${S.pilot}. This is revision ${S.rotationRevision||0} of your WABA operations briefing for duty dated ${S.dutyDate}, ${S.dutyStart} to ${S.dutyEnd} UTC. You are assigned a ${S.rotationType.toLowerCase()} rotation with ${remaining.length} remaining sectors. Planned sequence: ${sequence}. Current sector is ${f.flightNo}, ${f.dep} to ${f.arr}, estimated arrival ${f.arrT}, planned level ${f.fl}, with ${f.pax.length} passengers. Arrival handling is ${f.arrAp.handling||'to be confirmed'}, parking ${f.arrAp.parking||'to be confirmed'}, and planning alternate ${f.alt}. Simulated fuel estimate is ${f.fuel.total} kilograms. Weather, performance, fuel and operational documents must be checked in the approved sources used for your simulator flight. Report any client, technical or timing change to operations.`;
   const depCity=f.depAp?.city||f.dep;
   const arrCity=f.arrAp?.city||f.arr;
@@ -1709,9 +1927,12 @@ async function requestMicAccess(){
 }
 
 function rotationContextForAI(){
-  const legs=S.rotationPlan.slice(S.rotationIndex).map((leg,index)=>
-    `Secteur ${index+1}: ${leg.flightNo}, ${leg.dep} vers ${leg.arr}, ${leg.depDate||S.dutyDate} ${leg.depT} à ${leg.arrT}, ${leg.missionRole}, ${leg.pax.length} passagers, ${leg.fl}, alternate ${leg.alt}, carburant simulation ${leg.fuel.total} kg.`
-  ).join(' ');
+  const remaining=S.rotationPlan.slice(S.rotationIndex);
+  const legs=remaining.map((leg,index)=>{
+    const next=remaining[index+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
+    const ground=wait?` Attente au sol suivante: ${fmtDur(wait)} à ${leg.arr}, motif ${leg.groundReason||'attente opérationnelle ou client'}.`:'';
+    return `Secteur ${index+1}: ${leg.flightNo}, ${leg.dep} vers ${leg.arr}, ${leg.depDate||S.dutyDate} ${leg.depT} à ${leg.arrT}, ${leg.missionRole}, ${leg.pax.length} passagers, ${leg.fl}, alternate ${leg.alt}, carburant simulation ${leg.fuel.total} kg.${ground}`;
+  }).join(' ');
   return `DOSSIER STRUCTURÉ WABA, RÉVISION ${S.rotationRevision||0}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}. ${legs}`;
 }
 
