@@ -725,7 +725,7 @@ Le commandant de bord conserve l'autorité finale. En cas d'urgence réelle, app
 // STATE
 // ═══════════════════════════════════════════════════════
 const S = {
-  pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null,
+  pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
   rotationPlan:[], rotationIndex:0, rotationType:null,
@@ -789,6 +789,7 @@ async function startDuty(){
   S.aircraft=$('s-ac').value;
   S.dutyStart=$('s-start').value;
   S.dutyEnd=$('s-end').value;
+  S.dutyMinutes=dutyMinutes;
   // Mode aléatoire
   const r=Math.random();
   S.mode=r<0.5?'normal':r<0.8?'challenging':'fullops';
@@ -818,7 +819,7 @@ async function startDuty(){
   },700);
   await Promise.allSettled([micPromise,voicePromise]);
   clearInterval(progressTimer);
-  setBootProgress(100,kokoroReady?'WABA OPS PRÊT':'SESSION PRÊTE — VOIX SYSTÈME DE SECOURS');
+  setBootProgress(100,kokoroReady?'WABA OPS PRÊT — VOIX FF_SIWIS':'SESSION PRÊTE — FF_SIWIS INDISPONIBLE, VOIX SYSTÈME');
   await sleep(700);
   $('boot-ov').style.display='none';
   // ACARS welcome
@@ -898,7 +899,7 @@ function buildFlight(dep,dest,existing={}){
   const flightNo=existing.flightNo||'WAB'+num;
   // FL
   const fl=dist<200?'FL250':dist<600?'FL350':ac.cruise_fl;
-  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depMinuteOfDay:depMin,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole:existing.missionRole||'CLIENT'};
+  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depMinuteOfDay:depMin,arrMinuteOfDay:arrMin,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole:existing.missionRole||'CLIENT'};
 }
 
 function generateRotation(destination=null){
@@ -920,24 +921,26 @@ function generateRotation(destination=null){
   return buildFlight(dep,shuffled[0]?.icao);
 }
 
-function chooseBusinessDestination(origin,excluded=[]){
+function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
   const candidates=AIRPORTS.filter(a=>a.icao!==origin&&!excluded.includes(a.icao))
     .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;})
     .sort(()=>Math.random()-.5);
   for(const ap of candidates){
     const test=buildFlight(origin,ap.icao);
-    if(test&&!test.fuel.overCapacity)return ap.icao;
+    if(test&&!test.fuel.overCapacity&&test.durMin<=maxDurationMin)return ap.icao;
   }
   return null;
 }
 
 function generateBusinessRotation(){
   const base=S.position||'LFRS';
-  const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr));
-  const first=firstDest&&buildFlight(base,firstDest,{missionRole:'CLIENT'});
+  const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),Math.max(60,S.dutyMinutes-75));
+  const firstDeparture=timeToMinutes(S.dutyStart)+45;
+  const first=firstDest&&buildFlight(base,firstDest,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT'});
   if(!first){
-    const fallback=generateRotation();
+    const randomFallback=generateRotation();
+    const fallback=randomFallback&&buildFlight(base,randomFallback.arr,{depMinuteOfDay:timeToMinutes(S.dutyStart)+45,missionRole:'CLIENT'});
     S.rotationPlan=fallback?[fallback]:[];S.rotationIndex=0;S.rotationType='MISSION SIMPLE';
     return fallback;
   }
@@ -966,10 +969,13 @@ function generateBusinessRotation(){
     }
     S.rotationType='MISSION MULTI-SECTEURS';
   }
-  if(plan.length===1)S.rotationType='MISSION SIMPLE';
-  S.rotationPlan=plan;
+  const dutyLimit=timeToMinutes(S.dutyStart)+S.dutyMinutes;
+  const dutyCompatible=plan.filter(leg=>leg.arrMinuteOfDay+30<=dutyLimit);
+  if(!dutyCompatible.length)dutyCompatible.push(first);
+  if(dutyCompatible.length===1)S.rotationType='MISSION SIMPLE';
+  S.rotationPlan=dutyCompatible;
   S.rotationIndex=0;
-  return plan[0];
+  return dutyCompatible[0];
 }
 
 async function fetchWX(icao,lat,lon){
@@ -1287,11 +1293,12 @@ async function initiateCall(type){
 
 function makeSpokenBriefing(f,d,lang='fr'){
   const remaining=S.rotationPlan.slice(S.rotationIndex);
-  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, ${leg.missionRole.toLowerCase()}`).join('. ');
-  if(lang==='en')return `${S.rank} ${S.pilot}, WABA has assigned a ${S.rotationType.toLowerCase()} rotation. Current flight ${f.flightNo}, from ${f.dep} to ${f.arr}. Departure ${f.depT}, estimated arrival ${f.arrT}, ${f.pax.length} passengers. Planned sequence: ${sequence}. The current flight file has been sent to the EFB.`;
+  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, départ ${leg.depT}, ${leg.missionRole.toLowerCase()}`).join('. ');
+  if(lang==='en')return `Good day ${S.rank} ${S.pilot}. This is your WABA operations briefing for duty ${S.dutyStart} to ${S.dutyEnd} UTC. You are assigned a ${S.rotationType.toLowerCase()} rotation with ${remaining.length} remaining sectors. Planned sequence: ${sequence}. Current sector is ${f.flightNo}, ${f.dep} to ${f.arr}, estimated arrival ${f.arrT}, planned level ${f.fl}, with ${f.pax.length} passengers. Arrival handling is ${f.arrAp.handling||'to be confirmed'}, parking ${f.arrAp.parking||'to be confirmed'}, and planning alternate ${f.alt}. Simulated fuel estimate is ${f.fuel.total} kilograms. Weather, performance, fuel and operational documents must be checked in the approved sources used for your simulator flight. Report any client, technical or timing change to operations.`;
   const depCity=f.depAp?.city||f.dep;
   const arrCity=f.arrAp?.city||f.arr;
-  return `${S.rank} ${S.pilot}, WABA vous affecte une rotation de type ${S.rotationType.toLowerCase()}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. Départ prévu ${f.depT}, arrivée estimée ${f.arrT}, avec ${f.pax.length} passagers. Séquence planifiée: ${sequence}. Le dossier du secteur courant est transmis dans l EFB.`;
+  const notes=f.arrAp.notes?`Points particuliers arrivée: ${f.arrAp.notes}.`:'';
+  return `Bonjour ${S.rank} ${S.pilot}. Voici votre briefing opérations WABA pour le duty de ${S.dutyStart} à ${S.dutyEnd} UTC. Vous êtes affecté à une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant à effectuer. Programme prévu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. Départ prévu ${f.depT}, arrivée estimée ${f.arrT}, niveau planifié ${f.fl}, avec ${f.pax.length} passagers. Le handling arrivée est ${f.arrAp.handling||'à confirmer'}, parking ${f.arrAp.parking||'à confirmer'}, alternate de planification ${f.alt}. ${notes} L estimation carburant de simulation est de ${f.fuel.total} kilogrammes. La météo, les performances, le carburant et les documents opérationnels restent à vérifier dans vos sources de simulation approuvées. Signalez aux opérations toute modification client, technique ou horaire. Le dossier complet de rotation est disponible dans l EFB.`;
 }
 
 function handleBriefingResponse(rotation){
@@ -1352,6 +1359,7 @@ let kokoroTTS = null;
 let kokoroLoading = false;
 let kokoroReady = false;
 let kokoroLoadPromise = null;
+let kokoroErrorMessage = '';
 let audioMuted = false;
 let currentAudio = null;
 
@@ -1390,11 +1398,12 @@ async function initKokoro() {
     return true;
   } catch(e) {
     console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
+    kokoroErrorMessage=String(e?.message||e||'Erreur inconnue');
     kokoroLoading = false;
     kokoroReady = false;
     $('kokoro-btn').style.opacity = '.25';
-    $('kokoro-btn').title = 'Voix française indisponible — touchez pour réessayer';
-    showToast('Voix française indisponible — voix système utilisée',6000);
+    $('kokoro-btn').title = `ff_siwis indisponible: ${kokoroErrorMessage.slice(0,120)} — touchez pour réessayer`;
+    showToast(`ff_siwis indisponible: ${kokoroErrorMessage.slice(0,90)}`,10000);
     return false;
   }finally{kokoroLoading=false;kokoroLoadPromise=null;}})();
   return kokoroLoadPromise;
@@ -1446,7 +1455,12 @@ async function speak(text) {
   u.lang = navigator.language?.startsWith('en') ? 'en-GB' : 'fr-FR';
   u.rate = 1.0; u.pitch = 1.0;
   const voices = window.speechSynthesis.getVoices();
-  const m = voices.find(v => v.lang.startsWith(u.lang.split('-')[0]) && !v.name.includes('Google'));
+  const preferred=['Thomas','Audrey','Amélie','Amelie','Marie','Siri','Premium','Enhanced','Natural','Denise','Henri'];
+  const candidates=voices.filter(v=>v.lang.toLowerCase().startsWith(u.lang.split('-')[0].toLowerCase()));
+  const m=candidates.sort((a,b)=>{
+    const score=v=>(v.localService?3:0)+preferred.reduce((n,name,i)=>n+(v.name.includes(name)?30-i:0),0)-(v.name.includes('Compact')?10:0);
+    return score(b)-score(a);
+  })[0];
   if(m) u.voice = m;
   await new Promise(resolve=>{
     u.onend=resolve;u.onerror=resolve;
