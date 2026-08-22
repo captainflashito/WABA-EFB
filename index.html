@@ -135,6 +135,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .c-end{background:var(--red);color:#fff;width:60px;height:60px;font-size:22px}
 .c-sec{background:var(--bg4);color:var(--text2)}
 .mic-tip{font-size:9px;font-family:var(--font-m);color:var(--text3);margin-top:10px;text-align:center}
+.ipad-reply{display:none;margin:2px 0 12px;padding:12px 22px;border:1px solid var(--gold);
+  border-radius:999px;background:var(--gold);color:#111;font:700 11px var(--font-b);cursor:pointer}
+.ipad-reply.on{display:block}
 
 /* ACARS */
 .acars-hdr{padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);
@@ -733,6 +736,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
   <div class="call-sub" id="call-sub">WABA OPS CENTER · NANTES</div>
   <div class="call-stat" id="call-stat">Connexion...</div>
   <div class="call-tx" id="call-tx"></div>
+  <button class="ipad-reply" id="ipad-reply" onclick="beginIpadReply()">🎤 RÉPONDRE AUX OPS</button>
   <div class="call-ctrl">
     <button class="cctrl c-sec" onclick="toggleSpk()">🔊</button>
     <button class="cctrl c-sec" onclick="toggleAmbience()" title="Ambiance centre OPS">🎧</button>
@@ -1810,6 +1814,7 @@ async function initiateCall(type){
   $('call-name').textContent=d.name;
   $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
   $('call-tx').innerHTML='';
+  $('ipad-reply').classList.remove('on');
   $('mic-tip').textContent=appleTouchAudio?'Préparation audio iPad...':'Activation du microphone pour cet appel...';
   $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Connexion à la voix WABA...';
   $('status-dot').className='dot call';
@@ -2230,19 +2235,14 @@ async function requestedLiveContext(text){
   }
 }
 
-async function startAutoListen(){
+async function startAutoListen(fromIpadButton=false){
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted||S.listenRestartPending)return;
-  S.listenRestartPending=true;
-  // WebKit iOS peut figer SpeechRecognition lorsqu on le relance juste apres
-  // la lecture d un fichier audio. Une courte temporisation suivie d un
-  // reamorcage getUserMedia restaure l entree micro sur iPad/iPhone.
-  if(usesAppleTouchAudio()){
-    $('mic-tip').textContent='Reconnexion du microphone iPad...';
-    await sleep(4000);
-    if(!S.callActive){S.listenRestartPending=false;return;}
-    await requestMicAccess(false);
-    await sleep(350);
+  if(usesAppleTouchAudio()&&!fromIpadButton){
+    $('ipad-reply').classList.add('on');
+    $('mic-tip').textContent='Touchez Répondre aux OPS, puis parlez';
+    return;
   }
+  S.listenRestartPending=true;
   S.listenRestartPending=false;
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -2290,9 +2290,22 @@ async function startAutoListen(){
   try{recognition.start();}catch(e){S.micActive=false;}
 }
 
+function beginIpadReply(){
+  if(!S.callActive||S.processingSpeech)return;
+  $('ipad-reply').classList.remove('on');
+  $('mic-tip').textContent='Activation du microphone...';
+  // L appel getUserMedia part directement du toucher: Safari iPad conserve
+  // ainsi le geste utilisateur necessaire a l ouverture fiable du micro.
+  requestMicAccess(false).then(ok=>{
+    if(ok&&S.callActive)startAutoListen(true);
+    else if(S.callActive)$('ipad-reply').classList.add('on');
+  });
+}
+
 function endCall(){
   S.callActive=false;
   S.listenRestartPending=false;
+  $('ipad-reply').classList.remove('on');
   stopRingback();stopOpsAmbience();playHangup();
   S.processingSpeech=false;S.micActive=false;
   if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
