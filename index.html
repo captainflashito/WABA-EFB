@@ -2011,7 +2011,7 @@ async function initElevenLabs() {
     const res=await fetch(WABA_PROXY,{cache:'no-store'});
     if(!res.ok)throw new Error(`Worker HTTP ${res.status}`);
     const state=await res.json();
-    if(!state.elevenlabs_configured||!state.voice_configured)throw new Error('Configuration ElevenLabs incomplète');
+    if(!state.elevenlabs_configured||!state.voice_configured||state.voice_count!==4)throw new Error(`Configuration ElevenLabs incomplète (${state.voice_count||0}/4 voix)`);
     kokoroReady=true;
     $('kokoro-btn').style.opacity='1';
     $('kokoro-btn').title='Voix humaine ElevenLabs prête';
@@ -2090,7 +2090,10 @@ async function speak(text) {
         })
       });
       clearTimeout(timer);
-      if(!res.ok)throw new Error(`TTS HTTP ${res.status}`);
+      if(!res.ok){
+        let detail='';try{const err=await res.json();detail=err.error||'';}catch{}
+        throw new Error(`${detail||'TTS indisponible'} — HTTP ${res.status}`);
+      }
       const blob=await res.blob();
       const url = URL.createObjectURL(blob);
       const a = new Audio(url);
@@ -2103,29 +2106,16 @@ async function speak(text) {
       setCallAudioDuck(false);
       return;
     } catch(e) {
-      console.warn('[WABA] ElevenLabs indisponible, fallback système:', e);
+      console.error('[WABA] Voix ElevenLabs refusée:', e);
+      setCallAudioDuck(false);
+      showToast(`Voix ${DISPATCHER_VOICE_PROFILE[S.dispatcher?.id]||'1'} indisponible — aucune voix de remplacement utilisée`,7000);
+      return;
     }
   }
 
-  // Fallback Web Speech API
-  if(!window.speechSynthesis){setCallAudioDuck(false);return;}
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(clean);
-  u.lang = navigator.language?.startsWith('en') ? 'en-GB' : 'fr-FR';
-  u.rate = 1.0; u.pitch = 1.0;
-  const voices = window.speechSynthesis.getVoices();
-  const preferred=['Thomas','Audrey','Amélie','Amelie','Marie','Siri','Premium','Enhanced','Natural','Denise','Henri'];
-  const candidates=voices.filter(v=>v.lang.toLowerCase().startsWith(u.lang.split('-')[0].toLowerCase()));
-  const m=candidates.sort((a,b)=>{
-    const score=v=>(v.localService?3:0)+preferred.reduce((n,name,i)=>n+(v.name.includes(name)?30-i:0),0)-(v.name.includes('Compact')?10:0);
-    return score(b)-score(a);
-  })[0];
-  if(m) u.voice = m;
-  await new Promise(resolve=>{
-    u.onend=resolve;u.onerror=resolve;
-    window.speechSynthesis.speak(u);
-  });
+  // Ne jamais substituer une autre voix au dispatcher sélectionné.
   setCallAudioDuck(false);
+  showToast('Voix ElevenLabs indisponible — aucune voix robotique utilisée',6000);
 }
 
 async function requestMicAccess(holdForCall=false){
