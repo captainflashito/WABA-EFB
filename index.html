@@ -291,7 +291,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <option value="B738">Boeing BBJ2 — B738 (F-LIMB)</option>
     </select>
   </div>
-  <div class="frow" style="width:100%">
+  <div class="frow" style="width:100%;flex-wrap:wrap">
+    <div class="fg" style="margin-bottom:4px;flex-basis:100%">
+      <label class="fl">Date duty (UTC)</label>
+      <input class="fi" type="date" id="s-date"/>
+    </div>
     <div class="fg" style="margin-bottom:0">
       <label class="fl">Début duty (UTC)</label>
       <input class="fi" type="time" id="s-start" value="18:00"/>
@@ -473,6 +477,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div class="card">
         <div class="ctitle" id="rotation-title">Rotation WABA</div>
         <div id="rotation-legs"></div>
+        <div id="rotation-history" style="margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font:8px var(--font-m);color:var(--text3);line-height:1.7"></div>
       </div>
       <!-- Route -->
       <div class="route-box">
@@ -684,9 +689,9 @@ const AIRPORTS = [
 ];
 
 const ROUTES = {
-  C750:['LFPB','EGLF','EGKB','EBBR','EBAW','LFMN','LFML','LFLL','LFBO','LFBD','LFKJ','LFKB','LSZH','LSGG','LSZA','LIRF','LIRA','LIMC','LIML','LIPZ','LICJ','LEMD','LEBL','LEMG','LEPA','LEBB','EHAM','EDDF','EDDM','EDDB','LPPT','LPMA','LGAV','LGMK','LGST','LOWI','LOWW','ENGM','ESSA','EKCH'],
-  C700:['LFPB','EGLF','EGKB','EBBR','EBAW','LFMN','LFML','LFLL','LFBO','LFBD','LFKJ','LFKB','LSZH','LSGG','LSZA','LIRF','LIRA','LIMC','LIML','LIPZ','LICJ','LEMD','LEBL','LEMG','LEPA','LEBB','EHAM','EDDF','EDDM','EDDB','LPPT','LPMA','LGAV','LGMK','LGST','LOWI','LOWW','ENGM','ENTC','ESSA','EKCH'],
-  B738:['LFPB','EGLF','LSZH','LSGG','LIRF','LIMC','LEMD','EHAM','EDDF','EDDM','LGAV','LOWW','ENGM','ESSA','EKCH','LPPT','LPMA','OMDB','OMAA','OTBD','GMMN','KTEB','KMIA'],
+  C750:AIRPORTS.map(a=>a.icao).filter(icao=>!['KTEB','KMIA'].includes(icao)),
+  C700:AIRPORTS.map(a=>a.icao).filter(icao=>!['KTEB','KMIA'].includes(icao)),
+  B738:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGMK','LGST','LIRQ'].includes(icao)),
 };
 
 const PAX_POOL = [
@@ -720,10 +725,10 @@ Le commandant de bord conserve l'autorité finale. En cas d'urgence réelle, app
 // STATE
 // ═══════════════════════════════════════════════════════
 const S = {
-  pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
+  pilot:null, rank:null, aircraft:null, dutyDate:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
-  rotationPlan:[], rotationIndex:0, rotationType:null,
+  rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
   convHistory:[], position:'LFRS', callController:null,
@@ -735,10 +740,11 @@ let sessionResetting=false;
 function sessionSnapshot(){
   return{
     version:1,savedAt:new Date().toISOString(),
-    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
+    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
     rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
+    rotationRevision:S.rotationRevision,rotationHistory:S.rotationHistory,
     position:S.position,inFlight:S.inFlight
   };
 }
@@ -770,11 +776,14 @@ function restoreSession(){
   let saved;
   try{saved=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||'null');}catch{return false;}
   if(!saved||saved.version!==1||!saved.pilot||!AIRCRAFT_DATA[saved.aircraft])return false;
+  saved.dutyDate=saved.dutyDate||new Date().toISOString().slice(0,10);
+  saved.rotationRevision=Number(saved.rotationRevision)||0;
+  saved.rotationHistory=Array.isArray(saved.rotationHistory)?saved.rotationHistory:[];
   const dispatcher=DISPATCHERS.find(d=>d.id===saved.dispatcherId)||getDispatcher();
   Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,processingSpeech:false,recognition:null,callController:null,convHistory:[]});
   $('setup').style.display='none';$('boot-ov').style.display='none';$('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+S.pilot.split(' ').slice(-1)[0];
-  $('b-acft').textContent=S.aircraft;$('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
+  $('b-acft').textContent=S.aircraft;$('b-duty').textContent=formatDateFr(S.dutyDate)+' · '+S.dutyStart+'→'+S.dutyEnd;
   updateDispUI();renderRotationPlan();
   if(S.currentFlight){
     const restoredPhase=S.phase;
@@ -808,6 +817,15 @@ function fmt2(n){return String(n).padStart(2,'0')}
 function utcNow(){const n=new Date();return fmt2(n.getUTCHours())+':'+fmt2(n.getUTCMinutes())+'Z'}
 function fmtDur(min){return `${Math.floor(min/60)}h${fmt2(min%60)}`}
 function timeToMinutes(value){const [h,m]=String(value).split(':').map(Number);return h*60+m;}
+function dateAtDutyMinute(absMinute){
+  const base=new Date((S.dutyDate||new Date().toISOString().slice(0,10))+'T00:00:00Z');
+  base.setUTCDate(base.getUTCDate()+Math.floor(absMinute/1440));
+  return base.toISOString().slice(0,10);
+}
+function formatAbsTime(absMinute){return fmt2(Math.floor(((absMinute%1440)+1440)%1440/60))+':'+fmt2(((absMinute%1440)+1440)%1440%60)+'Z';}
+function formatDateFr(iso){
+  const [y,m,d]=String(iso).split('-');return `${d}/${m}/${y}`;
+}
 function setBootProgress(value,label){
   const pct=Math.max(0,Math.min(100,Math.round(value)));
   $('boot-fill').style.width=pct+'%';
@@ -845,13 +863,14 @@ async function startDuty(){
     showToast('Saisissez réellement votre prénom et votre nom — les textes gris sont des exemples',6000);
     (!fn?$('s-fn'):$('s-ln')).focus();return;
   }
-  if(!$('s-start').value||!$('s-end').value){showToast('Renseignez les horaires du duty',5000);return;}
+  if(!$('s-date').value||!$('s-start').value||!$('s-end').value){showToast('Renseignez la date et les horaires du duty',5000);return;}
   let dutyMinutes=timeToMinutes($('s-end').value)-timeToMinutes($('s-start').value);
   if(dutyMinutes<=0)dutyMinutes+=1440;
   if(dutyMinutes<60||dutyMinutes>18*60){showToast('Fenêtre de duty incohérente pour cette simulation',5000);return;}
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
   S.aircraft=$('s-ac').value;
+  S.dutyDate=$('s-date').value;
   S.dutyStart=$('s-start').value;
   S.dutyEnd=$('s-end').value;
   S.dutyMinutes=dutyMinutes;
@@ -866,7 +885,7 @@ async function startDuty(){
   $('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+ln;
   $('b-acft').textContent=S.aircraft;
-  $('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
+  $('b-duty').textContent=formatDateFr(S.dutyDate)+' · '+S.dutyStart+'→'+S.dutyEnd;
   updateDispUI();
   // Vérifie la voix distante dès la prise de service.
   $('kokoro-btn').style.opacity='.7';
@@ -894,7 +913,7 @@ async function startDuty(){
 }
 
 function getDispatcher(){
-  const h=new Date().getUTCHours();
+  const h=S.dutyStart?Math.floor(timeToMinutes(S.dutyStart)/60):new Date().getUTCHours();
   const avail=DISPATCHERS.filter(d=>{
     const[s,e]=d.shift;
     return s>e ? (h>=s||h<e) : (h>=s&&h<e);
@@ -935,8 +954,8 @@ function buildFlight(dep,dest,existing={}){
   const now=new Date();
   const depMin=existing.depMinuteOfDay??(now.getUTCHours()*60+now.getUTCMinutes()+15);
   const arrMin=depMin+durMin;
-  const depT=fmt2(Math.floor(depMin/60)%24)+':'+fmt2(depMin%60)+'Z';
-  const arrT=fmt2(Math.floor(arrMin/60)%24)+':'+fmt2(arrMin%60)+'Z';
+  const depT=formatAbsTime(depMin),arrT=formatAbsTime(arrMin);
+  const depDate=dateAtDutyMinute(depMin),arrDate=dateAtDutyMinute(arrMin);
   // Estimation de simulation seulement; ne remplace pas un OFP.
   const trip=Math.round(ac.fuel_burn_kgh*(durH+0.22));
   const cont=Math.round(trip*0.05);
@@ -964,7 +983,12 @@ function buildFlight(dep,dest,existing={}){
   const flightNo=existing.flightNo||'WAB'+num;
   // FL
   const fl=dist<200?'FL250':dist<600?'FL350':ac.cruise_fl;
-  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depMinuteOfDay:depMin,arrMinuteOfDay:arrMin,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole:existing.missionRole||'CLIENT'};
+  const missionRole=existing.missionRole||'CLIENT';
+  const international=arrAp.country!=='France';
+  const turnaroundMin=existing.turnaroundMin??(missionRole.includes('POSITIONING')?45:international?90:65);
+  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depDate,arrDate,
+    depMinuteOfDay:depMin,arrMinuteOfDay:arrMin,turnaroundMin,fl,alt,fuel,
+    pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole};
 }
 
 function generateRotation(destination=null){
@@ -972,11 +996,12 @@ function generateRotation(destination=null){
   const dep=S.position||'LFRS';
   if(destination)return buildFlight(dep,destination);
   const recent=new Set(S.sessionFlights.slice(-6).map(f=>f.arr));
-  let pool=AIRPORTS.filter(a=>a.icao!==dep&&!recent.has(a.icao)).filter(a=>{
+  const allowed=new Set(ROUTES[S.aircraft]||[]);
+  let pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==dep&&!recent.has(a.icao)).filter(a=>{
     const d=distNM(getAP(dep).lat,getAP(dep).lon,a.lat,a.lon);
     return d>=70&&d<=ac.range_nm*0.9;
   });
-  if(!pool.length)pool=AIRPORTS.filter(a=>a.icao!==dep);
+  if(!pool.length)pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==dep);
   // Écarte les routes dont l'estimation simplifiée excède la capacité déclarée.
   const shuffled=[...pool].sort(()=>Math.random()-.5);
   for(const candidate of shuffled){
@@ -988,7 +1013,8 @@ function generateRotation(destination=null){
 
 function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
-  const candidates=AIRPORTS.filter(a=>a.icao!==origin&&!excluded.includes(a.icao))
+  const allowed=new Set(ROUTES[S.aircraft]||[]);
+  const candidates=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==origin&&!excluded.includes(a.icao))
     .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;})
     .sort(()=>Math.random()-.5);
   for(const ap of candidates){
@@ -1000,47 +1026,50 @@ function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
 
 function generateBusinessRotation(){
   const base=S.position||'LFRS';
-  const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),Math.max(60,S.dutyMinutes-75));
-  const firstDeparture=timeToMinutes(S.dutyStart)+45;
+  const dutyStartAbs=timeToMinutes(S.dutyStart);
+  const dutyLimit=dutyStartAbs+S.dutyMinutes;
+  const firstDeparture=dutyStartAbs+45;
+  const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),Math.max(60,dutyLimit-firstDeparture-30));
   const first=firstDest&&buildFlight(base,firstDest,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT'});
-  if(!first){
+  if(!first||first.arrMinuteOfDay+30>dutyLimit){
     const randomFallback=generateRotation();
-    const fallback=randomFallback&&buildFlight(base,randomFallback.arr,{depMinuteOfDay:timeToMinutes(S.dutyStart)+45,missionRole:'CLIENT'});
+    const fallback=randomFallback&&buildFlight(base,randomFallback.arr,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT'});
     S.rotationPlan=fallback?[fallback]:[];S.rotationIndex=0;S.rotationType='MISSION SIMPLE';
+    S.rotationRevision=0;S.rotationHistory=[{revision:0,at:utcNow(),reason:'ÉMISSION INITIALE'}];
     return fallback;
   }
   const roll=Math.random();
   const plan=[first];
   if(roll<.45){
-    // Dépose client, attente sur place, puis retour vers la base de départ.
-    const wait=90+Math.floor(Math.random()*181);
-    const back=buildFlight(first.arr,base,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+wait,missionRole:'RETOUR CLIENT'});
-    if(back&&!back.fuel.overCapacity)plan.push(back);
+    const availableWait=dutyLimit-first.arrMinuteOfDay-30;
+    const wait=Math.min(210,Math.max(90,availableWait-180));
+    const back=buildFlight(first.arr,base,{depMinuteOfDay:first.arrMinuteOfDay+wait,missionRole:'RETOUR CLIENT'});
+    if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan.push(back);
     S.rotationType='ALLER-RETOUR CLIENT';
   }else if(roll<.75){
-    // Dépose client suivie d'un repositionnement court sans passagers.
-    const repoDest=chooseBusinessDestination(first.arr,[base,first.arr]);
-    const repo=repoDest&&buildFlight(first.arr,repoDest,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+55,pax:[],missionRole:'POSITIONING À VIDE'});
-    if(repo&&!repo.fuel.overCapacity)plan.push(repo);
+    const nextDeparture=first.arrMinuteOfDay+first.turnaroundMin;
+    const repoDest=chooseBusinessDestination(first.arr,[base,first.arr],Math.max(45,dutyLimit-nextDeparture-30));
+    const repo=repoDest&&buildFlight(first.arr,repoDest,{depMinuteOfDay:nextDeparture,pax:[],missionRole:'POSITIONING À VIDE'});
+    if(repo&&!repo.fuel.overCapacity&&repo.arrMinuteOfDay+30<=dutyLimit)plan.push(repo);
     S.rotationType='DÉPOSE CLIENT + POSITIONING';
   }else{
-    // Mission multi-villes puis retour base si les estimations restent possibles.
-    const secondDest=chooseBusinessDestination(first.arr,[base,first.arr]);
-    const second=secondDest&&buildFlight(first.arr,secondDest,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+75,missionRole:'CLIENT — SECTEUR 2'});
-    if(second&&!second.fuel.overCapacity){
+    const secondDeparture=first.arrMinuteOfDay+first.turnaroundMin;
+    const secondDest=chooseBusinessDestination(first.arr,[base,first.arr],Math.max(45,dutyLimit-secondDeparture-30));
+    const second=secondDest&&buildFlight(first.arr,secondDest,{depMinuteOfDay:secondDeparture,missionRole:'CLIENT — SECTEUR 2'});
+    if(second&&!second.fuel.overCapacity&&second.arrMinuteOfDay+30<=dutyLimit){
       plan.push(second);
-      const back=buildFlight(second.arr,base,{depMinuteOfDay:second.depMinuteOfDay+second.durMin+70,pax:[],missionRole:'RETOUR BASE À VIDE'});
-      if(back&&!back.fuel.overCapacity)plan.push(back);
+      const back=buildFlight(second.arr,base,{depMinuteOfDay:second.arrMinuteOfDay+second.turnaroundMin,pax:[],missionRole:'RETOUR BASE À VIDE'});
+      if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan.push(back);
     }
     S.rotationType='MISSION MULTI-SECTEURS';
   }
-  const dutyLimit=timeToMinutes(S.dutyStart)+S.dutyMinutes;
-  const dutyCompatible=plan.filter(leg=>leg.arrMinuteOfDay+30<=dutyLimit);
-  if(!dutyCompatible.length)dutyCompatible.push(first);
-  if(dutyCompatible.length===1)S.rotationType='MISSION SIMPLE';
-  S.rotationPlan=dutyCompatible;
+  if(plan.length===1)S.rotationType='MISSION SIMPLE';
+  S.rotationPlan=plan;
   S.rotationIndex=0;
-  return dutyCompatible[0];
+  S.rotationRevision=0;
+  S.rotationHistory=[{revision:0,at:utcNow(),reason:'ÉMISSION INITIALE'}];
+  saveSession();
+  return plan[0];
 }
 
 async function fetchWX(icao,lat,lon){
@@ -1059,18 +1088,47 @@ async function fetchWX(icao,lat,lon){
   }catch{return{icon:'❓',wind:'---',vis:'---',temp:'---',clouds:'---',ok:false};}
 }
 
+function recordRotationRevision(reason){
+  S.rotationRevision=(Number(S.rotationRevision)||0)+1;
+  S.rotationHistory=Array.isArray(S.rotationHistory)?S.rotationHistory:[];
+  S.rotationHistory.push({revision:S.rotationRevision,at:utcNow(),reason:String(reason||'MISE À JOUR OPS')});
+  saveSession();
+}
+
+function resequenceFollowingLegs(startIndex){
+  const dutyLimit=timeToMinutes(S.dutyStart)+S.dutyMinutes;
+  for(let i=startIndex;i<S.rotationPlan.length;i++){
+    const previous=S.rotationPlan[i-1],old=S.rotationPlan[i];
+    if(!previous||!old)break;
+    const departure=previous.arrMinuteOfDay+(previous.turnaroundMin||60);
+    let destination=old.arr;
+    if(destination===previous.arr){
+      destination=chooseBusinessDestination(previous.arr,[previous.dep,previous.arr],Math.max(45,dutyLimit-departure-30));
+    }
+    const rebuilt=destination&&buildFlight(previous.arr,destination,{
+      flightNo:old.flightNo,pax:old.pax,depMinuteOfDay:departure,
+      missionRole:old.missionRole,turnaroundMin:old.turnaroundMin
+    });
+    if(!rebuilt||rebuilt.fuel.overCapacity||rebuilt.arrMinuteOfDay+30>dutyLimit){
+      S.rotationPlan=S.rotationPlan.slice(0,i);break;
+    }
+    S.rotationPlan[i]=rebuilt;
+  }
+}
+
 function renderRotationPlan(){
   const host=$('rotation-legs');
   if(!host)return;
   host.replaceChildren();
-  $('rotation-title').textContent=`Rotation WABA — ${S.rotationType||'MISSION'}`;
+  $('rotation-title').textContent=`Rotation WABA — ${S.rotationType||'MISSION'} · REV ${S.rotationRevision||0}`;
   S.rotationPlan.forEach((leg,index)=>{
     const row=document.createElement('div');row.className='rot-leg';
     const num=document.createElement('div');num.className='rot-num';num.textContent=index+1;
     const info=document.createElement('div');
     const route=document.createElement('div');route.className='rot-route';route.textContent=`${leg.dep} → ${leg.arr}`;
     const meta=document.createElement('div');meta.className='rot-meta';
-    meta.textContent=`${leg.depT} · ${leg.missionRole} · ${leg.pax.length} PAX`;
+    const dateTag=leg.depDate&&leg.depDate!==S.dutyDate?formatDateFr(leg.depDate)+' · ':'';
+    meta.textContent=`${dateTag}${leg.depT}–${leg.arrT} · ESCALE ${leg.turnaroundMin||60}MIN · ${leg.missionRole} · ${leg.pax.length} PAX`;
     info.append(route,meta);
     const status=document.createElement('div');
     const state=index<S.rotationIndex?'done':(index===S.rotationIndex&&S.currentFlight)?'current':'planned';
@@ -1078,6 +1136,11 @@ function renderRotationPlan(){
     status.textContent=state==='done'?'TERMINÉ':state==='current'?'EN COURS':'PLANIFIÉ';
     row.append(num,info,status);host.appendChild(row);
   });
+  const history=$('rotation-history');
+  if(history){
+    history.textContent=(S.rotationHistory||[]).slice(-4).map(item=>`REV ${item.revision} · ${item.at} · ${item.reason}`).join('\n');
+    history.style.whiteSpace='pre-line';
+  }
 }
 
 function populateDossier(f){
@@ -1091,8 +1154,8 @@ function populateDossier(f){
   $('d-dur').textContent=fmtDur(f.durMin);
   $('d-fltno').textContent=f.flightNo;
   $('d-acft').textContent=AIRCRAFT_DATA[S.aircraft].name+' · '+AIRCRAFT_DATA[S.aircraft].reg;
-  $('d-dep-t').textContent=f.depT;
-  $('d-arr-t').textContent=f.arrT;
+  $('d-dep-t').textContent=`${formatDateFr(f.depDate||S.dutyDate)} · ${f.depT}`;
+  $('d-arr-t').textContent=`${formatDateFr(f.arrDate||S.dutyDate)} · ${f.arrT}`;
   $('d-fl').textContent=f.fl;
   $('d-dist').textContent=f.dist+' NM';
   $('d-alt').textContent=f.alt;
@@ -1233,6 +1296,7 @@ function setPhase(n){
   if(n===2&&(S.mode==='challenging'||S.mode==='fullops')){
     scheduleScenario(f);
   }
+  saveSession();
 }
 
 function scheduleScenario(f){
@@ -1262,7 +1326,9 @@ function applyOperationalChange(action,f){
     const revised=newDest&&buildFlight(next.dep,newDest,{flightNo:next.flightNo,pax:next.pax,depMinuteOfDay:next.depMinuteOfDay,missionRole:'CLIENT — PROGRAMME RÉVISÉ'});
     if(revised){
       S.rotationPlan[idx]=revised;
+      resequenceFollowingLegs(idx+1);
       S.rotationType=(S.rotationType||'ROTATION')+' — RÉVISÉE';
+      recordRotationRevision(`CHANGEMENT CLIENT SECTEUR ${idx+1}: ${revised.arr}`);
       renderRotationPlan();
       addAcars('ops','INFO',`ROTATION MISE À JOUR // SECTEUR ${idx+1}: ${revised.dep}→${revised.arr} // ${revised.depT}`);
     }
@@ -1271,9 +1337,10 @@ function applyOperationalChange(action,f){
     const diversion=buildFlight(f.dep,f.alt,{flightNo:f.flightNo,pax:f.pax,depMinuteOfDay:f.depMinuteOfDay,missionRole:'DÉROUTEMENT'});
     if(diversion){
       S.currentFlight=diversion;
-      S.rotationPlan=S.rotationPlan.slice(0,S.rotationIndex+1);
       S.rotationPlan[S.rotationIndex]=diversion;
+      resequenceFollowingLegs(S.rotationIndex+1);
       S.rotationType=(S.rotationType||'ROTATION')+' — DÉROUTÉE';
+      recordRotationRevision(`DÉROUTEMENT ${f.arr} VERS ${diversion.arr}`);
       populateDossier(diversion);
     }
   }
@@ -1358,12 +1425,12 @@ async function initiateCall(type){
 
 function makeSpokenBriefing(f,d,lang='fr'){
   const remaining=S.rotationPlan.slice(S.rotationIndex);
-  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, départ ${leg.depT}, ${leg.missionRole.toLowerCase()}`).join('. ');
-  if(lang==='en')return `Good day ${S.rank} ${S.pilot}. This is your WABA operations briefing for duty ${S.dutyStart} to ${S.dutyEnd} UTC. You are assigned a ${S.rotationType.toLowerCase()} rotation with ${remaining.length} remaining sectors. Planned sequence: ${sequence}. Current sector is ${f.flightNo}, ${f.dep} to ${f.arr}, estimated arrival ${f.arrT}, planned level ${f.fl}, with ${f.pax.length} passengers. Arrival handling is ${f.arrAp.handling||'to be confirmed'}, parking ${f.arrAp.parking||'to be confirmed'}, and planning alternate ${f.alt}. Simulated fuel estimate is ${f.fuel.total} kilograms. Weather, performance, fuel and operational documents must be checked in the approved sources used for your simulator flight. Report any client, technical or timing change to operations.`;
+  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, départ ${leg.depT}, arrivée ${leg.arrT}, ${leg.missionRole.toLowerCase()}`).join('. ');
+  if(lang==='en')return `Good day ${S.rank} ${S.pilot}. This is revision ${S.rotationRevision||0} of your WABA operations briefing for duty dated ${S.dutyDate}, ${S.dutyStart} to ${S.dutyEnd} UTC. You are assigned a ${S.rotationType.toLowerCase()} rotation with ${remaining.length} remaining sectors. Planned sequence: ${sequence}. Current sector is ${f.flightNo}, ${f.dep} to ${f.arr}, estimated arrival ${f.arrT}, planned level ${f.fl}, with ${f.pax.length} passengers. Arrival handling is ${f.arrAp.handling||'to be confirmed'}, parking ${f.arrAp.parking||'to be confirmed'}, and planning alternate ${f.alt}. Simulated fuel estimate is ${f.fuel.total} kilograms. Weather, performance, fuel and operational documents must be checked in the approved sources used for your simulator flight. Report any client, technical or timing change to operations.`;
   const depCity=f.depAp?.city||f.dep;
   const arrCity=f.arrAp?.city||f.arr;
   const notes=f.arrAp.notes?`Points particuliers arrivée: ${f.arrAp.notes}.`:'';
-  return `Bonjour ${S.rank} ${S.pilot}. Voici votre briefing opérations WABA pour le duty de ${S.dutyStart} à ${S.dutyEnd} UTC. Vous êtes affecté à une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant à effectuer. Programme prévu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. Départ prévu ${f.depT}, arrivée estimée ${f.arrT}, niveau planifié ${f.fl}, avec ${f.pax.length} passagers. Le handling arrivée est ${f.arrAp.handling||'à confirmer'}, parking ${f.arrAp.parking||'à confirmer'}, alternate de planification ${f.alt}. ${notes} L estimation carburant de simulation est de ${f.fuel.total} kilogrammes. La météo, les performances, le carburant et les documents opérationnels restent à vérifier dans vos sources de simulation approuvées. Signalez aux opérations toute modification client, technique ou horaire. Le dossier complet de rotation est disponible dans l EFB.`;
+  return `Bonjour ${S.rank} ${S.pilot}. Voici la révision ${S.rotationRevision||0} de votre briefing opérations WABA pour le duty du ${formatDateFr(S.dutyDate)}, de ${S.dutyStart} à ${S.dutyEnd} UTC. Vous êtes affecté à une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant à effectuer. Programme prévu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. Départ prévu ${f.depT}, arrivée estimée ${f.arrT}, niveau planifié ${f.fl}, avec ${f.pax.length} passagers. Le handling arrivée est ${f.arrAp.handling||'à confirmer'}, parking ${f.arrAp.parking||'à confirmer'}, alternate de planification ${f.alt}. ${notes} L estimation carburant de simulation est de ${f.fuel.total} kilogrammes. La météo, les performances, le carburant et les documents opérationnels restent à vérifier dans vos sources de simulation approuvées. Signalez aux opérations toute modification client, technique ou horaire. Le dossier complet de rotation est disponible dans l EFB.`;
 }
 
 function handleBriefingResponse(rotation){
@@ -1681,12 +1748,14 @@ async function sendAcars(){
         if(newDest){
           setTimeout(()=>{
             const previous=S.currentFlight;
-            const newRot=buildFlight(previous.dep,newDest,{flightNo:previous.flightNo,pax:previous.pax});
+            const newRot=buildFlight(previous.dep,newDest,{flightNo:previous.flightNo,pax:previous.pax,
+              depMinuteOfDay:previous.depMinuteOfDay,missionRole:'CLIENT — DESTINATION RÉVISÉE',turnaroundMin:previous.turnaroundMin});
             if(newRot){
               S.currentFlight=newRot;
-              S.rotationPlan=S.rotationPlan.slice(0,S.rotationIndex+1);
               S.rotationPlan[S.rotationIndex]=newRot;
+              resequenceFollowingLegs(S.rotationIndex+1);
               S.rotationType=(S.rotationType||'ROTATION')+' RÉVISÉE';
+              recordRotationRevision(`CHANGEMENT DESTINATION ACARS VERS ${newDest}`);
               populateDossier(newRot);
               addAcars('ops','INFO',`${S.currentFlight.flightNo} — DOSSIER MIS À JOUR // NOUVELLE DESTINATION ${newDest} // SIMBRIEF DISPONIBLE`);
             }
@@ -1766,6 +1835,7 @@ function toggleVoice() {
 setInterval(saveSession,5000);
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveSession();});
 window.addEventListener('beforeunload',saveSession);
+$('s-date').value=new Date().toISOString().slice(0,10);
 restoreSession();
 </script>
 </body>
