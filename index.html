@@ -742,11 +742,14 @@ $('utc-clock').textContent=utcNow();
 // ═══════════════════════════════════════════════════════
 function startDuty(){
   const fn=$('s-fn').value.trim(), ln=$('s-ln').value.trim();
-  if(!fn||!ln){alert('Renseignez votre prénom et nom');return;}
-  if(!$('s-start').value||!$('s-end').value){alert('Renseignez les horaires du duty');return;}
+  if(!fn||!ln){
+    showToast('Saisissez réellement votre prénom et votre nom — les textes gris sont des exemples',6000);
+    (!fn?$('s-fn'):$('s-ln')).focus();return;
+  }
+  if(!$('s-start').value||!$('s-end').value){showToast('Renseignez les horaires du duty',5000);return;}
   let dutyMinutes=timeToMinutes($('s-end').value)-timeToMinutes($('s-start').value);
   if(dutyMinutes<=0)dutyMinutes+=1440;
-  if(dutyMinutes<60||dutyMinutes>18*60){alert('Fenêtre de duty incohérente pour cette simulation');return;}
+  if(dutyMinutes<60||dutyMinutes>18*60){showToast('Fenêtre de duty incohérente pour cette simulation',5000);return;}
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
   S.aircraft=$('s-ac').value;
