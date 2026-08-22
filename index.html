@@ -202,6 +202,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .pbadge2.spec{background:rgba(74,155,184,.1);color:var(--blue)}
 .fuel-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:5px}
 .fuel-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold))}
+.rot-leg{display:grid;grid-template-columns:30px 1fr auto;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.rot-leg:last-child{border-bottom:none}.rot-num{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg4);font:700 9px var(--font-m);color:var(--text2)}
+.rot-route{font:700 11px var(--font-m)}.rot-meta{font-size:8px;color:var(--text2);margin-top:3px}.rot-status{font:700 8px var(--font-m);padding:3px 6px;border-radius:3px}
+.rot-status.done{color:var(--green);background:rgba(90,158,111,.12)}.rot-status.current{color:var(--gold);background:rgba(184,151,62,.12)}.rot-status.planned{color:var(--blue);background:rgba(74,155,184,.12)}
 
 /* PHASE BAR */
 .phase-bar{padding:8px 14px;background:var(--bg2);border-top:1px solid var(--border);
@@ -234,6 +238,16 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   border:none;border-radius:var(--r);font-size:12px;font-weight:700;
   font-family:var(--font-m);letter-spacing:1px;cursor:pointer;transition:all .2s}
 .start-btn:hover{background:var(--gold-l)}
+
+/* SESSION LOADER */
+.boot-ov{position:fixed;inset:0;background:var(--bg);z-index:210;display:none;
+  flex-direction:column;align-items:center;justify-content:center;padding:30px;max-width:480px;margin:0 auto}
+.boot-title{font-family:var(--font-d);font-size:25px;margin-bottom:7px}
+.boot-state{font-family:var(--font-m);font-size:9px;color:var(--text2);letter-spacing:1px;
+  min-height:18px;margin-bottom:16px;text-align:center}
+.boot-track{width:100%;height:6px;background:var(--bg4);border-radius:5px;overflow:hidden;border:1px solid var(--border)}
+.boot-fill{height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-l));transition:width .35s ease}
+.boot-pct{font-family:var(--font-m);font-size:10px;color:var(--gold);margin-top:8px}
 
 /* NOTIF TOAST */
 .toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);
@@ -291,6 +305,14 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     MODE SIMULATION — NE PAS UTILISER POUR LA PRÉPARATION OU LA CONDUITE D'UN VOL RÉEL
   </div>
   <button class="start-btn" onclick="startDuty()">PRENDRE SON SERVICE →</button>
+</div>
+
+<!-- PRÉPARATION SESSION -->
+<div class="boot-ov" id="boot-ov">
+  <div class="boot-title">WABA OPS</div>
+  <div class="boot-state" id="boot-state">INITIALISATION DE LA SESSION...</div>
+  <div class="boot-track"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-pct" id="boot-pct">0%</div>
 </div>
 
 <!-- HEADER -->
@@ -446,6 +468,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
     </div>
     <div id="dos-content" style="display:none;flex-direction:column;gap:11px">
+      <!-- Rotation complète -->
+      <div class="card">
+        <div class="ctitle" id="rotation-title">Rotation WABA</div>
+        <div id="rotation-legs"></div>
+      </div>
       <!-- Route -->
       <div class="route-box">
         <div class="rap"><div class="ricao" id="d-dep">—</div><div class="rcity" id="d-dep-city">—</div></div>
@@ -701,6 +728,7 @@ const S = {
   pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null,
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
+  rotationPlan:[], rotationIndex:0, rotationType:null,
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
   convHistory:[], position:'LFRS', callController:null,
@@ -715,6 +743,12 @@ function fmt2(n){return String(n).padStart(2,'0')}
 function utcNow(){const n=new Date();return fmt2(n.getUTCHours())+':'+fmt2(n.getUTCMinutes())+'Z'}
 function fmtDur(min){return `${Math.floor(min/60)}h${fmt2(min%60)}`}
 function timeToMinutes(value){const [h,m]=String(value).split(':').map(Number);return h*60+m;}
+function setBootProgress(value,label){
+  const pct=Math.max(0,Math.min(100,Math.round(value)));
+  $('boot-fill').style.width=pct+'%';
+  $('boot-pct').textContent=pct+'%';
+  if(label)$('boot-state').textContent=label;
+}
 
 function showToast(msg, dur=3000){
   const t=$('toast');
@@ -740,7 +774,7 @@ $('utc-clock').textContent=utcNow();
 // ═══════════════════════════════════════════════════════
 // DUTY SETUP
 // ═══════════════════════════════════════════════════════
-function startDuty(){
+async function startDuty(){
   const fn=$('s-fn').value.trim(), ln=$('s-ln').value.trim();
   if(!fn||!ln){
     showToast('Saisissez réellement votre prénom et votre nom — les textes gris sont des exemples',6000);
@@ -761,6 +795,8 @@ function startDuty(){
   // Dispatcher selon heure
   S.dispatcher=getDispatcher();
   $('setup').style.display='none';
+  $('boot-ov').style.display='flex';
+  setBootProgress(6,'INITIALISATION DE LA SESSION...');
   $('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+ln;
   $('b-acft').textContent=S.aircraft;
@@ -770,8 +806,21 @@ function startDuty(){
   // disponible avant le premier appel OPS.
   $('kokoro-btn').style.opacity='.7';
   $('kokoro-btn').title='Chargement de la voix française...';
-  initKokoro();
-  requestMicAccess();
+  // Ces appels démarrent immédiatement depuis le clic utilisateur, nécessaire
+  // pour que le navigateur puisse afficher la permission microphone.
+  const micPromise=requestMicAccess();
+  const voicePromise=initKokoro();
+  let progress=12;
+  setBootProgress(progress,'AUTORISATION MICROPHONE ET CHARGEMENT DE LA VOIX...');
+  const progressTimer=setInterval(()=>{
+    progress=Math.min(92,progress+(progress<55?7:progress<80?3:1));
+    setBootProgress(progress,kokoroReady?'FINALISATION DU CENTRE OPS...':'CHARGEMENT DE LA VOIX FRANÇAISE...');
+  },700);
+  await Promise.allSettled([micPromise,voicePromise]);
+  clearInterval(progressTimer);
+  setBootProgress(100,kokoroReady?'WABA OPS PRÊT':'SESSION PRÊTE — VOIX SYSTÈME DE SECOURS');
+  await sleep(700);
+  $('boot-ov').style.display='none';
   // ACARS welcome
   setTimeout(()=>{
     addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE`);
@@ -818,7 +867,7 @@ function buildFlight(dep,dest,existing={}){
   const durH=dist/ac.cruise_kt;
   const durMin=Math.round(durH*60)+20;
   const now=new Date();
-  const depMin=now.getUTCHours()*60+now.getUTCMinutes()+15;
+  const depMin=existing.depMinuteOfDay??(now.getUTCHours()*60+now.getUTCMinutes()+15);
   const arrMin=depMin+durMin;
   const depT=fmt2(Math.floor(depMin/60)%24)+':'+fmt2(depMin%60)+'Z';
   const arrT=fmt2(Math.floor(arrMin/60)%24)+':'+fmt2(arrMin%60)+'Z';
@@ -849,7 +898,7 @@ function buildFlight(dep,dest,existing={}){
   const flightNo=existing.flightNo||'WAB'+num;
   // FL
   const fl=dist<200?'FL250':dist<600?'FL350':ac.cruise_fl;
-  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length};
+  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,depMinuteOfDay:depMin,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length,missionRole:existing.missionRole||'CLIENT'};
 }
 
 function generateRotation(destination=null){
@@ -871,6 +920,58 @@ function generateRotation(destination=null){
   return buildFlight(dep,shuffled[0]?.icao);
 }
 
+function chooseBusinessDestination(origin,excluded=[]){
+  const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
+  const candidates=AIRPORTS.filter(a=>a.icao!==origin&&!excluded.includes(a.icao))
+    .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;})
+    .sort(()=>Math.random()-.5);
+  for(const ap of candidates){
+    const test=buildFlight(origin,ap.icao);
+    if(test&&!test.fuel.overCapacity)return ap.icao;
+  }
+  return null;
+}
+
+function generateBusinessRotation(){
+  const base=S.position||'LFRS';
+  const firstDest=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr));
+  const first=firstDest&&buildFlight(base,firstDest,{missionRole:'CLIENT'});
+  if(!first){
+    const fallback=generateRotation();
+    S.rotationPlan=fallback?[fallback]:[];S.rotationIndex=0;S.rotationType='MISSION SIMPLE';
+    return fallback;
+  }
+  const roll=Math.random();
+  const plan=[first];
+  if(roll<.45){
+    // Dépose client, attente sur place, puis retour vers la base de départ.
+    const wait=90+Math.floor(Math.random()*181);
+    const back=buildFlight(first.arr,base,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+wait,missionRole:'RETOUR CLIENT'});
+    if(back&&!back.fuel.overCapacity)plan.push(back);
+    S.rotationType='ALLER-RETOUR CLIENT';
+  }else if(roll<.75){
+    // Dépose client suivie d'un repositionnement court sans passagers.
+    const repoDest=chooseBusinessDestination(first.arr,[base,first.arr]);
+    const repo=repoDest&&buildFlight(first.arr,repoDest,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+55,pax:[],missionRole:'POSITIONING À VIDE'});
+    if(repo&&!repo.fuel.overCapacity)plan.push(repo);
+    S.rotationType='DÉPOSE CLIENT + POSITIONING';
+  }else{
+    // Mission multi-villes puis retour base si les estimations restent possibles.
+    const secondDest=chooseBusinessDestination(first.arr,[base,first.arr]);
+    const second=secondDest&&buildFlight(first.arr,secondDest,{depMinuteOfDay:first.depMinuteOfDay+first.durMin+75,missionRole:'CLIENT — SECTEUR 2'});
+    if(second&&!second.fuel.overCapacity){
+      plan.push(second);
+      const back=buildFlight(second.arr,base,{depMinuteOfDay:second.depMinuteOfDay+second.durMin+70,pax:[],missionRole:'RETOUR BASE À VIDE'});
+      if(back&&!back.fuel.overCapacity)plan.push(back);
+    }
+    S.rotationType='MISSION MULTI-SECTEURS';
+  }
+  if(plan.length===1)S.rotationType='MISSION SIMPLE';
+  S.rotationPlan=plan;
+  S.rotationIndex=0;
+  return plan[0];
+}
+
 async function fetchWX(icao,lat,lon){
   try{
     const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,visibility,cloud_cover,precipitation,temperature_2m&wind_speed_unit=kn`);
@@ -887,9 +988,31 @@ async function fetchWX(icao,lat,lon){
   }catch{return{icon:'❓',wind:'---',vis:'---',temp:'---',clouds:'---',ok:false};}
 }
 
+function renderRotationPlan(){
+  const host=$('rotation-legs');
+  if(!host)return;
+  host.replaceChildren();
+  $('rotation-title').textContent=`Rotation WABA — ${S.rotationType||'MISSION'}`;
+  S.rotationPlan.forEach((leg,index)=>{
+    const row=document.createElement('div');row.className='rot-leg';
+    const num=document.createElement('div');num.className='rot-num';num.textContent=index+1;
+    const info=document.createElement('div');
+    const route=document.createElement('div');route.className='rot-route';route.textContent=`${leg.dep} → ${leg.arr}`;
+    const meta=document.createElement('div');meta.className='rot-meta';
+    meta.textContent=`${leg.depT} · ${leg.missionRole} · ${leg.pax.length} PAX`;
+    info.append(route,meta);
+    const status=document.createElement('div');
+    const state=index<S.rotationIndex?'done':(index===S.rotationIndex&&S.currentFlight)?'current':'planned';
+    status.className='rot-status '+state;
+    status.textContent=state==='done'?'TERMINÉ':state==='current'?'EN COURS':'PLANIFIÉ';
+    row.append(num,info,status);host.appendChild(row);
+  });
+}
+
 function populateDossier(f){
   $('dos-empty').style.display='none';
   const dc=$('dos-content');dc.style.display='flex';dc.style.flexDirection='column';
+  renderRotationPlan();
   $('d-dep').textContent=f.dep;
   $('d-dep-city').textContent=f.depAp.city;
   $('d-arr').textContent=f.arr;
@@ -1007,22 +1130,30 @@ function setPhase(n){
         1:`BON VOL // MÉTÉO ARR NOMINALE // ${S.dispatcher.name.toUpperCase()} DISPONIBLE`,
         2:`REÇU // WX DEST NOMINALE // PROCHAIN CHECK ETA-30MIN`,
         3:`REÇU // PARKING ${f.arrAp.parking} CONFIRMÉ // HANDLING ALERTÉ`,
-        4:`BIEN REÇU // BON TRAVAIL // ${n===4&&S.sessionFlights.length<3?'PROCHAIN VOL EN PRÉPARATION':'FIN DUTY'}`,
+        4:`BIEN REÇU // BON TRAVAIL // ${S.rotationIndex+1<S.rotationPlan.length?'SECTEUR SUIVANT MAINTENU':'ROTATION TERMINÉE'}`,
       };
       addAcars('ops','INFO',`${f.flightNo} — ${acks[n]}`);
       // Après ONBLK — proposer rotation suivante
       if(n===4){
         S.sessionFlights.push(S.currentFlight);
         S.position=f.arr;
+        S.rotationIndex++;
         await sleep(3000);
-        addAcars('ops','INFO',`SESSION: ${S.sessionFlights.length} VOL(S) EFFECTUÉ(S) // APPELEZ-NOUS POUR ROTATION SUIVANTE OU FIN DUTY`);
-        $('main-call-btn').textContent='📞 APPELER LES OPS — ROTATION SUIVANTE';
+        const nextLeg=S.rotationPlan[S.rotationIndex];
+        if(nextLeg){
+          addAcars('ops','INFO',`ROTATION ${S.rotationType} // PROCHAIN SECTEUR PLANIFIÉ ${nextLeg.dep}→${nextLeg.arr} // ${nextLeg.missionRole} // APPELEZ POUR BRIEFING`);
+          $('main-call-btn').textContent='📞 APPELER LES OPS — SECTEUR SUIVANT';
+        }else{
+          addAcars('ops','INFO',`ROTATION TERMINÉE // ${S.sessionFlights.length} VOL(S) EFFECTUÉ(S) // APPELEZ POUR NOUVELLE MISSION OU FIN DUTY`);
+          $('main-call-btn').textContent='📞 APPELER LES OPS — NOUVELLE MISSION';
+        }
         $('main-call-btn').disabled=false;
         $('main-call-btn').onclick=()=>initiateCall('next');
         setPhase(0);
         $('phase-bar').style.display='none';
         S.currentFlight=null;
         $('b-flt').textContent='—';
+        renderRotationPlan();
       }
     },3000);
   }
@@ -1039,15 +1170,42 @@ function scheduleScenario(f){
     if(S.phase!==2)return;
     const scenarios=[
       {code:'WX',msg:`WX UPDATE — DÉGRADATION EN COURS SUR ${f.arr} // VENT ${Math.floor(Math.random()*20+15)}KT RAFALES ${Math.floor(Math.random()*10+25)}KT // ALTERNATE ${f.alt} CONFIRM ?`},
-      {code:'OPS',msg:`CLIENT SOUHAITE MODIFIER DESTINATION RETOUR — ATTENTE CONFIRMATION VOTRE PART`},
+      {code:'OPS',msg:`CLIENT MODIFIE LE PROGRAMME DU SECTEUR SUIVANT — DOSSIER ROTATION EN COURS DE RÉVISION`,action:'client-change'},
+      {code:'ALERT',msg:`DESTINATION INDISPONIBLE — DÉROUTEMENT OPS VERS ${f.alt} // DOSSIER RÉVISÉ`,action:'diversion'},
       {code:'ALERT',msg:`SLOT ATC IMPOSÉ ARR ${f.arr} — NOUVELLE HDG ${f.arrT} // HOLDING POSSIBLE 15-20MIN`},
       {code:'INFO',msg:`PARKING MODIFIÉ À L ARRIVÉE — NOUVEAU PARKING: ${['A-12','B-07','C-03','G-15'][Math.floor(Math.random()*4)]}`},
       {code:'OPS',msg:`CAMO — VÉRIFIER TECH LOG ITEM 4.3 À L ARRIVÉE AVANT PROCHAIN VOL`},
     ];
     const s=scenarios[Math.floor(Math.random()*scenarios.length)];
     addAcars('ops',s.code,f.flightNo+' — '+s.msg,s.code==='ALERT');
+    if(s.action)applyOperationalChange(s.action,f);
     beep(s.code==='ALERT');
   },delay);
+}
+
+function applyOperationalChange(action,f){
+  if(action==='client-change'){
+    const idx=S.rotationIndex+1,next=S.rotationPlan[idx];
+    if(!next)return;
+    const newDest=chooseBusinessDestination(next.dep,[next.arr,f.dep,f.arr]);
+    const revised=newDest&&buildFlight(next.dep,newDest,{flightNo:next.flightNo,pax:next.pax,depMinuteOfDay:next.depMinuteOfDay,missionRole:'CLIENT — PROGRAMME RÉVISÉ'});
+    if(revised){
+      S.rotationPlan[idx]=revised;
+      S.rotationType=(S.rotationType||'ROTATION')+' — RÉVISÉE';
+      renderRotationPlan();
+      addAcars('ops','INFO',`ROTATION MISE À JOUR // SECTEUR ${idx+1}: ${revised.dep}→${revised.arr} // ${revised.depT}`);
+    }
+  }
+  if(action==='diversion'&&S.currentFlight){
+    const diversion=buildFlight(f.dep,f.alt,{flightNo:f.flightNo,pax:f.pax,depMinuteOfDay:f.depMinuteOfDay,missionRole:'DÉROUTEMENT'});
+    if(diversion){
+      S.currentFlight=diversion;
+      S.rotationPlan=S.rotationPlan.slice(0,S.rotationIndex+1);
+      S.rotationPlan[S.rotationIndex]=diversion;
+      S.rotationType=(S.rotationType||'ROTATION')+' — DÉROUTÉE';
+      populateDossier(diversion);
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -1088,16 +1246,19 @@ async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
   S.callType=type;S.callActive=true;S.convHistory=[];
-  // Démarrer Kokoro en arrière-plan si pas encore prêt
-  if(!kokoroReady && !kokoroLoading) initKokoro();
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
   $('call-ring').textContent='📞';
   $('call-name').textContent=d.name;
   $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
   $('call-tx').innerHTML='';
-  $('call-stat').textContent='Connexion en cours...';
+  $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Préparation de la voix française...';
   $('status-dot').className='dot call';
+  if(!kokoroReady){
+    await Promise.race([initKokoro(),sleep(60000)]);
+    if(!S.callActive)return;
+  }
+  $('call-stat').textContent='Connexion en cours...';
   await sleep(1500);
   $('call-stat').textContent=d.name+' décroche...';
   await sleep(700);
@@ -1105,20 +1266,32 @@ async function initiateCall(type){
   const lang=navigator.language?.startsWith('en')?'en':'fr';
   const greet=lang==='en'?d.greet_en:d.greet;
   addTx('ops',d.name,greet);await speak(greet);
-  const ctx=S;
   const sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
   let planned=null;
-  let userPrompt='Commence l appel après ton greeting. Sois naturel et concis.';
   if((type==='briefing'||type==='next')&&!S.currentFlight){
-    planned=generateRotation();
+    planned=type==='next'&&S.rotationPlan[S.rotationIndex]
+      ? S.rotationPlan[S.rotationIndex]
+      : generateBusinessRotation();
     if(!planned){showToast('Impossible de générer une rotation');endCall();return;}
-    userPrompt=`Présente exactement cette rotation, sans modifier ni inventer ses données: ${planned.flightNo}, ${planned.dep} vers ${planned.arr}, départ ${planned.depT}, arrivée ${planned.arrT}, ${planned.pax.length} passagers, niveau ${planned.fl}, estimation carburant ${planned.fuel.total} kg. Rappelle que météo et carburant sont des données de simulation.`;
   }
-  const intro=await callAI(sysPrompt,userPrompt);
+  // Le briefing initial n'est jamais généré librement par l'IA : il est lu
+  // depuis le même objet Flight que le dossier afin d'éviter toute divergence.
+  const intro=planned
+    ? makeSpokenBriefing(planned,d,lang)
+    : await callAI(sysPrompt,'Commence l appel après ton greeting. Sois naturel et concis.');
   if(intro){addTx('ops',d.name,intro);await speak(intro);}
   if(planned)handleBriefingResponse(planned);
   addCallHist(type);
   if(S.callActive)startAutoListen();
+}
+
+function makeSpokenBriefing(f,d,lang='fr'){
+  const remaining=S.rotationPlan.slice(S.rotationIndex);
+  const sequence=remaining.map((leg,i)=>`secteur ${i+1}, ${leg.dep} vers ${leg.arr}, ${leg.missionRole.toLowerCase()}`).join('. ');
+  if(lang==='en')return `${S.rank} ${S.pilot}, WABA has assigned a ${S.rotationType.toLowerCase()} rotation. Current flight ${f.flightNo}, from ${f.dep} to ${f.arr}. Departure ${f.depT}, estimated arrival ${f.arrT}, ${f.pax.length} passengers. Planned sequence: ${sequence}. The current flight file has been sent to the EFB.`;
+  const depCity=f.depAp?.city||f.dep;
+  const arrCity=f.arrAp?.city||f.arr;
+  return `${S.rank} ${S.pilot}, WABA vous affecte une rotation de type ${S.rotationType.toLowerCase()}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. Départ prévu ${f.depT}, arrivée estimée ${f.arrT}, avec ${f.pax.length} passagers. Séquence planifiée: ${sequence}. Le dossier du secteur courant est transmis dans l EFB.`;
 }
 
 function handleBriefingResponse(rotation){
@@ -1178,6 +1351,7 @@ function addTx(who,name,text){
 let kokoroTTS = null;
 let kokoroLoading = false;
 let kokoroReady = false;
+let kokoroLoadPromise = null;
 let audioMuted = false;
 let currentAudio = null;
 
@@ -1195,15 +1369,16 @@ const DISPATCHER_SPEEDS = {
 };
 
 async function initKokoro() {
-  if(kokoroReady || kokoroLoading) return;
+  if(kokoroReady)return true;
+  if(kokoroLoadPromise)return kokoroLoadPromise;
   kokoroLoading = true;
   $('kokoro-btn').style.opacity = '.7';
   $('kokoro-btn').title = 'Chargement de la voix française...';
-  try {
+  kokoroLoadPromise=(async()=>{try {
     showToast('Chargement de la voix française... première utilisation uniquement', 8000);
     const { KokoroTTS } = await import('https://esm.sh/kokoro-js@1.1.1');
     kokoroTTS = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
-      dtype: 'q8',
+      dtype: 'q4',
       device: 'wasm',
     });
     kokoroReady = true;
@@ -1212,6 +1387,7 @@ async function initKokoro() {
     $('kokoro-btn').title = 'Voix française prête';
     showToast('✓ Voix française prête');
     console.log('[WABA] Kokoro TTS ready. Voices:', await kokoroTTS.list_voices());
+    return true;
   } catch(e) {
     console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
     kokoroLoading = false;
@@ -1219,7 +1395,9 @@ async function initKokoro() {
     $('kokoro-btn').style.opacity = '.25';
     $('kokoro-btn').title = 'Voix française indisponible — touchez pour réessayer';
     showToast('Voix française indisponible — voix système utilisée',6000);
-  }
+    return false;
+  }finally{kokoroLoading=false;kokoroLoadPromise=null;}})();
+  return kokoroLoadPromise;
 }
 
 function cleanForSpeech(text) {
@@ -1311,7 +1489,11 @@ function startAutoListen(){
     addTx('pilot',S.pilot,text);
     $('mic-tip').textContent='OPS prépare sa réponse...';
     const lang=navigator.language?.startsWith('en')?'en':'fr';
-    const sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
+    let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
+    if(S.currentFlight){
+      const f=S.currentFlight;
+      sys+=` ROTATION ACTIVE IMMUTABLE: ${f.flightNo}, ${f.dep} vers ${f.arr}, départ ${f.depT}, arrivée ${f.arrT}, ${f.pax.length} PAX, niveau ${f.fl}, carburant simulation ${f.fuel.total} kg. Ne cite jamais une autre destination sauf si le pilote demande explicitement un changement.`;
+    }
     const reply=await callAI(sys,text);
     if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
     S.processingSpeech=false;
@@ -1420,7 +1602,12 @@ async function sendAcars(){
           setTimeout(()=>{
             const previous=S.currentFlight;
             const newRot=buildFlight(previous.dep,newDest,{flightNo:previous.flightNo,pax:previous.pax});
-            if(newRot){S.currentFlight=newRot;populateDossier(newRot);
+            if(newRot){
+              S.currentFlight=newRot;
+              S.rotationPlan=S.rotationPlan.slice(0,S.rotationIndex+1);
+              S.rotationPlan[S.rotationIndex]=newRot;
+              S.rotationType=(S.rotationType||'ROTATION')+' RÉVISÉE';
+              populateDossier(newRot);
               addAcars('ops','INFO',`${S.currentFlight.flightNo} — DOSSIER MIS À JOUR // NOUVELLE DESTINATION ${newDest} // SIMBRIEF DISPONIBLE`);
             }
           },2000);
