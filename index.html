@@ -925,7 +925,7 @@ const S = {
   rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
-  convHistory:[], acarsHistory:[], position:'LFRS', callController:null,briefingStage:null,
+  convHistory:[], acarsHistory:[], position:'LFRS', callController:null,briefingStage:null,callMicStream:null,
 };
 
 const SESSION_STORAGE_KEY='waba_efb_session_v1';
@@ -969,7 +969,7 @@ function restoreSession(){
   saved.rotationRevision=Number(saved.rotationRevision)||0;
   saved.rotationHistory=Array.isArray(saved.rotationHistory)?saved.rotationHistory:[];
   const dispatcher=DISPATCHERS.find(d=>d.id===saved.dispatcherId)||getDispatcher();
-  Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,processingSpeech:false,recognition:null,callController:null,convHistory:[],acarsHistory:Array.isArray(saved.acarsHistory)?saved.acarsHistory:[]});
+  Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,micGranted:false,processingSpeech:false,recognition:null,callController:null,callMicStream:null,convHistory:[],acarsHistory:Array.isArray(saved.acarsHistory)?saved.acarsHistory:[]});
   $('setup').style.display='none';$('boot-ov').style.display='none';$('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+S.pilot.split(' ').slice(-1)[0];
   $('b-acft').textContent=S.aircraft;$('b-duty').textContent=formatDateFr(S.dutyDate)+' · '+S.dutyStart+'→'+S.dutyEnd;
@@ -991,6 +991,7 @@ function requestResetSession(){
   if(!confirm('Réinitialiser WABA ? Le duty, la rotation, le dossier et l historique local seront effacés.'))return;
   sessionResetting=true;
   try{localStorage.removeItem(SESSION_STORAGE_KEY);}catch{}
+  releaseCallMicrophone();
   if(S.recognition){try{S.recognition.abort();}catch{}}
   if(currentAudio){currentAudio.pause();currentAudio=null;}
   location.reload();
@@ -1075,20 +1076,18 @@ async function startDuty(){
   $('b-acft').textContent=S.aircraft;
   $('b-duty').textContent=formatDateFr(S.dutyDate)+' · '+S.dutyStart+'→'+S.dutyEnd;
   updateDispUI();
-  // Vérifie la voix distante dès la prise de service.
+  // Vérifie uniquement la voix distante dès la prise de service.
+  // Le microphone sera ouvert au début de chaque appel OPS.
   $('kokoro-btn').style.opacity='.7';
   $('kokoro-btn').title='Connexion à la voix WABA...';
-  // Ces appels démarrent immédiatement depuis le clic utilisateur, nécessaire
-  // pour que le navigateur puisse afficher la permission microphone.
-  const micPromise=requestMicAccess();
   const voicePromise=initElevenLabs();
   let progress=12;
-  setBootProgress(progress,'AUTORISATION MICROPHONE ET CONNEXION À LA VOIX...');
+  setBootProgress(progress,'CONNEXION AU CENTRE OPS ET À LA VOIX...');
   const progressTimer=setInterval(()=>{
     progress=Math.min(92,progress+(progress<55?7:progress<80?3:1));
     setBootProgress(progress,kokoroReady?'FINALISATION DU CENTRE OPS...':'CONNEXION À LA VOIX WABA...');
   },700);
-  await Promise.allSettled([micPromise,voicePromise]);
+  await Promise.allSettled([voicePromise]);
   clearInterval(progressTimer);
   setBootProgress(100,kokoroReady?'WABA OPS PRÊT — VOIX ELEVENLABS':'SESSION PRÊTE — ELEVENLABS INDISPONIBLE, VOIX SYSTÈME');
   await sleep(700);
@@ -1647,10 +1646,6 @@ function setPhase(n,options={}){
     },options.fromAcars?400:3000);
   }
   $('acars-phase').textContent=['PRE-DÉPART','ROULAGE/DÉCOLLAGE','EN CROISIÈRE','DESCENTE/ARRIVÉE','AU SOL'][n]+' · '+(n<4?f.dep:f.arr);
-  // Scénarios imprévus
-  if(n===2&&(S.mode==='challenging'||S.mode==='fullops')){
-    scheduleScenario(f);
-  }
   renderAcarsQuickActions();
   saveSession();
 }
@@ -1683,23 +1678,47 @@ function renderAcarsQuickActions(){
   }));
 }
 
+const scenarioTimers=new Map();
+let majorEventsDuty=0;
+
 function scheduleScenario(f){
-  const delay=(S.mode==='fullops'?1:2)*60000+Math.random()*120000;
-  setTimeout(async()=>{
-    if(S.phase!==2)return;
-    const scenarios=[
-      {code:'WX',msg:`WX UPDATE — DÉGRADATION EN COURS SUR ${f.arr} // VENT ${Math.floor(Math.random()*20+15)}KT RAFALES ${Math.floor(Math.random()*10+25)}KT // ALTERNATE ${f.alt} CONFIRM ?`},
-      {code:'OPS',msg:`CLIENT MODIFIE LE PROGRAMME DU SECTEUR SUIVANT — DOSSIER ROTATION EN COURS DE RÉVISION`,action:'client-change'},
-      {code:'ALERT',msg:`DESTINATION INDISPONIBLE — DÉROUTEMENT OPS VERS ${f.alt} // DOSSIER RÉVISÉ`,action:'diversion'},
-      {code:'ALERT',msg:`SLOT ATC IMPOSÉ ARR ${f.arr} — NOUVELLE HDG ${f.arrT} // HOLDING POSSIBLE 15-20MIN`},
-      {code:'INFO',msg:`PARKING MODIFIÉ À L ARRIVÉE — NOUVEAU PARKING: ${['A-12','B-07','C-03','G-15'][Math.floor(Math.random()*4)]}`},
-      {code:'OPS',msg:`CAMO — VÉRIFIER TECH LOG ITEM 4.3 À L ARRIVÉE AVANT PROCHAIN VOL`},
-    ];
-    const s=scenarios[Math.floor(Math.random()*scenarios.length)];
-    addAcars('ops',s.code,f.flightNo+' — '+s.msg,s.code==='ALERT');
-    if(s.action)applyOperationalChange(s.action,f);
-    beep(s.code==='ALERT');
+  if(!f||scenarioTimers.has(f.flightNo))return;
+  // L événement peut apparaître à toute phase. En temps de simulation sans
+  // MSFS, la fenêtre murale reste volontairement testable: 45 s à 8 min.
+  const delay=45000+Math.random()*435000;
+  const timer=setTimeout(()=>{
+    scenarioTimers.delete(f.flightNo);
+    if(!S.currentFlight||S.currentFlight.flightNo!==f.flightNo||S.phase===4)return;
+    const eventChance=S.mode==='normal'?.20:S.mode==='challenging'?.35:.50;
+    if(Math.random()>eventChance)return;
+    triggerWeightedScenario(f);
   },delay);
+  scenarioTimers.set(f.flightNo,timer);
+}
+
+function triggerWeightedScenario(f){
+  const roll=Math.random()*29;
+  let kind=roll<8?'parking':roll<15?'weather':roll<20?'slot':roll<24?'client-info':roll<26?'client-change':roll<28?'technical':'diversion';
+  if(majorEventsDuty>=1&&['client-change','technical','diversion'].includes(kind))kind=Math.random()<.5?'weather':'client-info';
+  const phase=S.phase;
+  const scenarios={
+    parking:{code:'INFO',msg:`HANDLING ${f.arr} — PARKING ${['A-12','B-07','C-03','G-15'][Math.floor(Math.random()*4)]} PROPOSÉ // CONFIRMATION FINALE À L ARRIVÉE`},
+    weather:{code:'WX',msg:`WX UPDATE ${f.arr} — ÉVOLUTION À SURVEILLER // DEMANDEZ METAR/TAF ACTUALISÉS SI NÉCESSAIRE`},
+    slot:phase<=1
+      ?{code:'ATC',msg:`SLOT ATC / CTOT SIGNALÉ // CRÉNEAU PROVISOIRE ${formatAbsTime(f.depMinuteOfDay+15)} // TENEZ OPS INFORMÉS DE TOUT GO ATC OU RÉVISION`}
+      :{code:'ATC',msg:`RÉGULATION ATC À L ARRIVÉE ${f.arr} // DÉLAI POSSIBLE 10-20MIN // CONFIRMEZ TOUTE CLAIRANCE DIRECTE OU ABSENCE DE CONTRAINTE`},
+    'client-info':{code:'OPS',msg:`CLIENT / ASSISTANT EN CONTACT AVEC OPS // AJUSTEMENT MINEUR POSSIBLE SUR LE PROGRAMME SUIVANT // AUCUNE MODIFICATION DU DOSSIER À CE STADE`},
+    'client-change':{code:'OPS',msg:`CLIENT DEMANDE UNE MODIFICATION DU SECTEUR SUIVANT // ÉTUDE DISPATCH EN COURS // DOSSIER NON MODIFIÉ AVANT CONFIRMATION`,action:'client-change'},
+    technical:{code:'ALERT',msg:`CAMO — INFORMATION TECHNIQUE À CLARIFIER // CONTRÔLE TECH LOG DEMANDÉ À LA PROCHAINE ESCALE`,major:true},
+    diversion:{code:'ALERT',msg:`OPTION DÉROUTEMENT À L ÉTUDE VERS ${f.alt} // AUCUNE DÉCISION APPLIQUÉE // ATTENTE INSTRUCTIONS ÉQUIPAGE / ATC`,major:true},
+  };
+  const scenario=scenarios[kind];
+  if(!scenario)return;
+  if(scenario.major||kind==='client-change')majorEventsDuty++;
+  addAcars('ops',scenario.code,`${f.flightNo} — ${scenario.msg}`,scenario.code==='ALERT');
+  // Une demande client ne modifie plus silencieusement la rotation: elle ouvre
+  // une étude. La modification effective exige ensuite un échange explicite.
+  beep(scenario.code==='ALERT');
 }
 
 function applyOperationalChange(action,f){
@@ -1774,6 +1793,9 @@ async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
   S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
+  // Appelé immédiatement depuis le geste utilisateur afin que Safari puisse
+  // ouvrir le microphone. La piste restera active jusqu à endCall().
+  const micPromise=requestMicAccess(true);
   startRingback(type==='emergency');
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
@@ -1781,12 +1803,15 @@ async function initiateCall(type){
   $('call-name').textContent=d.name;
   $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
   $('call-tx').innerHTML='';
+  $('mic-tip').textContent='Activation du microphone pour cet appel...';
   $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Connexion à la voix WABA...';
   $('status-dot').className='dot call';
   if(!kokoroReady){
     await Promise.race([initElevenLabs(),sleep(10000)]);
     if(!S.callActive)return;
   }
+  await micPromise;
+  if(!S.callActive)return;
   $('call-stat').textContent='Connexion en cours...';
   await sleep(1500);
   $('call-stat').textContent=d.name+' décroche...';
@@ -1834,6 +1859,7 @@ function handleBriefingResponse(rotation){
   const rot=rotation&&typeof rotation==='object'?rotation:generateRotation();
   if(rot){
     S.currentFlight=rot;
+    scheduleScenario(rot);
     setTimeout(()=>{populateDossier(rot);},1000);
     setTimeout(()=>{
       addAcars('ops','INFO',`DOSSIER VOL ${rot.flightNo} TRANSMIS // ${rot.dep}→${rot.arr} // DEP ${rot.depT} // ${rot.pax.length} PAX // FUEL ${rot.fuel.total.toLocaleString('fr-FR')}KG`);
@@ -2102,21 +2128,35 @@ async function speak(text) {
   setCallAudioDuck(false);
 }
 
-async function requestMicAccess(){
+async function requestMicAccess(holdForCall=false){
   if(!navigator.mediaDevices?.getUserMedia){
     showToast('Microphone mains libres non disponible sur ce navigateur',5000);return false;
   }
   try{
-    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    stream.getTracks().forEach(track=>track.stop());
+    if(holdForCall&&S.callMicStream?.getAudioTracks().some(track=>track.readyState==='live')){
+      S.micGranted=true;return true;
+    }
+    const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    if(holdForCall&&S.callActive){
+      releaseCallMicrophone();
+      S.callMicStream=stream;
+    }else stream.getTracks().forEach(track=>track.stop());
     S.micGranted=true;
-    showToast('✓ Microphone autorisé pour les appels OPS');
+    if(holdForCall)showToast('Microphone actif pendant l appel OPS',3000);
     return true;
   }catch(e){
     S.micGranted=false;
     showToast('Microphone refusé — appels en écoute uniquement',6000);
     return false;
   }
+}
+
+function releaseCallMicrophone(){
+  if(S.callMicStream){
+    S.callMicStream.getTracks().forEach(track=>{try{track.stop();}catch{}});
+    S.callMicStream=null;
+  }
+  S.micGranted=false;S.micActive=false;
 }
 
 function rotationContextForAI(){
@@ -2245,6 +2285,7 @@ function endCall(){
   stopRingback();stopOpsAmbience();playHangup();
   S.processingSpeech=false;S.micActive=false;
   if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
+  releaseCallMicrophone();
   if(S.callController){S.callController.abort();S.callController=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   if(currentAudio){currentAudio.pause();currentAudio=null;}
