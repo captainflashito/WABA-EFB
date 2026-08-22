@@ -377,28 +377,14 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <div style="font-size:18px;cursor:pointer;color:var(--text3)" onclick="showTeam()">👥</div>
     </div>
 
-    <button class="btn btn-gold" id="main-call-btn" onclick="initiateCall('briefing')">
-      📞 APPELER LES OPS — BRIEFING
+    <button class="btn btn-gold" id="main-call-btn" onclick="initiateContextualCall()">
+      📞 APPELER LES OPS
     </button>
 
     <div class="card">
-      <div class="ctitle">Au sol — Appels disponibles</div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        <button class="btn btn-sec" id="btn-free" onclick="initiateCall('free')" style="font-size:10px;padding:9px">
-          📞 APPEL LIBRE — PARLER AUX OPS
-        </button>
-        <button class="btn btn-sec" id="btn-delay" onclick="initiateCall('delay')" style="font-size:10px;padding:9px">
-          ⏱ DÉCLARER UN RETARD
-        </button>
-        <button class="btn btn-sec" id="btn-tech" onclick="initiateCall('technical')" style="font-size:10px;padding:9px">
-          🔧 PROBLÈME TECHNIQUE
-        </button>
-        <button class="btn btn-blue" id="btn-client" onclick="initiateCall('client')" style="font-size:10px;padding:9px">
-          👤 UPDATE CLIENT / PASSAGERS
-        </button>
-        <button class="btn btn-red" onclick="initiateCall('emergency')" style="font-size:10px;padding:9px">
-          🚨 URGENCE — APPEL PRIORITAIRE
-        </button>
+      <div class="ctitle">Ligne directe WABA OPS</div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.6">
+        Présentez-vous puis annoncez naturellement le motif de votre appel : briefing, retard, demande client, problème technique ou urgence.
       </div>
     </div>
 
@@ -767,8 +753,7 @@ function applyRestoredPhase(n){
   const pb=$('phase-badge');
   pb.textContent=PHASE_LABELS[n];pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
   const callsBlocked=n===2;
-  $('btn-free').disabled=callsBlocked;$('btn-delay').disabled=callsBlocked;$('btn-tech').disabled=false;
-  $('btn-client').disabled=callsBlocked;$('main-call-btn').disabled=callsBlocked;
+  $('main-call-btn').disabled=callsBlocked;
   $('inflight-notice').style.display=callsBlocked?'block':'none';
   if(S.currentFlight)$('acars-phase').textContent=['PRE-DÉPART','ROULAGE/DÉCOLLAGE','EN CROISIÈRE','DESCENTE/ARRIVÉE','AU SOL'][n]+' · '+(n<4?S.currentFlight.dep:S.currentFlight.arr);
 }
@@ -791,8 +776,8 @@ function restoreSession(){
     populateDossier(S.currentFlight);
     applyRestoredPhase(restoredPhase);
   }else if(S.rotationPlan[S.rotationIndex]){
-    $('main-call-btn').textContent='📞 APPELER LES OPS — SECTEUR SUIVANT';
-    $('main-call-btn').onclick=()=>initiateCall('next');
+    $('main-call-btn').textContent='📞 APPELER LES OPS';
+    $('main-call-btn').onclick=initiateContextualCall;
   }
   addAcars('ops','INFO',`SESSION RESTAURÉE // DUTY ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.rotationPlan.length} SECTEUR(S)`);
   showToast('✓ Session WABA restaurée',5000);
@@ -1242,10 +1227,6 @@ function setPhase(n){
   pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
   // OPS call button
   const inFlight=(n===2);
-  $('btn-free').disabled=inFlight;
-  $('btn-delay').disabled=inFlight;
-  $('btn-tech').disabled=false;
-  $('btn-client').disabled=inFlight;
   $('main-call-btn').disabled=inFlight;
   $('inflight-notice').style.display=inFlight?'block':'none';
   // ACARS auto-messages
@@ -1277,13 +1258,13 @@ function setPhase(n){
         const nextLeg=S.rotationPlan[S.rotationIndex];
         if(nextLeg){
           addAcars('ops','INFO',`ROTATION ${S.rotationType} // PROCHAIN SECTEUR PLANIFIÉ ${nextLeg.dep}→${nextLeg.arr} // ${nextLeg.missionRole} // APPELEZ POUR BRIEFING`);
-          $('main-call-btn').textContent='📞 APPELER LES OPS — SECTEUR SUIVANT';
+          $('main-call-btn').textContent='📞 APPELER LES OPS';
         }else{
           addAcars('ops','INFO',`ROTATION TERMINÉE // ${S.sessionFlights.length} VOL(S) EFFECTUÉ(S) // APPELEZ POUR NOUVELLE MISSION OU FIN DUTY`);
-          $('main-call-btn').textContent='📞 APPELER LES OPS — NOUVELLE MISSION';
+          $('main-call-btn').textContent='📞 APPELER LES OPS';
         }
         $('main-call-btn').disabled=false;
-        $('main-call-btn').onclick=()=>initiateCall('next');
+        $('main-call-btn').onclick=initiateContextualCall;
         setPhase(0);
         $('phase-bar').style.display='none';
         S.currentFlight=null;
@@ -1356,8 +1337,8 @@ const CALL_SYS = {
     en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language ONLY. No asterisks, no bullets, no ACARS codes, no emojis. Speak as on the phone. You are ${d.name}, WABA dispatcher for West Atlantic Business Aviation. Brief ${f.rank} ${f.pilot} on the structured rotation supplied by the application. Aircraft: ${AIRCRAFT_DATA[ac].name}. Never change or invent a destination, time, weather item, passenger count or fuel quantity. Style: ${d.style}. ${EASA}`,
   },
   free:{
-    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le ${f.rank} ${f.pilot} t appelle librement. Réponds naturellement à ses questions et demandes. Style: ${d.style}. ${EASA}`,
-    en:(d,f)=>`You are ${d.name}, WABA dispatcher. ${f.rank} ${f.pilot} is calling freely. Answer naturally. Style: ${d.style}. ${EASA}`,
+    fr:(d,f,ac)=>`IMPORTANT: Réponds uniquement comme dans une conversation téléphonique naturelle, sans listes, astérisques ni emojis. Tu es ${d.name}, dispatcher WABA. Le ${f.rank} ${f.pilot} appelle la ligne unique des OPS pour un motif qu il va préciser. Identifie son besoin au fil de la conversation: question opérationnelle, retard, changement client ou passagers, problème technique ou urgence. En cas de problème technique, collecte les faits et réfère à la MEL et au CAMO sans inventer de décision de navigabilité. En cas d urgence, reste calme, demande position, situation, intentions et assistance requise. N invente jamais une météo ou un NOTAM présenté comme réel. Avion: ${AIRCRAFT_DATA[ac]?.name||ac}. Style: ${d.style}. ${EASA}`,
+    en:(d,f,ac)=>`IMPORTANT: Reply only as a natural telephone conversation, without lists, asterisks or emojis. You are ${d.name}, WABA dispatcher. ${f.rank} ${f.pilot} is calling the single OPS line and will explain the reason. Identify and handle operational questions, delays, client or passenger changes, technical issues or emergencies as the conversation develops. Never invent live weather or NOTAM information. Aircraft: ${AIRCRAFT_DATA[ac]?.name||ac}. Style: ${d.style}. ${EASA}`,
   },
   delay:{
     fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le pilote déclare un retard. Prends note, demande code et nouveau temps. Vérifie impact FDP EASA. Style: ${d.style}.`,
@@ -1380,6 +1361,12 @@ const CALL_SYS = {
     en:(d,f)=>`You are ${d.name}, WABA dispatcher. EMERGENCY. Stay calm, get info fast, activate procedures. ${EASA}`,
   },
 };
+
+function initiateContextualCall(){
+  let type='free';
+  if(!S.currentFlight)type=S.rotationPlan?.[S.rotationIndex]?'next':'briefing';
+  initiateCall(type);
+}
 
 async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
@@ -1461,12 +1448,17 @@ async function callAI(systemPrompt,userMsg){
       method:'POST',
       headers:{'Content-Type':'application/json'},
       signal:controller.signal,
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:180,system:systemPrompt,messages:msgs})
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',
+        max_tokens:180,
+        system:`${systemPrompt}\nRÈGLE DE SORTIE ABSOLUE: écris seulement les mots réellement prononcés par le dispatcher. Aucune didascalie, indication de ton, émotion, geste, pause, bruitage, nom de locuteur, astérisque, crochet ou parenthèse de mise en scène. N explique jamais comment la phrase doit être dite. Fais des phrases courtes et naturelles. Adapte subtilement tes paroles à la situation et à l état apparent du pilote: rassure sans dramatiser, reconnais une difficulté avant de proposer une action, sois plus direct en urgence et plus chaleureux lors d un échange normal. Exprime cette sensibilité uniquement par le choix des mots, le rythme des phrases et la ponctuation.`,
+        messages:msgs
+      })
     });
     clearTimeout(timer);
     if(!res.ok)throw new Error(`Proxy HTTP ${res.status}`);
     const data=await res.json();
-    const reply=data.content?.[0]?.text||'';
+    const reply=cleanAssistantDialogue(data.content?.[0]?.text||'');
     if(reply){
       S.convHistory.push({role:'user',content:userMsg||'Commence.'});
       S.convHistory.push({role:'assistant',content:reply});
@@ -1619,8 +1611,24 @@ function aviationForSpeech(text){
   return out;
 }
 
+function cleanAssistantDialogue(text){
+  return String(text||'')
+    .replace(/<[^>]*>/g,' ')
+    .replace(/\*\*?[^*\n]+\*\*?/g,' ')
+    .replace(/\[[^\]]*\]/g,' ')
+    .replace(/\((?:[^)]*\b(?:ton|voix|pause|silence|souri|rire|soupir|calme|rassurant|professionnel|hésitant|bruit|musique|respir|chuchot|enthousias)[^)]*)\)/gi,' ')
+    .replace(/^\s*(?:dispatcher|ops|opérations|waba ops)\s*:\s*/gim,'')
+    .replace(/^\s*(?:ton|intonation|émotion|attitude|voix)\s*:\s*[^\n]*$/gim,'')
+    .replace(/^\s*(?:d['’]un ton|avec une voix|sur un ton)\s+[^:,.!?]+[:,]\s*/gim,'')
+    .replace(/^\s*[-–—•]+\s*/gm,'')
+    .replace(/\s+([,.;!?])/g,'$1')
+    .replace(/[ \t]{2,}/g,' ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
 function cleanForSpeech(text) {
-  return aviationForSpeech(text)
+  return aviationForSpeech(cleanAssistantDialogue(text))
     .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')
     .replace(/[*_~`#●·►◄▶◀■□]/g, '')
