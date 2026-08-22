@@ -328,6 +328,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div class="dot" id="status-dot"></div>
     <div class="clock" id="utc-clock">--:--Z</div>
     <div onclick="toggleVoice()" id="kokoro-btn" title="Voix WABA ElevenLabs" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
+    <button onclick="requestResetSession()" title="Réinitialiser la session WABA" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text2);border-radius:5px;padding:4px 6px;font:700 8px var(--font-m);cursor:pointer">RÉINIT.</button>
   </div>
 </div>
 
@@ -728,6 +729,76 @@ const S = {
   convHistory:[], position:'LFRS', callController:null,
 };
 
+const SESSION_STORAGE_KEY='waba_efb_session_v1';
+let sessionResetting=false;
+
+function sessionSnapshot(){
+  return{
+    version:1,savedAt:new Date().toISOString(),
+    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
+    mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
+    currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
+    rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
+    position:S.position,inFlight:S.inFlight
+  };
+}
+
+function saveSession(){
+  if(!S.pilot||sessionResetting)return;
+  try{localStorage.setItem(SESSION_STORAGE_KEY,JSON.stringify(sessionSnapshot()));}
+  catch(e){console.warn('[WABA] Sauvegarde indisponible',e);}
+}
+
+function applyRestoredPhase(n){
+  n=Math.max(0,Math.min(4,Number(n)||0));
+  S.phase=n;S.inFlight=(n>=1&&n<=3);
+  PHASE_IDS.forEach((id,i)=>{
+    const b=$(id);if(!b)return;
+    b.className='ph-btn '+(i<n?'done':i===n?'cur':'avail');
+    b.disabled=i<=n;b.onclick=i===n+1?()=>setPhase(i):null;
+  });
+  const pb=$('phase-badge');
+  pb.textContent=PHASE_LABELS[n];pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
+  const callsBlocked=n===2;
+  $('btn-free').disabled=callsBlocked;$('btn-delay').disabled=callsBlocked;$('btn-tech').disabled=false;
+  $('btn-client').disabled=callsBlocked;$('main-call-btn').disabled=callsBlocked;
+  $('inflight-notice').style.display=callsBlocked?'block':'none';
+  if(S.currentFlight)$('acars-phase').textContent=['PRE-DÉPART','ROULAGE/DÉCOLLAGE','EN CROISIÈRE','DESCENTE/ARRIVÉE','AU SOL'][n]+' · '+(n<4?S.currentFlight.dep:S.currentFlight.arr);
+}
+
+function restoreSession(){
+  let saved;
+  try{saved=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||'null');}catch{return false;}
+  if(!saved||saved.version!==1||!saved.pilot||!AIRCRAFT_DATA[saved.aircraft])return false;
+  const dispatcher=DISPATCHERS.find(d=>d.id===saved.dispatcherId)||getDispatcher();
+  Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,processingSpeech:false,recognition:null,callController:null,convHistory:[]});
+  $('setup').style.display='none';$('boot-ov').style.display='none';$('status-dot').className='dot on';
+  $('b-pilot').textContent=S.rank+' '+S.pilot.split(' ').slice(-1)[0];
+  $('b-acft').textContent=S.aircraft;$('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
+  updateDispUI();renderRotationPlan();
+  if(S.currentFlight){
+    const restoredPhase=S.phase;
+    populateDossier(S.currentFlight);
+    applyRestoredPhase(restoredPhase);
+  }else if(S.rotationPlan[S.rotationIndex]){
+    $('main-call-btn').textContent='📞 APPELER LES OPS — SECTEUR SUIVANT';
+    $('main-call-btn').onclick=()=>initiateCall('next');
+  }
+  addAcars('ops','INFO',`SESSION RESTAURÉE // DUTY ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.rotationPlan.length} SECTEUR(S)`);
+  showToast('✓ Session WABA restaurée',5000);
+  initElevenLabs();
+  return true;
+}
+
+function requestResetSession(){
+  if(!confirm('Réinitialiser WABA ? Le duty, la rotation, le dossier et l historique local seront effacés.'))return;
+  sessionResetting=true;
+  try{localStorage.removeItem(SESSION_STORAGE_KEY);}catch{}
+  if(S.recognition){try{S.recognition.abort();}catch{}}
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
+  location.reload();
+}
+
 // ═══════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════
@@ -819,6 +890,7 @@ async function startDuty(){
   setTimeout(()=>{
     addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE`);
   },2000);
+  saveSession();
 }
 
 function getDispatcher(){
@@ -1690,6 +1762,11 @@ function toggleVoice() {
     });
   }
 }
+
+setInterval(saveSession,5000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveSession();});
+window.addEventListener('beforeunload',saveSession);
+restoreSession();
 </script>
 </body>
 </html>
