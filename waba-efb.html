@@ -287,6 +287,9 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <input class="fi" type="time" id="s-end" value="02:00"/>
     </div>
   </div>
+  <div style="width:100%;font-size:8px;color:var(--text3);font-family:var(--font-m);margin-top:8px;line-height:1.5">
+    MODE SIMULATION — NE PAS UTILISER POUR LA PRÉPARATION OU LA CONDUITE D'UN VOL RÉEL
+  </div>
   <button class="start-btn" onclick="startDuty()">PRENDRE SON SERVICE →</button>
 </div>
 
@@ -302,7 +305,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="hdr-right">
     <div class="dot" id="status-dot"></div>
     <div class="clock" id="utc-clock">--:--Z</div>
-    <div onclick="toggleKokoro()" id="kokoro-btn" title="Voix Kokoro" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
+    <div onclick="toggleKokoro()" id="kokoro-btn" title="Voix française ff_siwis" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
   </div>
 </div>
 
@@ -482,7 +485,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
           </div>
         </div>
         <div style="font-size:8px;color:var(--text3);margin-top:7px;font-family:var(--font-m)">
-          ⚠ Météo indicative — Consulter SIA/Météo France officiels
+          ⚠ Données météo grand public — non aéronautiques, non valides pour un vol réel
         </div>
       </div>
       <!-- PAX -->
@@ -492,7 +495,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       </div>
       <!-- Fuel -->
       <div class="card">
-        <div class="ctitle">Plan carburant — EASA Part-NCC</div>
+        <div class="ctitle">Estimation carburant — simulation uniquement</div>
         <div class="crow"><span class="clbl">Trip fuel</span><span class="cval" id="f-trip">—</span></div>
         <div class="crow"><span class="clbl">Contingence (5%)</span><span class="cval" id="f-cont">—</span></div>
         <div class="crow"><span class="clbl">Fuel alternate</span><span class="cval" id="f-alt">—</span></div>
@@ -606,6 +609,49 @@ const AIRPORTS = [
   {icao:'OMAA',city:'Abu Dhabi',country:'UAE',lat:24.433,lon:54.651,handling:'Abu Dhabi Aviation',parking:'GA',notes:'Non-Schengen.'},
   {icao:'OTBD',city:'Doha',country:'Qatar',lat:25.273,lon:51.608,handling:'Qatar Aviation Services',parking:'GA',notes:'Non-Schengen.'},
   {icao:'GMMN',city:'Casablanca',country:'Maroc',lat:33.368,lon:-7.590,handling:'RAM Handling',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'LFRN',city:'Rennes',country:'France',lat:48.069,lon:-1.735,handling:'Rennes Handling',parking:'GA'},
+  {icao:'LFRB',city:'Brest',country:'France',lat:48.448,lon:-4.419,handling:'Brest Handling',parking:'GA'},
+  {icao:'LFLB',city:'Chambéry',country:'France',lat:45.639,lon:5.881,handling:'Chambéry Aviation',parking:'GA',notes:'Relief alpin. Slots saisonniers.'},
+  {icao:'LFBZ',city:'Biarritz',country:'France',lat:43.468,lon:-1.523,handling:'Biarritz Handling',parking:'GA'},
+  {icao:'LFMQ',city:'Le Castellet',country:'France',lat:43.252,lon:5.785,handling:'Castellet Aviation',parking:'GA',notes:'PPR recommandé.'},
+  {icao:'EGGW',city:'Londres Luton',country:'UK',lat:51.875,lon:-0.368,handling:'Signature LTN',parking:'GA',notes:'Non-Schengen. Slot et handling requis.'},
+  {icao:'EGSS',city:'Londres Stansted',country:'UK',lat:51.885,lon:0.235,handling:'Universal Aviation',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'EIDW',city:'Dublin',country:'Irlande',lat:53.421,lon:-6.270,handling:'Universal Aviation',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'EINN',city:'Shannon',country:'Irlande',lat:52.702,lon:-8.925,handling:'Shannon Aviation',parking:'GA',notes:'Point d entrée transatlantique.'},
+  {icao:'ELLX',city:'Luxembourg',country:'Luxembourg',lat:49.623,lon:6.204,handling:'Luxaviation',parking:'GA'},
+  {icao:'LSZB',city:'Berne',country:'Suisse',lat:46.914,lon:7.497,handling:'Bern Airport Handling',parking:'GA',notes:'Piste et relief à vérifier.'},
+  {icao:'LSZS',city:'Saint-Moritz',country:'Suisse',lat:46.534,lon:9.884,handling:'Engadin Airport',parking:'GA',notes:'Haute altitude et relief alpin. Qualification/procédures spécifiques.'},
+  {icao:'EDDH',city:'Hambourg',country:'Allemagne',lat:53.630,lon:9.988,handling:'AHS Hamburg',parking:'GA'},
+  {icao:'EDDK',city:'Cologne',country:'Allemagne',lat:50.866,lon:7.143,handling:'Cologne Bonn Handling',parking:'GA'},
+  {icao:'EDDS',city:'Stuttgart',country:'Allemagne',lat:48.690,lon:9.222,handling:'Kurz Aviation',parking:'GA'},
+  {icao:'EDDL',city:'Düsseldorf',country:'Allemagne',lat:51.289,lon:6.767,handling:'Jet Aviation',parking:'GA'},
+  {icao:'LOWG',city:'Graz',country:'Autriche',lat:46.991,lon:15.440,handling:'Graz Handling',parking:'GA'},
+  {icao:'LKPR',city:'Prague',country:'Tchéquie',lat:50.101,lon:14.260,handling:'Menzies Aviation',parking:'GA'},
+  {icao:'LHBP',city:'Budapest',country:'Hongrie',lat:47.439,lon:19.262,handling:'Celebi Aviation',parking:'GA'},
+  {icao:'EPWA',city:'Varsovie',country:'Pologne',lat:52.166,lon:20.967,handling:'Welcome Airport Services',parking:'GA'},
+  {icao:'LROP',city:'Bucarest',country:'Roumanie',lat:44.572,lon:26.102,handling:'GlobeGround',parking:'GA'},
+  {icao:'LDZA',city:'Zagreb',country:'Croatie',lat:45.743,lon:16.069,handling:'Zagreb Handling',parking:'GA'},
+  {icao:'LDSP',city:'Split',country:'Croatie',lat:43.539,lon:16.298,handling:'Split Handling',parking:'GA',notes:'Slots saisonniers.'},
+  {icao:'LDDU',city:'Dubrovnik',country:'Croatie',lat:42.561,lon:18.268,handling:'Dubrovnik Handling',parking:'GA',notes:'Relief et vents locaux.'},
+  {icao:'LBSF',city:'Sofia',country:'Bulgarie',lat:42.696,lon:23.411,handling:'Swissport Sofia',parking:'GA'},
+  {icao:'LGIR',city:'Héraklion',country:'Grèce',lat:35.339,lon:25.180,handling:'Swissport Greece',parking:'GA'},
+  {icao:'LCLK',city:'Larnaca',country:'Chypre',lat:34.875,lon:33.625,handling:'Swissport Cyprus',parking:'GA'},
+  {icao:'LMML',city:'Malte',country:'Malte',lat:35.857,lon:14.478,handling:'Malta Aviation Services',parking:'GA'},
+  {icao:'LEIB',city:'Ibiza',country:'Espagne',lat:38.873,lon:1.373,handling:'Ibiza Handling',parking:'GA',notes:'Slots saisonniers.'},
+  {icao:'LPPR',city:'Porto',country:'Portugal',lat:41.248,lon:-8.681,handling:'Groundforce OPO',parking:'GA'},
+  {icao:'LIMJ',city:'Gênes',country:'Italie',lat:44.413,lon:8.838,handling:'Aviapartner GOA',parking:'GA',notes:'Relief proche.'},
+  {icao:'LIRQ',city:'Florence',country:'Italie',lat:43.810,lon:11.205,handling:'Toscana Aeroporti',parking:'GA',notes:'Piste courte et relief.'},
+  {icao:'LIEO',city:'Olbia',country:'Italie',lat:40.899,lon:9.518,handling:'Eccelsa Aviation',parking:'GA',notes:'Forte demande saisonnière.'},
+  {icao:'LIPQ',city:'Trieste',country:'Italie',lat:45.827,lon:13.472,handling:'Trieste Handling',parking:'GA'},
+  {icao:'EFHK',city:'Helsinki',country:'Finlande',lat:60.317,lon:24.963,handling:'Airpro',parking:'GA'},
+  {icao:'ENBR',city:'Bergen',country:'Norvège',lat:60.294,lon:5.218,handling:'Aviator Bergen',parking:'GA',notes:'Météo maritime changeante.'},
+  {icao:'BIKF',city:'Keflavík',country:'Islande',lat:63.985,lon:-22.606,handling:'Southair',parking:'GA',notes:'Vents forts possibles.'},
+  {icao:'GCTS',city:'Tenerife Sud',country:'Espagne',lat:28.044,lon:-16.572,handling:'Aviapartner TFS',parking:'GA'},
+  {icao:'GCLP',city:'Gran Canaria',country:'Espagne',lat:27.932,lon:-15.386,handling:'Groundforce LPA',parking:'GA'},
+  {icao:'DAAG',city:'Alger',country:'Algérie',lat:36.691,lon:3.215,handling:'Air Algérie Handling',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'DTTA',city:'Tunis',country:'Tunisie',lat:36.851,lon:10.227,handling:'Tunisair Handling',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'HECA',city:'Le Caire',country:'Égypte',lat:30.122,lon:31.406,handling:'EgyptAir Ground Services',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'OERK',city:'Riyad',country:'Arabie saoudite',lat:24.958,lon:46.699,handling:'Saudi Ground Services',parking:'Royal Terminal',notes:'Non-Schengen.'},
   {icao:'KTEB',city:'New York',country:'USA',lat:40.850,lon:-74.061,handling:'Signature Aviation TEB',parking:'Signature',notes:'APIS requis 60min. Non-Schengen. MTOW 100 000lbs.'},
   {icao:'KMIA',city:'Miami',country:'USA',lat:25.796,lon:-80.287,handling:'Signature MIA',parking:'GA',notes:'Non-Schengen. APIS requis.'},
 ];
@@ -644,13 +690,10 @@ const DISPATCHERS = [
   {id:'claire',name:'Claire Beaumont',ini:'CB',col:'#7A7880',bg:'rgba(122,120,128,.08)',role:'Dispatch Support',shift:[8,18],style:'nouvelle appliquée. Cherche confirmation auprès collègues. Sympathique mais parfois hésitante.',greet:'Euh... dispatch WABA, Claire à l appareil, bonjour !',greet_en:'WABA dispatch, Claire speaking, hello!'},
 ];
 
-const EASA = `RÉGLEMENTATION EASA Part-NCC applicable à WABA:
-FTL: FDP max 14h, repos min 12h, 100h vol/28j, 900h/an. Duty nuit (02-05h locale): -1h FDP max.
-CARBURANT NCC.OP.151: Trip+Contingence 5%+Alternate+Réserve finale 30min+Taxi. Extra à discrétion commandant.
-MÉTÉO MINIMUMS: CAT I: DH200ft RVR550m. CAT II: DH100ft RVR300m. Alternate requis si météo <minimums+1h.
-MTOW: C750=16375kg, C700=16920kg, B738=79015kg.
-URGENCES: Dépressurisation→O2+descente FL100. TCAS RA→suivre RA priorité sur ATC. GPWS→thrust max pitch max.
-PIC: Autorité finale. Peut refuser vol. Carburant extra sans justification. Peut déclarer urgence.`;
+const EASA = `CONTEXTE DE SIMULATION WABA:
+Cette application est un jeu de rôle opérationnel et non un EFB certifié. Ne présente jamais une estimation comme une donnée de vol réelle.
+Ne donne aucune décision MEL, performance, carburant, météo, FTL ou Go/No-Go comme certaine. Invite l'équipage à utiliser l'OM, l'AFM/FCOM/QRH, la MEL approuvée et les sources aéronautiques officielles.
+Le commandant de bord conserve l'autorité finale. En cas d'urgence réelle, appliquer les procédures approuvées et contacter les services appropriés.`;
 
 // ═══════════════════════════════════════════════════════
 // STATE
@@ -660,7 +703,7 @@ const S = {
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
   inFlight:false, acarsUnread:0, micActive:false, recognition:null,
-  convHistory:[],
+  convHistory:[], position:'LFRS', callController:null,
 };
 
 // ═══════════════════════════════════════════════════════
@@ -671,6 +714,7 @@ const $=id=>document.getElementById(id);
 function fmt2(n){return String(n).padStart(2,'0')}
 function utcNow(){const n=new Date();return fmt2(n.getUTCHours())+':'+fmt2(n.getUTCMinutes())+'Z'}
 function fmtDur(min){return `${Math.floor(min/60)}h${fmt2(min%60)}`}
+function timeToMinutes(value){const [h,m]=String(value).split(':').map(Number);return h*60+m;}
 
 function showToast(msg, dur=3000){
   const t=$('toast');
@@ -699,6 +743,10 @@ $('utc-clock').textContent=utcNow();
 function startDuty(){
   const fn=$('s-fn').value.trim(), ln=$('s-ln').value.trim();
   if(!fn||!ln){alert('Renseignez votre prénom et nom');return;}
+  if(!$('s-start').value||!$('s-end').value){alert('Renseignez les horaires du duty');return;}
+  let dutyMinutes=timeToMinutes($('s-end').value)-timeToMinutes($('s-start').value);
+  if(dutyMinutes<=0)dutyMinutes+=1440;
+  if(dutyMinutes<60||dutyMinutes>18*60){alert('Fenêtre de duty incohérente pour cette simulation');return;}
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
   S.aircraft=$('s-ac').value;
@@ -717,7 +765,7 @@ function startDuty(){
   updateDispUI();
   // ACARS welcome
   setTimeout(()=>{
-    addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE // MODE: ${S.mode.toUpperCase()}`);
+    addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE`);
   },2000);
 }
 
@@ -743,16 +791,20 @@ function updateDispUI(){
 // ═══════════════════════════════════════════════════════
 // ROTATION
 // ═══════════════════════════════════════════════════════
-function generateRotation(){
+function chooseAlternate(dep,arr){
+  const arrAp=getAP(arr);
+  return AIRPORTS
+    .filter(a=>a.icao!==dep&&a.icao!==arr)
+    .map(a=>({icao:a.icao,dist:distNM(arrAp.lat,arrAp.lon,a.lat,a.lon)}))
+    .filter(a=>a.dist<=250)
+    .sort((a,b)=>a.dist-b.dist)[0]?.icao||dep;
+}
+
+function buildFlight(dep,dest,existing={}){
   const ac=AIRCRAFT_DATA[S.aircraft];
-  const routes=ROUTES[S.aircraft];
-  const recent=S.sessionFlights.map(f=>f.arr);
-  const avail=routes.filter(r=>!recent.includes(r));
-  const pool=avail.length?avail:routes;
-  const dest=pool[Math.floor(Math.random()*pool.length)];
   const arrAp=getAP(dest);
-  if(!arrAp)return null;
-  const depAp=getAP('LFRS');
+  const depAp=getAP(dep);
+  if(!arrAp||!depAp||dep===dest)return null;
   const dist=Math.round(distNM(depAp.lat,depAp.lon,arrAp.lat,arrAp.lon));
   const durH=dist/ac.cruise_kt;
   const durMin=Math.round(durH*60)+20;
@@ -761,14 +813,17 @@ function generateRotation(){
   const arrMin=depMin+durMin;
   const depT=fmt2(Math.floor(depMin/60)%24)+':'+fmt2(depMin%60)+'Z';
   const arrT=fmt2(Math.floor(arrMin/60)%24)+':'+fmt2(arrMin%60)+'Z';
-  // Fuel EASA
-  const trip=Math.round(ac.fuel_burn_kgh*durH);
+  // Estimation de simulation seulement; ne remplace pas un OFP.
+  const trip=Math.round(ac.fuel_burn_kgh*(durH+0.22));
   const cont=Math.round(trip*0.05);
-  const altF=Math.round(ac.fuel_burn_kgh*0.5);
-  const res=ac.fuel_reserve;
+  const alt=chooseAlternate(dep,dest);
+  const altAp=getAP(alt);
+  const altDist=altAp?distNM(arrAp.lat,arrAp.lon,altAp.lat,altAp.lon):0;
+  const altF=Math.round(ac.fuel_burn_kgh*(altDist/ac.cruise_kt+0.18));
+  const res=Math.round(ac.fuel_burn_kgh*0.5);
   const taxi=ac.fuel_taxi;
   const total=trip+cont+altF+res+taxi;
-  const fuel={trip,cont,altF,res,taxi,total};
+  const fuel={trip,cont,altF,res,taxi,total,overCapacity:total>ac.fuel_cap};
   // PAX
   const paxN=Math.floor(Math.random()*(ac.pax_max-1))+1;
   const pax=[...PAX_POOL].sort(()=>Math.random()-.5).slice(0,paxN).map((p,i)=>({
@@ -779,16 +834,32 @@ function generateRotation(){
   const isIntl=['OMDB','OMAA','OTBD','GMMN','KTEB','KMIA'].includes(dest);
   const prefix=isIntl?'4':'3';
   let num;
-  const usedNos=S.sessionFlights.map(f=>f.flightNo);
+  const usedNos=S.sessionFlights.map(f=>f.flightNo).concat(existing.flightNo||[]);
   do{num=prefix+String(Math.floor(Math.random()*99+10))}
   while(usedNos.includes('WAB'+num));
-  const flightNo='WAB'+num;
+  const flightNo=existing.flightNo||'WAB'+num;
   // FL
   const fl=dist<200?'FL250':dist<600?'FL350':ac.cruise_fl;
-  // Alternate
-  const alts={LFPB:'LFPO',LFPO:'LFPB',EGLF:'EGKB',EGKB:'EGLF',LSZH:'LSGG',LSGG:'LSZH',LIRF:'LIRA',LIRA:'LIRF',LEMD:'LEBL',LGAV:'LGTS',OMDB:'OMAA'};
-  const alt=alts[dest]||'LFRS';
-  return{flightNo,dep:'LFRS',arr:dest,depAp,arrAp,dist,durMin,depT,arrT,fl,alt,fuel,pax,flightIdx:S.sessionFlights.length};
+  return{flightNo,dep,arr:dest,depAp,arrAp,dist,durMin,depT,arrT,fl,alt,fuel,pax:existing.pax||pax,flightIdx:S.sessionFlights.length};
+}
+
+function generateRotation(destination=null){
+  const ac=AIRCRAFT_DATA[S.aircraft];
+  const dep=S.position||'LFRS';
+  if(destination)return buildFlight(dep,destination);
+  const recent=new Set(S.sessionFlights.slice(-6).map(f=>f.arr));
+  let pool=AIRPORTS.filter(a=>a.icao!==dep&&!recent.has(a.icao)).filter(a=>{
+    const d=distNM(getAP(dep).lat,getAP(dep).lon,a.lat,a.lon);
+    return d>=70&&d<=ac.range_nm*0.9;
+  });
+  if(!pool.length)pool=AIRPORTS.filter(a=>a.icao!==dep);
+  // Écarte les routes dont l'estimation simplifiée excède la capacité déclarée.
+  const shuffled=[...pool].sort(()=>Math.random()-.5);
+  for(const candidate of shuffled){
+    const flight=buildFlight(dep,candidate.icao);
+    if(flight&&!flight.fuel.overCapacity)return flight;
+  }
+  return buildFlight(dep,shuffled[0]?.icao);
 }
 
 async function fetchWX(icao,lat,lon){
@@ -856,7 +927,9 @@ function populateDossier(f){
   $('f-res').textContent=fu.res.toLocaleString('fr-FR')+' kg';
   $('f-taxi').textContent=fu.taxi.toLocaleString('fr-FR')+' kg';
   $('f-tot').textContent=fu.total.toLocaleString('fr-FR')+' kg';
-  const pct=Math.min(95,Math.max(40,Math.round(fu.total/AIRCRAFT_DATA[S.aircraft].fuel_cap*100)));
+  $('f-tot').style.color=fu.overCapacity?'var(--red)':'var(--gold)';
+  if(fu.overCapacity)showToast('⚠ Estimation carburant supérieure à la capacité simulée',6000);
+  const pct=Math.min(100,Math.max(0,Math.round(fu.total/AIRCRAFT_DATA[S.aircraft].fuel_cap*100)));
   $('f-bar').style.width=pct+'%';
   // Notes terrain
   if(f.arrAp.notes){
@@ -887,13 +960,14 @@ const PHASE_LABELS=['PRE-DEP','DÉPART','CRUISE','ARRIVÉE','ON BLKS'];
 const PHASE_IDS=['ph-0','ph-1','ph-2','ph-3','ph-4'];
 
 function setPhase(n){
+  if(n!==0&&n!==S.phase+1){showToast('Validez les phases dans l ordre');return;}
   S.phase=n;
-  S.inFlight=(n===2);
+  S.inFlight=(n>=1&&n<=3);
   PHASE_IDS.forEach((id,i)=>{
     const b=$(id);if(!b)return;
     b.className='ph-btn '+(i<n?'done':i===n?'cur':'avail');
     b.disabled=i<=n;
-    b.onclick=i>n?()=>setPhase(i):null;
+    b.onclick=i===n+1?()=>setPhase(i):null;
   });
   // Phase badge
   const pb=$('phase-badge');
@@ -930,6 +1004,7 @@ function setPhase(n){
       // Après ONBLK — proposer rotation suivante
       if(n===4){
         S.sessionFlights.push(S.currentFlight);
+        S.position=f.arr;
         await sleep(3000);
         addAcars('ops','INFO',`SESSION: ${S.sessionFlights.length} VOL(S) EFFECTUÉ(S) // APPELEZ-NOUS POUR ROTATION SUIVANTE OU FIN DUTY`);
         $('main-call-btn').textContent='📞 APPELER LES OPS — ROTATION SUIVANTE';
@@ -971,8 +1046,8 @@ function scheduleScenario(f){
 // ═══════════════════════════════════════════════════════
 const CALL_SYS = {
   briefing:{
-    fr:(d,f,ac)=>`IMPORTANT: Réponds en langage oral naturel UNIQUEMENT. Pas d astérisques, pas de bullets, pas de codes ACARS, pas d emojis, pas de majuscules excessives. Parle comme au téléphone. Tu es ${d.name}, dispatcher WABA (West Atlantic Business Aviation), compagnie aviation affaires Nantes. Tu appelles le ${f.rank} ${f.pilot} pour briefing rotation du soir. Avion: ${AIRCRAFT_DATA[ac].name} (${ac}). Mode: ${f.mode} (normal=classique, challenging=imprévu possible, fullops=imprévu certain). Génère rotation réaliste avec destination variée parmi nos aéroports européens, horaires UTC, météo simplifiée, nb PAX (max ${AIRCRAFT_DATA[ac].pax_max}), fuel estimé. Sois naturel et professionnel. Style: ${d.style}. ${EASA}`,
-    en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language ONLY. No asterisks, no bullets, no ACARS codes, no emojis. Speak as on the phone. You are ${d.name}, WABA dispatcher. Calling ${f.rank} ${f.pilot} for evening rotation briefing. Aircraft: ${AIRCRAFT_DATA[ac].name}. Mode: ${f.mode}. Generate realistic rotation. Style: ${d.style}. ${EASA}`,
+    fr:(d,f,ac)=>`IMPORTANT: Réponds en langage oral naturel UNIQUEMENT. Pas d astérisques, pas de bullets, pas de codes ACARS, pas d emojis, pas de majuscules excessives. Parle comme au téléphone. Tu es ${d.name}, dispatcher WABA (West Atlantic Business Aviation), compagnie aviation affaires Nantes. Tu appelles le ${f.rank} ${f.pilot} pour un briefing. Avion: ${AIRCRAFT_DATA[ac].name} (${ac}). Présente strictement la rotation structurée fournie par l application: ne change et n invente aucune destination, heure, météo, passager ou quantité de carburant. Sois naturel et professionnel. Style: ${d.style}. ${EASA}`,
+    en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language ONLY. No asterisks, no bullets, no ACARS codes, no emojis. Speak as on the phone. You are ${d.name}, WABA dispatcher for West Atlantic Business Aviation. Brief ${f.rank} ${f.pilot} on the structured rotation supplied by the application. Aircraft: ${AIRCRAFT_DATA[ac].name}. Never change or invent a destination, time, weather item, passenger count or fuel quantity. Style: ${d.style}. ${EASA}`,
   },
   free:{
     fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le ${f.rank} ${f.pilot} t appelle librement. Réponds naturellement à ses questions et demandes. Style: ${d.style}. ${EASA}`,
@@ -1024,15 +1099,21 @@ async function initiateCall(type){
   await sleep(800);
   const ctx=S;
   const sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
-  const intro=await callAI(sysPrompt,'Commence le briefing/appel après ton greeting. Sois naturel et concis.');
-  if(intro){addTx('ops',d.name,intro);speak(intro);
-    if(type==='briefing'||type==='next'){handleBriefingResponse(intro);}
+  let planned=null;
+  let userPrompt='Commence l appel après ton greeting. Sois naturel et concis.';
+  if((type==='briefing'||type==='next')&&!S.currentFlight){
+    planned=generateRotation();
+    if(!planned){showToast('Impossible de générer une rotation');endCall();return;}
+    userPrompt=`Présente exactement cette rotation, sans modifier ni inventer ses données: ${planned.flightNo}, ${planned.dep} vers ${planned.arr}, départ ${planned.depT}, arrivée ${planned.arrT}, ${planned.pax.length} passagers, niveau ${planned.fl}, estimation carburant ${planned.fuel.total} kg. Rappelle que météo et carburant sont des données de simulation.`;
   }
+  const intro=await callAI(sysPrompt,userPrompt);
+  if(intro){addTx('ops',d.name,intro);speak(intro);}
+  if(planned)handleBriefingResponse(planned);
   addCallHist(type);
 }
 
-function handleBriefingResponse(text){
-  const rot=generateRotation();
+function handleBriefingResponse(rotation){
+  const rot=rotation&&typeof rotation==='object'?rotation:generateRotation();
   if(rot){
     S.currentFlight=rot;
     setTimeout(()=>{populateDossier(rot);},1000);
@@ -1044,14 +1125,21 @@ function handleBriefingResponse(text){
 
 async function callAI(systemPrompt,userMsg){
   try{
+    if(S.callController)S.callController.abort();
+    const controller=new AbortController();
+    S.callController=controller;
+    const timer=setTimeout(()=>controller.abort(),20000);
     const msgs=[...S.convHistory];
     if(userMsg)msgs.push({role:'user',content:userMsg});
     if(!msgs.length)msgs.push({role:'user',content:'Commence.'});
     const res=await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
+      signal:controller.signal,
       body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:msgs})
     });
+    clearTimeout(timer);
+    if(!res.ok)throw new Error(`Proxy HTTP ${res.status}`);
     const data=await res.json();
     const reply=data.content?.[0]?.text||'';
     if(reply){
@@ -1066,7 +1154,12 @@ function addTx(who,name,text){
   const w=$('call-tx');
   const d=document.createElement('div');
   d.className='tx-line tx-'+who;
-  d.innerHTML=`<div class="tx-who">${name.toUpperCase()}</div>${text}`;
+  const whoEl=document.createElement('div');
+  whoEl.className='tx-who';
+  whoEl.textContent=String(name||'').toUpperCase();
+  const textEl=document.createElement('div');
+  textEl.textContent=String(text||'');
+  d.append(whoEl,textEl);
   w.appendChild(d);w.scrollTop=w.scrollHeight;
 }
 
@@ -1076,34 +1169,35 @@ function addTx(who,name,text){
 let kokoroTTS = null;
 let kokoroLoading = false;
 let kokoroReady = false;
+let audioMuted = false;
+let currentAudio = null;
 
-// Voix par dispatcher — masculin/féminin
+// ff_siwis est la voix française native de Kokoro. Les profils de vitesse
+// donnent un caractère légèrement différent à chaque dispatcher.
 const DISPATCHER_VOICES = {
-  marc: 'bm_lewis',       // Voix masculine britannique
-  sophie: 'bf_emma',      // Voix féminine britannique
-  kevin: 'am_adam',       // Voix masculine américaine
-  isabelle: 'bf_isabella',// Voix féminine britannique
-  thomas: 'am_michael',   // Voix masculine américaine
-  antoine: 'bm_george',   // Voix masculine britannique
-  hind: 'bf_emma',        // Voix féminine britannique
-  laurent: 'bm_lewis',    // Voix masculine britannique
-  nathalie: 'bf_isabella',// Voix féminine britannique
-  claire: 'bf_emma',      // Voix féminine britannique
+  marc: 'ff_siwis', sophie: 'ff_siwis', kevin: 'ff_siwis',
+  isabelle: 'ff_siwis', thomas: 'ff_siwis', antoine: 'ff_siwis',
+  hind: 'ff_siwis', laurent: 'ff_siwis', nathalie: 'ff_siwis', claire: 'ff_siwis',
+};
+
+const DISPATCHER_SPEEDS = {
+  marc:.94, sophie:1.06, kevin:1.02, isabelle:.90, thomas:1.08,
+  antoine:.98, hind:.96, laurent:.92, nathalie:.95, claire:1.03,
 };
 
 async function initKokoro() {
   if(kokoroReady || kokoroLoading) return;
   kokoroLoading = true;
   try {
-    showToast('Chargement voix Kokoro... (première fois ~30s)', 8000);
+    showToast('Chargement de la voix française... première utilisation uniquement', 8000);
     const { KokoroTTS } = await import('https://esm.sh/kokoro-js@1.1.1');
-    kokoroTTS = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-ONNX', {
+    kokoroTTS = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
       dtype: 'q8',
       device: 'wasm',
     });
     kokoroReady = true;
     kokoroLoading = false;
-    showToast('✓ Voix Kokoro prête !');
+    showToast('✓ Voix française prête');
     console.log('[WABA] Kokoro TTS ready. Voices:', await kokoroTTS.list_voices());
   } catch(e) {
     console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
@@ -1124,6 +1218,7 @@ function cleanForSpeech(text) {
 }
 
 async function speak(text) {
+  if(audioMuted)return;
   const clean = cleanForSpeech(text);
   if(!clean) return;
 
@@ -1131,13 +1226,15 @@ async function speak(text) {
   if(kokoroReady && kokoroTTS) {
     try {
       const dispId = S.dispatcher?.id || 'marc';
-      const voice = DISPATCHER_VOICES[dispId] || 'bm_lewis';
-      const audio = await kokoroTTS.generate(clean, { voice });
+      const voice = DISPATCHER_VOICES[dispId] || 'ff_siwis';
+      const speed = DISPATCHER_SPEEDS[dispId] || 1;
+      const audio = await kokoroTTS.generate(clean, { voice, speed });
       // Jouer l'audio
       const blob = new Blob([audio.data], { type: 'audio/wav' });
       const url = URL.createObjectURL(blob);
       const a = new Audio(url);
-      a.onended = () => URL.revokeObjectURL(url);
+      currentAudio=a;
+      a.onended = () => {URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;};
       await a.play();
       return;
     } catch(e) {
@@ -1198,13 +1295,22 @@ function stopListen(){
 function endCall(){
   S.callActive=false;S.micActive=false;
   if(S.recognition)S.recognition.stop();
+  if(S.callController){S.callController.abort();S.callController=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
+  if(currentAudio){currentAudio.pause();currentAudio=null;}
   $('call-ov').classList.remove('on');
   $('status-dot').className='dot on';
   S.convHistory=[];
 }
 
-function toggleSpk(){}
+function toggleSpk(){
+  audioMuted=!audioMuted;
+  if(audioMuted){
+    if(window.speechSynthesis)window.speechSynthesis.cancel();
+    if(currentAudio){currentAudio.pause();currentAudio=null;}
+  }
+  showToast(audioMuted?'Haut-parleur coupé':'Haut-parleur activé');
+}
 
 function addCallHist(type){
   const labels={briefing:'Briefing rotation',free:'Appel libre',delay:'Retard',technical:'Problème technique',client:'Update client',next:'Rotation suivante',emergency:'URGENCE'};
@@ -1225,11 +1331,15 @@ function addAcars(from,code,text,urgent=false){
   const wrap=document.createElement('div');
   wrap.className='amsg from-'+(from==='ops'?'ops':'pilot');
   const bubCls='abub'+(urgent?' urg':code==='ALERT'?' alt':code==='INFO'?' info':'');
-  wrap.innerHTML=`<div class="amsg-hdr ${from==='pilot'?'r':''}">
-    <span>${utcNow()}</span>
-    <span>${from==='ops'?'WABA OPS':(S.pilot||'PILOT')}</span>
-  </div>
-  <div class="${bubCls}"><span class="acode">${code}</span>${text}</div>`;
+  const header=document.createElement('div');
+  header.className='amsg-hdr '+(from==='pilot'?'r':'');
+  const time=document.createElement('span');time.textContent=utcNow();
+  const author=document.createElement('span');author.textContent=from==='ops'?'WABA OPS':(S.pilot||'PILOT');
+  header.append(time,author);
+  const bubble=document.createElement('div');bubble.className=bubCls;
+  const codeEl=document.createElement('span');codeEl.className='acode';codeEl.textContent=String(code||'INFO');
+  bubble.append(codeEl,document.createTextNode(String(text||'')));
+  wrap.append(header,bubble);
   msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
   if(!$('tab-acars').classList.contains('on')&&from==='ops'){
     S.acarsUnread++;
@@ -1248,14 +1358,18 @@ async function sendAcars(){
   await sleep(1500+Math.random()*3000);
   // AI response
   try{
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),15000);
     const res=await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
       body:JSON.stringify({
         model:'claude-haiku-4-5-20251001',max_tokens:120,
         system:`Tu es ${S.dispatcher?.name||'Marc Lebrun'}, dispatcher WABA. Reponds message ACARS type ${type} du pilote. Format ACARS court. Si CHG demandé, confirme et indique action prise. Si REQ WX, donne météo simplifiée. Si URG, active protocole urgence. Max 2 lignes. Mode: ${S.mode}. ${EASA}`,
         messages:[{role:'user',content:txt}]
       })
     });
+    clearTimeout(timer);
+    if(!res.ok)throw new Error(`Proxy HTTP ${res.status}`);
     const data=await res.json();
     const reply=data.content?.[0]?.text;
     if(reply)addAcars('ops','INFO',reply);
@@ -1266,15 +1380,16 @@ async function sendAcars(){
         const newDest=icaoMatch.find(i=>i!==S.currentFlight.dep&&i!=='CHG'&&AIRPORTS.find(a=>a.icao===i));
         if(newDest){
           setTimeout(()=>{
-            const newRot=generateRotation();
-            if(newRot){newRot.arr=newDest;S.currentFlight=newRot;populateDossier(newRot);
+            const previous=S.currentFlight;
+            const newRot=buildFlight(previous.dep,newDest,{flightNo:previous.flightNo,pax:previous.pax});
+            if(newRot){S.currentFlight=newRot;populateDossier(newRot);
               addAcars('ops','INFO',`${S.currentFlight.flightNo} — DOSSIER MIS À JOUR // NOUVELLE DESTINATION ${newDest} // SIMBRIEF DISPONIBLE`);
             }
           },2000);
         }
       }
     }
-  }catch(e){console.error(e);}
+  }catch(e){console.error(e);addAcars('ops','ALERT','LIAISON OPS INDISPONIBLE — RÉESSAYEZ',true);}
 }
 
 function qMsg(code){
@@ -1334,7 +1449,7 @@ function toggleKokoro() {
   if(kokoroReady) {
     kokoroReady = false; kokoroTTS = null;
     $('kokoro-btn').style.opacity = '.4';
-    showToast('Voix Kokoro désactivée — Web Speech API');
+    showToast('Voix française désactivée — voix système utilisée');
   } else {
     $('kokoro-btn').style.opacity = '1';
     initKokoro().then(()=>{
