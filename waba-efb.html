@@ -966,7 +966,7 @@ async function callClaude(systemPrompt, userMsg) {
     const messages = [...conversationHistory];
     if(userMsg) messages.push({ role: 'user', content: userMsg });
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1160,7 +1160,7 @@ async function sendAcars() {
 
 async function getAcarsReply(code, msg) {
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
