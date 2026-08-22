@@ -3,533 +3,406 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>WABA EFB — Electronic Flight Bag</title>
+<title>WABA EFB</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --gold:#B8973E;--gold-light:#D4AF60;
+  --gold:#B8973E;--gold-l:#D4AF60;
   --blue:#4A9BB8;--green:#5A9E6F;
   --orange:#C47A3A;--red:#B85A4A;
   --bg:#0C0C0E;--bg2:#111114;--bg3:#16161A;--bg4:#1C1C22;
   --border:#252530;--border2:#32323E;
   --text:#E8E6E0;--text2:#7A7880;--text3:#42404A;
-  --card:#111114;--hover:#1A1A1E;
-  --font-display:'Playfair Display',serif;
-  --font-mono:'JetBrains Mono',monospace;
-  --font-body:'DM Sans',sans-serif;
-  --radius:10px;--radius-sm:6px;
+  --card:#111114;
+  --font-d:'Playfair Display',serif;
+  --font-m:'JetBrains Mono',monospace;
+  --font-b:'DM Sans',sans-serif;
+  --r:10px;--rs:6px;
 }
-
-body{background:var(--bg);color:var(--text);font-family:var(--font-body);
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);
   height:100dvh;display:flex;flex-direction:column;overflow:hidden;
-  max-width:480px;margin:0 auto;position:relative;}
+  max-width:480px;margin:0 auto;}
 
-/* ─── HEADER ─── */
-.efb-header{
-  padding:12px 16px 10px;
-  background:var(--bg);
-  border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
-}
-.efb-logo{
-  display:flex;align-items:center;gap:10px;
-}
-.efb-logo-mark{
-  width:32px;height:32px;border:1px solid var(--gold);border-radius:6px;
+/* HEADER */
+.hdr{padding:10px 16px;background:var(--bg);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-logo{display:flex;align-items:center;gap:10px}
+.hdr-mark{width:30px;height:30px;border:1px solid var(--gold);border-radius:5px;
   display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--gold);
-  letter-spacing:1px;
-}
-.efb-logo-text{
-  display:flex;flex-direction:column;
-}
-.efb-logo-title{font-family:var(--font-mono);font-size:12px;font-weight:700;letter-spacing:2px;color:var(--text)}
-.efb-logo-sub{font-size:9px;color:var(--text3);letter-spacing:1px;margin-top:1px}
-.efb-status{display:flex;align-items:center;gap:8px}
-.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
-.status-dot.active{background:var(--green);box-shadow:0 0 6px var(--green)}
-.status-dot.call{background:var(--gold);box-shadow:0 0 6px var(--gold);animation:pulse 1s infinite}
-.status-time{font-family:var(--font-mono);font-size:11px;color:var(--text2)}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+  font-family:var(--font-m);font-size:9px;font-weight:700;color:var(--gold);letter-spacing:1px}
+.hdr-title{font-family:var(--font-m);font-size:11px;font-weight:700;letter-spacing:2px}
+.hdr-sub{font-size:8px;color:var(--text3);letter-spacing:1px;margin-top:1px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}
+.dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.call{background:var(--gold);box-shadow:0 0 6px var(--gold);animation:pulse 1s infinite}
+.clock{font-family:var(--font-m);font-size:11px;color:var(--text2)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
-/* ─── DUTY BAR ─── */
-.duty-bar{
-  background:var(--bg2);border-bottom:1px solid var(--border);
-  padding:8px 16px;display:flex;align-items:center;justify-content:space-between;
-  flex-shrink:0;
-}
-.duty-info{display:flex;align-items:center;gap:12px}
-.duty-tag{font-size:9px;font-weight:700;font-family:var(--font-mono);letter-spacing:1.5px;color:var(--text3)}
-.duty-val{font-size:11px;font-weight:600;font-family:var(--font-mono);color:var(--text2)}
-.duty-val.active{color:var(--green)}
-.duty-flight{font-size:11px;font-family:var(--font-mono);font-weight:700;color:var(--gold)}
-.phase-badge{
-  font-size:9px;font-weight:700;font-family:var(--font-mono);letter-spacing:1px;
-  padding:3px 8px;border-radius:3px;
-  background:var(--bg4);border:1px solid var(--border2);color:var(--text3);
-}
-.phase-badge.active{background:rgba(90,158,111,.12);border-color:rgba(90,158,111,.3);color:var(--green)}
-.phase-badge.inflight{background:rgba(74,155,184,.12);border-color:rgba(74,155,184,.3);color:var(--blue)}
-.phase-badge.alert{background:rgba(184,90,74,.12);border-color:rgba(184,90,74,.3);color:var(--red)}
+/* DUTY BAR */
+.dbar{background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:7px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.dbar-info{display:flex;align-items:center;gap:10px}
+.dbar-sep{width:1px;height:26px;background:var(--border)}
+.dtag{font-size:8px;font-weight:700;font-family:var(--font-m);letter-spacing:1px;color:var(--text3)}
+.dval{font-size:11px;font-weight:600;font-family:var(--font-m);color:var(--text2)}
+.dval.on{color:var(--green)}
+.pbadge{font-size:9px;font-weight:700;font-family:var(--font-m);letter-spacing:.5px;
+  padding:3px 8px;border-radius:3px;background:var(--bg4);border:1px solid var(--border2);color:var(--text3)}
+.pbadge.ground{background:rgba(90,158,111,.1);border-color:rgba(90,158,111,.3);color:var(--green)}
+.pbadge.flight{background:rgba(74,155,184,.1);border-color:rgba(74,155,184,.3);color:var(--blue)}
+.pbadge.alert{background:rgba(184,90,74,.1);border-color:rgba(184,90,74,.3);color:var(--red)}
 
-/* ─── TABS ─── */
-.tab-bar{
-  display:flex;background:var(--bg);border-bottom:1px solid var(--border);
-  flex-shrink:0;
-}
-.tab-btn{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:10px 4px;cursor:pointer;border:none;background:transparent;
-  color:var(--text3);transition:color .2s;position:relative;
-  font-family:var(--font-body);
-}
-.tab-btn.active{color:var(--gold)}
-.tab-btn.active::after{
-  content:'';position:absolute;bottom:0;left:20%;right:20%;
-  height:2px;background:var(--gold);border-radius:2px 2px 0 0;
-}
-.tab-icon{font-size:18px;line-height:1}
-.tab-label{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;font-family:var(--font-mono)}
-.tab-badge{
-  position:absolute;top:6px;right:calc(50% - 16px);
+/* TABS */
+.tabs{display:flex;background:var(--bg);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:9px 4px;cursor:pointer;border:none;background:transparent;
+  color:var(--text3);transition:color .2s;position:relative;font-family:var(--font-b)}
+.tab.on{color:var(--gold)}
+.tab.on::after{content:'';position:absolute;bottom:0;left:20%;right:20%;
+  height:2px;background:var(--gold);border-radius:2px 2px 0 0}
+.tab-ic{font-size:17px;line-height:1}
+.tab-lb{font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;font-family:var(--font-m)}
+.tbadge{position:absolute;top:5px;right:calc(50% - 16px);
   background:var(--red);color:#fff;font-size:8px;font-weight:700;
-  width:14px;height:14px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-mono);
-}
+  width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-m)}
 
-/* ─── PAGES ─── */
+/* PAGES */
 .page{display:none;flex:1;overflow-y:auto;flex-direction:column}
-.page.active{display:flex}
-.page-inner{padding:16px;display:flex;flex-direction:column;gap:12px;flex:1}
+.page.on{display:flex}
+.pi{padding:14px;display:flex;flex-direction:column;gap:11px;flex:1}
 
-/* ─── CARDS ─── */
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
-.card-title{font-size:9px;font-weight:700;font-family:var(--font-mono);letter-spacing:2px;color:var(--text3);margin-bottom:12px;text-transform:uppercase}
-.card-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)}
-.card-row:last-child{border-bottom:none}
-.card-lbl{font-size:11px;color:var(--text2)}
-.card-val{font-size:12px;font-weight:600;font-family:var(--font-mono)}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+.ctitle{font-size:8px;font-weight:700;font-family:var(--font-m);letter-spacing:2px;
+  color:var(--text3);margin-bottom:10px;text-transform:uppercase}
+.crow{display:flex;justify-content:space-between;align-items:center;
+  padding:5px 0;border-bottom:1px solid var(--border)}
+.crow:last-child{border-bottom:none}
+.clbl{font-size:11px;color:var(--text2)}
+.cval{font-size:11px;font-weight:600;font-family:var(--font-m)}
 
-/* ─── OPS PAGE ─── */
-.dispatcher-card{
-  background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
-  padding:14px;display:flex;align-items:center;gap:12px;
-}
-.dispatcher-avatar{
-  width:44px;height:44px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-mono);font-weight:700;font-size:14px;
-  flex-shrink:0;border:2px solid var(--border2);
-}
-.dispatcher-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.dispatcher-role{font-size:10px;color:var(--text2);font-family:var(--font-mono)}
-.dispatcher-status{font-size:10px;color:var(--green);margin-top:4px}
+/* BUTTONS */
+.btn{width:100%;padding:13px;border:none;border-radius:var(--rs);
+  font-size:12px;font-weight:700;font-family:var(--font-m);letter-spacing:.5px;
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:var(--gold-l)}
+.btn-sec{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
+.btn-sec:hover{border-color:var(--gold);color:var(--gold)}
+.btn-red{background:rgba(184,90,74,.12);border:1px solid rgba(184,90,74,.25);color:var(--red)}
+.btn-blue{background:rgba(74,155,184,.12);border:1px solid rgba(74,155,184,.25);color:var(--blue)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-sm{padding:8px 14px;font-size:10px;width:auto}
 
-.call-btn{
-  width:100%;padding:16px;border:none;border-radius:var(--radius);
-  font-size:13px;font-weight:700;font-family:var(--font-mono);letter-spacing:1px;
-  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;
-}
-.call-btn.primary{background:var(--gold);color:#000}
-.call-btn.primary:hover{background:var(--gold-light)}
-.call-btn.secondary{background:var(--bg3);border:1px solid var(--border2);color:var(--text2)}
-.call-btn.danger{background:rgba(184,90,74,.15);border:1px solid rgba(184,90,74,.3);color:var(--red)}
-.call-btn:disabled{opacity:.4;cursor:not-allowed}
+/* DISPATCHER */
+.disp-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:13px;display:flex;align-items:center;gap:11px}
+.disp-av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-m);font-weight:700;font-size:13px;flex-shrink:0;border:2px solid var(--border2)}
+.disp-name{font-size:13px;font-weight:600;margin-bottom:2px}
+.disp-role{font-size:9px;color:var(--text2);font-family:var(--font-m)}
+.disp-stat{font-size:9px;color:var(--green);margin-top:3px}
 
-/* ─── CALL INTERFACE ─── */
-.call-overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:100;
+/* CALL OVERLAY */
+.call-ov{position:fixed;inset:0;background:rgba(0,0,0,.96);z-index:100;
   display:none;flex-direction:column;align-items:center;justify-content:center;
-  max-width:480px;margin:0 auto;
-}
-.call-overlay.active{display:flex}
-.call-ring{
-  width:100px;height:100px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:36px;margin-bottom:24px;position:relative;
-}
-.call-ring::before,
-.call-ring::after{
-  content:'';position:absolute;inset:-8px;border-radius:50%;
-  border:1px solid var(--gold);opacity:.3;
-  animation:ring 2s ease-out infinite;
-}
+  max-width:480px;margin:0 auto;padding:20px}
+.call-ov.on{display:flex}
+.call-ring{width:88px;height:88px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:32px;margin-bottom:20px;position:relative}
+.call-ring::before,.call-ring::after{content:'';position:absolute;inset:-8px;border-radius:50%;
+  border:1px solid var(--gold);opacity:.3;animation:ring 2s ease-out infinite}
 .call-ring::after{animation-delay:.6s}
-@keyframes ring{0%{transform:scale(1);opacity:.3}100%{transform:scale(1.4);opacity:0}}
-.call-dispatcher-name{font-family:var(--font-display);font-size:22px;margin-bottom:4px}
-.call-subtitle{font-size:12px;color:var(--text2);font-family:var(--font-mono);letter-spacing:1px;margin-bottom:32px}
-.call-status{font-size:12px;color:var(--text2);margin-bottom:24px;min-height:20px;text-align:center}
+@keyframes ring{0%{transform:scale(1);opacity:.3}100%{transform:scale(1.5);opacity:0}}
+.call-name{font-family:var(--font-d);font-size:20px;margin-bottom:3px}
+.call-sub{font-size:10px;color:var(--text2);font-family:var(--font-m);letter-spacing:1px;margin-bottom:8px}
+.call-stat{font-size:11px;color:var(--text2);margin-bottom:16px;min-height:18px;text-align:center}
+.call-tx{width:100%;max-width:360px;max-height:220px;overflow-y:auto;
+  margin-bottom:16px;display:flex;flex-direction:column;gap:7px}
+.tx-line{padding:7px 11px;border-radius:7px;font-size:11px;line-height:1.5}
+.tx-ops{background:var(--bg3);border-left:2px solid var(--gold)}
+.tx-pilot{background:rgba(74,155,184,.08);border-right:2px solid var(--blue);text-align:right}
+.tx-who{font-size:8px;font-family:var(--font-m);color:var(--text3);margin-bottom:2px;letter-spacing:1px}
+.call-ctrl{display:flex;gap:10px;align-items:center}
+.cctrl{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:18px;transition:all .2s}
+.c-mic{background:var(--gold);color:#000}
+.c-mic.muted{background:var(--bg4);color:var(--text2)}
+.c-mic.live{background:var(--green);color:#fff;animation:pulse 1s infinite}
+.c-end{background:var(--red);color:#fff;width:60px;height:60px;font-size:22px}
+.c-sec{background:var(--bg4);color:var(--text2)}
+.mic-tip{font-size:9px;font-family:var(--font-m);color:var(--text3);margin-top:10px;text-align:center}
 
-.call-transcript{
-  width:100%;max-width:360px;max-height:200px;overflow-y:auto;
-  margin-bottom:20px;display:flex;flex-direction:column;gap:8px;
-  padding:0 16px;
-}
-.transcript-line{
-  padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.5;
-}
-.transcript-line.ops{background:var(--bg3);border-left:2px solid var(--gold);color:var(--text)}
-.transcript-line.pilot{background:rgba(74,155,184,.1);border-left:2px solid var(--blue);color:var(--text);text-align:right;border-left:none;border-right:2px solid var(--blue)}
-.transcript-speaker{font-size:9px;font-family:var(--font-mono);color:var(--text3);margin-bottom:3px;letter-spacing:1px}
+/* ACARS */
+.acars-hdr{padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.acars-flt{font-family:var(--font-m);font-size:12px;font-weight:700;color:var(--gold)}
+.acars-ph{font-size:9px;color:var(--text2);font-family:var(--font-m)}
+.acars-msgs{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:7px}
+.amsg{display:flex;flex-direction:column;gap:2px;max-width:92%}
+.amsg.from-ops{align-self:flex-start}
+.amsg.from-pilot{align-self:flex-end}
+.amsg-hdr{display:flex;align-items:center;gap:5px;font-size:8px;font-family:var(--font-m);color:var(--text3)}
+.amsg-hdr.r{justify-content:flex-end}
+.abub{padding:7px 11px;border-radius:7px;font-size:10px;font-family:var(--font-m);line-height:1.6}
+.from-ops .abub{background:var(--bg3);border:1px solid var(--border);border-top-left-radius:2px}
+.from-pilot .abub{background:rgba(184,151,62,.08);border:1px solid rgba(184,151,62,.18);
+  border-top-right-radius:2px;color:var(--gold)}
+.abub.urg{background:rgba(184,90,74,.08);border-color:rgba(184,90,74,.25);color:var(--red)}
+.abub.alt{background:rgba(196,122,58,.08);border-color:rgba(196,122,58,.25);color:var(--orange)}
+.abub.info{background:rgba(74,155,184,.08);border-color:rgba(74,155,184,.25);color:var(--blue)}
+.acode{display:inline-block;padding:1px 5px;border-radius:3px;
+  background:var(--bg4);font-size:8px;font-weight:700;margin-right:4px;color:var(--text2)}
+.acars-in{padding:9px 11px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0}
+.acars-row{display:flex;gap:7px;margin-bottom:7px}
+.asel{background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--rs);padding:7px 9px;font-size:10px;font-family:var(--font-m);font-weight:700;min-width:70px}
+.atxt{flex:1;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--rs);padding:7px 9px;font-size:10px;font-family:var(--font-m);outline:none;
+  text-transform:uppercase}
+.atxt::placeholder{text-transform:none;color:var(--text3)}
+.atxt:focus{border-color:var(--gold)}
+.asend{background:var(--gold);color:#000;border:none;border-radius:var(--rs);
+  padding:7px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-m)}
+.aquick{display:flex;gap:5px;flex-wrap:wrap}
+.qb{font-size:8px;font-family:var(--font-m);font-weight:700;
+  padding:3px 7px;border-radius:3px;border:1px solid var(--border2);
+  background:var(--bg4);color:var(--text2);cursor:pointer;transition:all .15s}
+.qb:hover{border-color:var(--gold);color:var(--gold)}
 
-.call-controls{display:flex;gap:12px;align-items:center}
-.call-ctrl-btn{
-  width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;font-size:20px;
-  transition:all .2s;
-}
-.ctrl-mic{background:var(--gold);color:#000}
-.ctrl-mic.muted{background:var(--bg4);color:var(--text2)}
-.ctrl-mic.listening{background:var(--green);color:#fff;animation:pulse 1s infinite}
-.ctrl-end{background:var(--red);color:#fff;width:64px;height:64px;font-size:24px}
-.ctrl-secondary{background:var(--bg4);color:var(--text2)}
-
-/* ─── ACARS PAGE ─── */
-.acars-header{
-  padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border);
-  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
-}
-.acars-flight{font-family:var(--font-mono);font-size:13px;font-weight:700;color:var(--gold)}
-.acars-phase{font-size:10px;color:var(--text2);font-family:var(--font-mono)}
-
-.acars-messages{
-  flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;
-}
-.acars-msg{
-  display:flex;flex-direction:column;gap:3px;
-  max-width:90%;
-}
-.acars-msg.from-ops{align-self:flex-start}
-.acars-msg.from-pilot{align-self:flex-end}
-.acars-msg-header{
-  display:flex;align-items:center;gap:6px;
-  font-size:9px;font-family:var(--font-mono);color:var(--text3);
-}
-.acars-msg-header.right{justify-content:flex-end}
-.acars-bubble{
-  padding:8px 12px;border-radius:8px;font-size:11px;
-  font-family:var(--font-mono);line-height:1.6;
-}
-.from-ops .acars-bubble{
-  background:var(--bg3);border:1px solid var(--border);
-  border-top-left-radius:2px;
-}
-.from-pilot .acars-bubble{
-  background:rgba(184,151,62,.1);border:1px solid rgba(184,151,62,.2);
-  border-top-right-radius:2px;color:var(--gold);
-}
-.acars-bubble.urgent{
-  background:rgba(184,90,74,.1);border-color:rgba(184,90,74,.3);color:var(--red);
-}
-.acars-bubble.alert{
-  background:rgba(196,122,58,.1);border-color:rgba(196,122,58,.3);color:var(--orange);
-}
-.acars-code{
-  display:inline-block;padding:1px 5px;border-radius:3px;
-  background:var(--bg4);font-size:9px;font-weight:700;margin-right:4px;
-}
-.urgent .acars-code{background:rgba(184,90,74,.2);color:var(--red)}
-
-.acars-input-area{
-  padding:10px 12px;background:var(--bg2);border-top:1px solid var(--border);
-  flex-shrink:0;
-}
-.acars-compose{
-  display:flex;gap:8px;margin-bottom:8px;
-}
-.acars-type-sel{
-  background:var(--bg3);border:1px solid var(--border);color:var(--text);
-  border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;
-  font-family:var(--font-mono);font-weight:700;min-width:80px;
-}
-.acars-text-input{
-  flex:1;background:var(--bg3);border:1px solid var(--border);
-  color:var(--text);border-radius:var(--radius-sm);padding:8px 10px;
-  font-size:11px;font-family:var(--font-mono);outline:none;
-  text-transform:uppercase;
-}
-.acars-text-input::placeholder{text-transform:none;color:var(--text3)}
-.acars-text-input:focus{border-color:var(--gold)}
-.acars-send-btn{
-  background:var(--gold);color:#000;border:none;border-radius:var(--radius-sm);
-  padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;
-  font-family:var(--font-mono);
-}
-.acars-quick{display:flex;gap:6px;flex-wrap:wrap}
-.quick-btn{
-  font-size:9px;font-family:var(--font-mono);font-weight:700;letter-spacing:.5px;
-  padding:4px 8px;border-radius:4px;border:1px solid var(--border2);
-  background:var(--bg4);color:var(--text2);cursor:pointer;transition:all .15s;
-}
-.quick-btn:hover{border-color:var(--gold);color:var(--gold)}
-
-/* ─── DOSSIER PAGE ─── */
-.route-display{
-  background:var(--bg2);border-radius:var(--radius);padding:14px;
-  display:flex;align-items:center;justify-content:space-between;
-  border:1px solid var(--border);
-}
-.route-ap{text-align:center}
-.route-icao{font-family:var(--font-mono);font-size:22px;font-weight:700;color:var(--text)}
-.route-city{font-size:10px;color:var(--text2);margin-top:2px}
-.route-arrow{
-  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 12px;
-}
-.route-line{
-  width:100%;height:1px;background:linear-gradient(90deg,var(--border),var(--gold),var(--border));
-  position:relative;
-}
-.route-plane{font-size:16px;margin-bottom:2px}
-.route-dur{font-size:9px;font-family:var(--font-mono);color:var(--text3)}
-
-.wx-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.wx-card{background:var(--bg3);border-radius:var(--radius-sm);padding:10px;border:1px solid var(--border)}
-.wx-icao{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--text3);margin-bottom:6px}
-.wx-val{font-size:11px;font-family:var(--font-mono);line-height:1.8}
-.wx-tag{color:var(--text3);font-size:10px}
-
-.pax-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 0;border-bottom:1px solid var(--border);
-}
+/* DOSSIER */
+.route-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:13px;display:flex;align-items:center;justify-content:space-between}
+.rap{text-align:center}
+.ricao{font-family:var(--font-m);font-size:20px;font-weight:700}
+.rcity{font-size:9px;color:var(--text2);margin-top:2px}
+.rarrow{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0 10px}
+.rline{width:100%;height:1px;background:linear-gradient(90deg,var(--border),var(--gold),var(--border))}
+.rplane{font-size:14px}
+.rdur{font-size:8px;font-family:var(--font-m);color:var(--text3)}
+.wx-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.wx-c{background:var(--bg3);border-radius:var(--rs);padding:9px;border:1px solid var(--border)}
+.wx-icao{font-family:var(--font-m);font-size:9px;font-weight:700;color:var(--text3);margin-bottom:5px}
+.wx-icon{font-size:18px;margin-bottom:4px}
+.wx-v{font-size:10px;font-family:var(--font-m);line-height:1.7}
+.wx-tag{color:var(--text3);font-size:9px}
+.pax-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
 .pax-item:last-child{border-bottom:none}
-.pax-seat{
-  width:28px;height:28px;border-radius:50%;background:var(--bg4);
+.pseat{width:26px;height:26px;border-radius:50%;background:var(--bg4);
   display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-family:var(--font-mono);font-weight:700;color:var(--text2);
-  flex-shrink:0;
-}
-.pax-seat.vip{background:rgba(184,151,62,.15);color:var(--gold);border:1px solid rgba(184,151,62,.3)}
-.pax-name{font-size:12px;font-weight:600}
-.pax-detail{font-size:10px;color:var(--text2);margin-top:1px}
-.pax-badge{
-  margin-left:auto;font-size:9px;padding:2px 7px;border-radius:3px;font-family:var(--font-mono);font-weight:700;
-}
-.pax-badge.vip{background:rgba(184,151,62,.15);color:var(--gold)}
-.pax-badge.special{background:rgba(74,155,184,.12);color:var(--blue)}
-
-.fuel-bar-wrap{margin-top:8px}
-.fuel-bar{height:6px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:4px}
+  font-size:9px;font-family:var(--font-m);font-weight:700;color:var(--text2);flex-shrink:0}
+.pseat.vip{background:rgba(184,151,62,.12);color:var(--gold);border:1px solid rgba(184,151,62,.25)}
+.pname{font-size:11px;font-weight:600}
+.pdet{font-size:9px;color:var(--text2);margin-top:1px}
+.pbadge2{margin-left:auto;font-size:8px;padding:2px 6px;border-radius:3px;font-family:var(--font-m);font-weight:700}
+.pbadge2.vip{background:rgba(184,151,62,.12);color:var(--gold)}
+.pbadge2.spec{background:rgba(74,155,184,.1);color:var(--blue)}
+.fuel-bar{height:5px;background:var(--bg4);border-radius:3px;overflow:hidden;margin-top:5px}
 .fuel-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--green),var(--gold))}
 
-/* ─── DUTY SETUP ─── */
-.duty-setup-overlay{
-  position:fixed;inset:0;background:var(--bg);z-index:200;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding:32px 24px;max-width:480px;margin:0 auto;
-}
-.duty-setup-logo{font-family:var(--font-display);font-size:32px;color:var(--text);margin-bottom:4px}
-.duty-setup-sub{font-size:10px;font-family:var(--font-mono);letter-spacing:3px;color:var(--gold);margin-bottom:40px}
-.form-group{width:100%;margin-bottom:16px}
-.form-label{font-size:9px;font-family:var(--font-mono);letter-spacing:1.5px;color:var(--text3);display:block;margin-bottom:6px;text-transform:uppercase}
-.form-input{
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  color:var(--text);border-radius:var(--radius-sm);padding:12px 14px;
-  font-size:13px;font-family:var(--font-mono);outline:none;transition:border-color .2s;
-}
-.form-input:focus{border-color:var(--gold)}
-select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A7880'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
-.time-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.start-duty-btn{
-  width:100%;padding:14px;margin-top:8px;
-  background:var(--gold);color:#000;border:none;border-radius:var(--radius);
-  font-size:13px;font-weight:700;font-family:var(--font-mono);letter-spacing:1px;
-  cursor:pointer;transition:all .2s;
-}
-.start-duty-btn:hover{background:var(--gold-light)}
+/* PHASE BAR */
+.phase-bar{padding:8px 14px;background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;gap:6px;flex-shrink:0}
+.ph-btn{flex:1;padding:7px 3px;border:1px solid var(--border2);border-radius:var(--rs);
+  background:var(--bg4);color:var(--text3);font-size:8px;font-family:var(--font-m);
+  font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .2s;text-align:center}
+.ph-btn.cur{background:rgba(90,158,111,.1);border-color:rgba(90,158,111,.25);color:var(--green)}
+.ph-btn.done{opacity:.3;cursor:default}
+.ph-btn.avail{color:var(--text2)}
+.ph-btn.avail:hover{border-color:var(--gold);color:var(--gold)}
+.ph-btn:disabled{opacity:.3;cursor:default}
 
-/* ─── PHASE CONTROLS ─── */
-.phase-controls{
-  padding:10px 16px;background:var(--bg2);border-top:1px solid var(--border);
-  display:flex;gap:8px;flex-shrink:0;
-}
-.phase-btn{
-  flex:1;padding:8px 4px;border:1px solid var(--border2);border-radius:var(--radius-sm);
-  background:var(--bg4);color:var(--text3);font-size:9px;font-family:var(--font-mono);
-  font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;text-align:center;
-}
-.phase-btn.current{background:rgba(90,158,111,.12);border-color:rgba(90,158,111,.3);color:var(--green)}
-.phase-btn.done{color:var(--text3);opacity:.4}
-.phase-btn.available{border-color:var(--border2);color:var(--text2)}
-.phase-btn.available:hover{border-color:var(--gold);color:var(--gold)}
+/* SETUP */
+.setup-ov{position:fixed;inset:0;background:var(--bg);z-index:200;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:28px 22px;max-width:480px;margin:0 auto}
+.setup-logo{font-family:var(--font-d);font-size:30px;margin-bottom:3px}
+.setup-sub{font-size:9px;font-family:var(--font-m);letter-spacing:3px;color:var(--gold);margin-bottom:36px}
+.fg{width:100%;margin-bottom:13px}
+.fl{font-size:8px;font-family:var(--font-m);letter-spacing:1px;color:var(--text3);
+  display:block;margin-bottom:5px;text-transform:uppercase}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+  border-radius:var(--rs);padding:11px 13px;font-size:13px;font-family:var(--font-m);
+  outline:none;transition:border-color .2s}
+.fi:focus{border-color:var(--gold)}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A7880'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:32px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.start-btn{width:100%;padding:13px;margin-top:6px;background:var(--gold);color:#000;
+  border:none;border-radius:var(--r);font-size:12px;font-weight:700;
+  font-family:var(--font-m);letter-spacing:1px;cursor:pointer;transition:all .2s}
+.start-btn:hover{background:var(--gold-l)}
+
+/* NOTIF TOAST */
+.toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);
+  background:var(--bg4);border:1px solid var(--border2);border-radius:var(--rs);
+  padding:8px 16px;font-size:11px;font-family:var(--font-m);
+  z-index:300;opacity:0;transition:opacity .3s;pointer-events:none;
+  max-width:90%;text-align:center}
+.toast.show{opacity:1}
+
+/* SOUND */
 </style>
 </head>
 <body>
 
-<!-- ═══ DUTY SETUP OVERLAY ═══ -->
-<div class="duty-setup-overlay" id="duty-setup">
-  <div class="duty-setup-logo">WABA EFB</div>
-  <div class="duty-setup-sub">Electronic Flight Bag</div>
-
-  <div class="form-group">
-    <label class="form-label">Prénom</label>
-    <input class="form-input" type="text" id="setup-firstname" placeholder="Thomas" autocomplete="given-name"/>
+<!-- SETUP -->
+<div class="setup-ov" id="setup">
+  <div class="setup-logo">WABA EFB</div>
+  <div class="setup-sub">ELECTRONIC FLIGHT BAG</div>
+  <div class="frow" style="width:100%;margin-bottom:13px">
+    <div class="fg" style="margin-bottom:0">
+      <label class="fl">Prénom</label>
+      <input class="fi" type="text" id="s-fn" placeholder="Thomas" autocomplete="given-name"/>
+    </div>
+    <div class="fg" style="margin-bottom:0">
+      <label class="fl">Nom</label>
+      <input class="fi" type="text" id="s-ln" placeholder="Leroux" autocomplete="family-name"/>
+    </div>
   </div>
-  <div class="form-group">
-    <label class="form-label">Nom</label>
-    <input class="form-input" type="text" id="setup-lastname" placeholder="Leroux" autocomplete="family-name"/>
-  </div>
-  <div class="form-group">
-    <label class="form-label">Rang</label>
-    <select class="form-input" id="setup-rank">
+  <div class="fg">
+    <label class="fl">Rang</label>
+    <select class="fi" id="s-rank">
       <option value="CPT">Commandant de bord (CPT)</option>
       <option value="FO">Copilote (F/O)</option>
     </select>
   </div>
-
-  <div class="form-group">
-    <label class="form-label">Qualification</label>
-    <select class="form-input" id="setup-ac">
+  <div class="fg">
+    <label class="fl">Qualification avion</label>
+    <select class="fi" id="s-ac">
       <option value="C750">Citation X — C750 (F-EVOK)</option>
       <option value="C700">Citation Longitude — C700 (F-EXZA)</option>
       <option value="B738">Boeing BBJ2 — B738 (F-LIMB)</option>
     </select>
   </div>
-
-  <div class="form-group">
-    <label class="form-label">Créneau de duty</label>
-    <div class="time-row">
-      <div>
-        <label class="form-label" style="margin-top:0">Début (UTC)</label>
-        <input class="form-input" type="time" id="setup-start" value="18:00"/>
-      </div>
-      <div>
-        <label class="form-label" style="margin-top:0">Fin (UTC)</label>
-        <input class="form-input" type="time" id="setup-end" value="02:00"/>
-      </div>
+  <div class="frow" style="width:100%">
+    <div class="fg" style="margin-bottom:0">
+      <label class="fl">Début duty (UTC)</label>
+      <input class="fi" type="time" id="s-start" value="18:00"/>
+    </div>
+    <div class="fg" style="margin-bottom:0">
+      <label class="fl">Fin duty (UTC)</label>
+      <input class="fi" type="time" id="s-end" value="02:00"/>
     </div>
   </div>
-
-  <button class="start-duty-btn" onclick="startDuty()">PRENDRE SON SERVICE →</button>
+  <button class="start-btn" onclick="startDuty()">PRENDRE SON SERVICE →</button>
 </div>
 
-<!-- ═══ MAIN APP ═══ -->
-<!-- Header -->
-<div class="efb-header">
-  <div class="efb-logo">
-    <div class="efb-logo-mark">EFB</div>
-    <div class="efb-logo-text">
-      <div class="efb-logo-title">WABA OPS</div>
-      <div class="efb-logo-sub">WEST ATLANTIC BUSINESS AVIATION</div>
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-mark">EFB</div>
+    <div>
+      <div class="hdr-title">WABA OPS</div>
+      <div class="hdr-sub">WEST ATLANTIC BUSINESS AVIATION</div>
     </div>
   </div>
-  <div class="efb-status">
-    <div class="status-dot" id="status-dot"></div>
-    <div class="status-time" id="utc-clock">--:--Z</div>
+  <div class="hdr-right">
+    <div class="dot" id="status-dot"></div>
+    <div class="clock" id="utc-clock">--:--Z</div>
   </div>
 </div>
 
-<!-- Duty bar -->
-<div class="duty-bar">
-  <div class="duty-info">
-    <div>
-      <div class="duty-tag">PILOT</div>
-      <div class="duty-val active" id="bar-pilot">—</div>
-    </div>
-    <div style="width:1px;height:28px;background:var(--border)"></div>
-    <div>
-      <div class="duty-tag">ACFT</div>
-      <div class="duty-val" id="bar-acft">—</div>
-    </div>
-    <div style="width:1px;height:28px;background:var(--border)"></div>
-    <div>
-      <div class="duty-tag">DUTY</div>
-      <div class="duty-val" id="bar-duty">—</div>
-    </div>
+<!-- DUTY BAR -->
+<div class="dbar">
+  <div class="dbar-info">
+    <div><div class="dtag">PILOT</div><div class="dval on" id="b-pilot">—</div></div>
+    <div class="dbar-sep"></div>
+    <div><div class="dtag">ACFT</div><div class="dval" id="b-acft">—</div></div>
+    <div class="dbar-sep"></div>
+    <div><div class="dtag">FLT</div><div class="dval" style="color:var(--gold)" id="b-flt">—</div></div>
+    <div class="dbar-sep"></div>
+    <div><div class="dtag">DUTY</div><div class="dval" id="b-duty">—</div></div>
   </div>
-  <div class="phase-badge" id="phase-badge">PRE-DUTY</div>
+  <div class="pbadge" id="phase-badge">STANDBY</div>
 </div>
 
-<!-- Tabs -->
-<div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('ops')" id="tab-ops">
-    <div class="tab-icon">📞</div>
-    <div class="tab-label">OPS</div>
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab on" onclick="switchTab('ops')" id="tab-ops">
+    <div class="tab-ic">📞</div><div class="tab-lb">OPS</div>
   </button>
-  <button class="tab-btn" onclick="switchTab('acars')" id="tab-acars">
-    <div class="tab-icon">📡</div>
-    <div class="tab-label">ACARS</div>
-    <div class="tab-badge" id="acars-badge" style="display:none">0</div>
+  <button class="tab" onclick="switchTab('acars')" id="tab-acars">
+    <div class="tab-ic">📡</div><div class="tab-lb">ACARS</div>
+    <div class="tbadge" id="acars-bdg" style="display:none">0</div>
   </button>
-  <button class="tab-btn" onclick="switchTab('dossier')" id="tab-dossier">
-    <div class="tab-icon">📋</div>
-    <div class="tab-label">DOSSIER</div>
+  <button class="tab" onclick="switchTab('dossier')" id="tab-dossier">
+    <div class="tab-ic">📋</div><div class="tab-lb">DOSSIER</div>
   </button>
 </div>
 
-<!-- ═══ PAGE OPS ═══ -->
-<div class="page active" id="page-ops">
-  <div class="page-inner">
-
-    <!-- Dispatcher du jour -->
-    <div class="dispatcher-card" id="dispatcher-card">
-      <div class="dispatcher-avatar" id="disp-avatar" style="background:rgba(184,151,62,.1);color:var(--gold)">ML</div>
+<!-- PAGE OPS -->
+<div class="page on" id="page-ops">
+  <div class="pi">
+    <div class="disp-card" id="disp-card">
+      <div class="disp-av" id="disp-av" style="background:rgba(184,151,62,.1);color:var(--gold)">ML</div>
       <div style="flex:1">
-        <div class="dispatcher-name" id="disp-name">Marc Lebrun</div>
-        <div class="dispatcher-role" id="disp-role">DISPATCH SENIOR · NANTES OPS CENTER</div>
-        <div class="dispatcher-status" id="disp-status">● En service</div>
+        <div class="disp-name" id="disp-name">Marc Lebrun</div>
+        <div class="disp-role" id="disp-role">DISPATCH SENIOR · NANTES OPS</div>
+        <div class="disp-stat" id="disp-stat">● En service</div>
       </div>
-      <div style="font-size:20px;cursor:pointer" onclick="showDispatcherTeam()" title="Équipe OPS">👥</div>
+      <div style="font-size:18px;cursor:pointer;color:var(--text3)" onclick="showTeam()">👥</div>
     </div>
 
-    <!-- Bouton d'appel principal -->
-    <button class="call-btn primary" id="main-call-btn" onclick="initiateCall('briefing')">
+    <button class="btn btn-gold" id="main-call-btn" onclick="initiateCall('briefing')">
       📞 APPELER LES OPS — BRIEFING
     </button>
 
-    <!-- Actions rapides -->
     <div class="card">
-      <div class="card-title">Actions rapides</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <button class="call-btn secondary" onclick="initiateCall('delay')" id="btn-delay" style="font-size:11px;padding:10px">
+      <div class="ctitle">Au sol — Appels disponibles</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <button class="btn btn-sec" id="btn-free" onclick="initiateCall('free')" style="font-size:10px;padding:9px">
+          📞 APPEL LIBRE — PARLER AUX OPS
+        </button>
+        <button class="btn btn-sec" id="btn-delay" onclick="initiateCall('delay')" style="font-size:10px;padding:9px">
           ⏱ DÉCLARER UN RETARD
         </button>
-        <button class="call-btn secondary" onclick="initiateCall('technical')" id="btn-tech" style="font-size:11px;padding:10px">
-          🔧 SIGNALER UN PROBLÈME TECHNIQUE
+        <button class="btn btn-sec" id="btn-tech" onclick="initiateCall('technical')" style="font-size:10px;padding:9px">
+          🔧 PROBLÈME TECHNIQUE
         </button>
-        <button class="call-btn secondary" onclick="initiateCall('client')" id="btn-client" style="font-size:11px;padding:10px">
-          👤 UPDATE CLIENT
+        <button class="btn btn-blue" id="btn-client" onclick="initiateCall('client')" style="font-size:10px;padding:9px">
+          👤 UPDATE CLIENT / PASSAGERS
         </button>
-        <button class="call-btn danger" onclick="initiateCall('emergency')" style="font-size:11px;padding:10px">
-          🚨 APPEL URGENCE OPS
+        <button class="btn btn-red" onclick="initiateCall('emergency')" style="font-size:10px;padding:9px">
+          🚨 URGENCE — APPEL PRIORITAIRE
         </button>
       </div>
     </div>
 
-    <!-- Historique appels -->
+    <div class="card" id="inflight-notice" style="display:none">
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:24px;margin-bottom:8px">✈️</div>
+        <div style="font-size:11px;font-family:var(--font-m);color:var(--blue);margin-bottom:4px">EN VOL — COMMUNICATION VOCALE INDISPONIBLE</div>
+        <div style="font-size:10px;color:var(--text2)">Utilisez l'onglet ACARS pour contacter les OPS</div>
+      </div>
+    </div>
+
     <div class="card">
-      <div class="card-title">Historique session</div>
-      <div id="call-history">
-        <div style="text-align:center;padding:16px;color:var(--text3);font-size:12px">
-          Aucun appel cette session
-        </div>
-      </div>
+      <div class="ctitle">Historique session</div>
+      <div id="call-hist"><div style="text-align:center;padding:14px;color:var(--text3);font-size:11px">Aucun appel cette session</div></div>
     </div>
-
   </div>
 </div>
 
-<!-- ═══ PAGE ACARS ═══ -->
+<!-- PAGE ACARS -->
 <div class="page" id="page-acars" style="overflow:hidden">
-  <div class="acars-header">
+  <div class="acars-hdr">
     <div>
-      <div class="acars-flight" id="acars-flight-no">WAB — —</div>
-      <div class="acars-phase" id="acars-phase-lbl">EN ATTENTE DUTY</div>
+      <div class="acars-flt" id="acars-fltno">WAB — —</div>
+      <div class="acars-ph" id="acars-phase">EN ATTENTE DUTY</div>
     </div>
-    <div style="font-size:10px;font-family:var(--font-mono);color:var(--text3)" id="acars-time">—</div>
+    <div style="font-size:9px;font-family:var(--font-m);color:var(--text3)" id="acars-time">—</div>
   </div>
-
-  <div class="acars-messages" id="acars-messages">
-    <div style="text-align:center;padding:24px 0;color:var(--text3);font-size:11px;font-family:var(--font-mono)">
+  <div class="acars-msgs" id="acars-msgs">
+    <div style="text-align:center;padding:28px 0;color:var(--text3);font-size:10px;font-family:var(--font-m)">
       ACARS SYSTEM READY<br>EN ATTENTE AFFECTATION VOL
     </div>
   </div>
-
-  <div class="acars-input-area">
-    <div class="acars-compose">
-      <select class="acars-type-sel" id="acars-type">
+  <div class="acars-in">
+    <div class="acars-row">
+      <select class="asel" id="acars-type">
         <option value="FLT">FLT</option>
         <option value="REQ">REQ</option>
         <option value="UPD">UPD</option>
@@ -538,791 +411,845 @@ select.form-input{appearance:none;background-image:url("data:image/svg+xml,%3Csv
         <option value="RDY">RDY</option>
         <option value="URG">URG</option>
         <option value="PIREP">PIREP</option>
+        <option value="OFFBLK">OFFBLK</option>
+        <option value="ONBLK">ONBLK</option>
       </select>
-      <input class="acars-text-input" id="acars-input" placeholder="Message..." maxlength="120"
+      <input class="atxt" id="acars-input" placeholder="Message..." maxlength="120"
              onkeydown="if(event.key==='Enter')sendAcars()"/>
-      <button class="acars-send-btn" onclick="sendAcars()">▶</button>
+      <button class="asend" onclick="sendAcars()">▶</button>
     </div>
-    <div class="acars-quick">
-      <button class="quick-btn" onclick="quickMsg('OFFBLK')">OFFBLK</button>
-      <button class="quick-btn" onclick="quickMsg('ONBLK')">ONBLK</button>
-      <button class="quick-btn" onclick="quickMsg('RDY')">READY</button>
-      <button class="quick-btn" onclick="quickMsg('DLA')">DELAY</button>
-      <button class="quick-btn" onclick="quickMsg('FUEL')">FUEL RPT</button>
-      <button class="quick-btn" onclick="quickMsg('PAX')">PAX RPT</button>
+    <div class="aquick">
+      <button class="qb" onclick="qMsg('OFFBLK')">OFFBLK</button>
+      <button class="qb" onclick="qMsg('ONBLK')">ONBLK</button>
+      <button class="qb" onclick="qMsg('RDY')">READY</button>
+      <button class="qb" onclick="qMsg('DLA')">DELAY</button>
+      <button class="qb" onclick="qMsg('FUEL')">FUEL RPT</button>
+      <button class="qb" onclick="qMsg('PAX')">PAX RPT</button>
+      <button class="qb" onclick="qMsg('WX')">REQ WX</button>
+      <button class="qb" onclick="qMsg('ETA')">ETA UPD</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ PAGE DOSSIER ═══ -->
+<!-- PAGE DOSSIER -->
 <div class="page" id="page-dossier">
-  <div class="page-inner">
-
-    <div id="dossier-empty" style="text-align:center;padding:40px 20px;color:var(--text3)">
-      <div style="font-size:40px;margin-bottom:12px">📋</div>
-      <div style="font-size:12px;font-family:var(--font-mono);line-height:1.8">
+  <div class="pi">
+    <div id="dos-empty" style="text-align:center;padding:40px 16px;color:var(--text3)">
+      <div style="font-size:36px;margin-bottom:10px">📋</div>
+      <div style="font-size:11px;font-family:var(--font-m);line-height:1.8">
         AUCUN DOSSIER DE VOL<br>
-        <span style="color:var(--text3);font-size:10px">Appelez les OPS pour recevoir votre rotation</span>
+        <span style="font-size:9px">Appelez les OPS pour recevoir votre rotation</span>
       </div>
     </div>
-
-    <div id="dossier-content" style="display:none;display:flex;flex-direction:column;gap:12px">
-
+    <div id="dos-content" style="display:none;flex-direction:column;gap:11px">
       <!-- Route -->
-      <div class="route-display">
-        <div class="route-ap">
-          <div class="route-icao" id="dos-dep">LFRS</div>
-          <div class="route-city" id="dos-dep-city">Nantes</div>
+      <div class="route-box">
+        <div class="rap"><div class="ricao" id="d-dep">—</div><div class="rcity" id="d-dep-city">—</div></div>
+        <div class="rarrow">
+          <div class="rplane">✈</div>
+          <div class="rline"></div>
+          <div class="rdur" id="d-dur">—</div>
         </div>
-        <div class="route-arrow">
-          <div class="route-plane">✈</div>
-          <div class="route-line"></div>
-          <div class="route-dur" id="dos-dur">—</div>
-        </div>
-        <div class="route-ap" style="text-align:right">
-          <div class="route-icao" id="dos-arr">—</div>
-          <div class="route-city" id="dos-arr-city">—</div>
-        </div>
+        <div class="rap" style="text-align:right"><div class="ricao" id="d-arr">—</div><div class="rcity" id="d-arr-city">—</div></div>
       </div>
-
       <!-- Infos vol -->
       <div class="card">
-        <div class="card-title">Informations vol</div>
-        <div class="card-row"><span class="card-lbl">N° de vol</span><span class="card-val" id="dos-fltno">—</span></div>
-        <div class="card-row"><span class="card-lbl">Appareil</span><span class="card-val" id="dos-acft">—</span></div>
-        <div class="card-row"><span class="card-lbl">Départ prévu</span><span class="card-val" id="dos-dep-time">—</span></div>
-        <div class="card-row"><span class="card-lbl">Arrivée prévue</span><span class="card-val" id="dos-arr-time">—</span></div>
-        <div class="card-row"><span class="card-lbl">Niveau de vol</span><span class="card-val" id="dos-fl">—</span></div>
-        <div class="card-row"><span class="card-lbl">Alternate</span><span class="card-val" id="dos-alt">—</span></div>
+        <div class="ctitle">Informations vol</div>
+        <div class="crow"><span class="clbl">N° de vol</span><span class="cval" id="d-fltno">—</span></div>
+        <div class="crow"><span class="clbl">Appareil</span><span class="cval" id="d-acft">—</span></div>
+        <div class="crow"><span class="clbl">Départ prévu</span><span class="cval" id="d-dep-t">—</span></div>
+        <div class="crow"><span class="clbl">Arrivée prévue</span><span class="cval" id="d-arr-t">—</span></div>
+        <div class="crow"><span class="clbl">Niveau de vol</span><span class="cval" id="d-fl">—</span></div>
+        <div class="crow"><span class="clbl">Distance</span><span class="cval" id="d-dist">—</span></div>
+        <div class="crow"><span class="clbl">Alternate</span><span class="cval" id="d-alt">—</span></div>
+        <div class="crow"><span class="clbl">Handling arrivée</span><span class="cval" id="d-handling">—</span></div>
+        <div class="crow"><span class="clbl">Parking</span><span class="cval" id="d-parking">—</span></div>
       </div>
-
       <!-- Météo -->
       <div class="card">
-        <div class="card-title">Météo</div>
+        <div class="ctitle">Météo</div>
         <div class="wx-grid">
-          <div class="wx-card">
-            <div class="wx-icao" id="wx-dep-icao">DEP —</div>
-            <div class="wx-val" id="wx-dep">—</div>
+          <div class="wx-c">
+            <div class="wx-icao" id="wx-dep-lbl">DEP —</div>
+            <div class="wx-icon" id="wx-dep-ic">⏳</div>
+            <div class="wx-v" id="wx-dep">Chargement...</div>
           </div>
-          <div class="wx-card">
-            <div class="wx-icao" id="wx-arr-icao">ARR —</div>
-            <div class="wx-val" id="wx-arr">—</div>
+          <div class="wx-c">
+            <div class="wx-icao" id="wx-arr-lbl">ARR —</div>
+            <div class="wx-icon" id="wx-arr-ic">⏳</div>
+            <div class="wx-v" id="wx-arr">Chargement...</div>
           </div>
         </div>
+        <div style="font-size:8px;color:var(--text3);margin-top:7px;font-family:var(--font-m)">
+          ⚠ Météo indicative — Consulter SIA/Météo France officiels
+        </div>
       </div>
-
       <!-- PAX -->
-      <div class="card" id="dos-pax-card">
-        <div class="card-title">Manifeste passagers</div>
-        <div id="dos-pax-list"></div>
+      <div class="card" id="d-pax-card">
+        <div class="ctitle">Manifeste passagers</div>
+        <div id="d-pax-list"></div>
       </div>
-
-      <!-- Carburant -->
+      <!-- Fuel -->
       <div class="card">
-        <div class="card-title">Plan carburant</div>
-        <div class="card-row"><span class="card-lbl">Trip fuel</span><span class="card-val" id="fuel-trip">—</span></div>
-        <div class="card-row"><span class="card-lbl">Contingence (5%)</span><span class="card-val" id="fuel-cont">—</span></div>
-        <div class="card-row"><span class="card-lbl">Alternate</span><span class="card-val" id="fuel-alt">—</span></div>
-        <div class="card-row"><span class="card-lbl">Réserve finale</span><span class="card-val" id="fuel-fin">—</span></div>
-        <div class="card-row" style="border-top:1px solid var(--border2);margin-top:4px;padding-top:10px">
-          <span class="card-lbl" style="font-weight:700">Total requis</span>
-          <span class="card-val" style="color:var(--gold)" id="fuel-tot">—</span>
+        <div class="ctitle">Plan carburant — EASA Part-NCC</div>
+        <div class="crow"><span class="clbl">Trip fuel</span><span class="cval" id="f-trip">—</span></div>
+        <div class="crow"><span class="clbl">Contingence (5%)</span><span class="cval" id="f-cont">—</span></div>
+        <div class="crow"><span class="clbl">Fuel alternate</span><span class="cval" id="f-alt">—</span></div>
+        <div class="crow"><span class="clbl">Réserve finale (30min)</span><span class="cval" id="f-res">—</span></div>
+        <div class="crow"><span class="clbl">Taxi</span><span class="cval" id="f-taxi">—</span></div>
+        <div class="crow" style="border-top:1px solid var(--border2);margin-top:3px;padding-top:8px">
+          <span class="clbl" style="font-weight:700">TOTAL REQUIS</span>
+          <span class="cval" style="color:var(--gold);font-size:13px" id="f-tot">—</span>
         </div>
-        <div class="fuel-bar-wrap">
-          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text3);font-family:var(--font-mono)">
-            <span>MINIMUM</span><span>OPTIMAL</span><span>MAX</span>
-          </div>
-          <div class="fuel-bar"><div class="fuel-fill" id="fuel-bar" style="width:65%"></div></div>
+        <div class="fuel-bar"><div class="fuel-fill" id="f-bar" style="width:65%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:8px;color:var(--text3);margin-top:3px;font-family:var(--font-m)">
+          <span>MIN</span><span>OPTIMAL</span><span>MAX CAP</span>
         </div>
       </div>
-
+      <!-- Notes terrain -->
+      <div class="card" id="d-notes-card" style="display:none">
+        <div class="ctitle">⚠ Notes terrain arrivée</div>
+        <div id="d-notes" style="font-size:11px;color:var(--orange);line-height:1.7"></div>
+      </div>
       <!-- SimBrief -->
-      <button class="call-btn primary" onclick="openSimBrief()" style="font-size:11px">
+      <button class="btn btn-gold" onclick="openSimBrief()" style="font-size:10px">
         ✈ OUVRIR PLAN VOL SIMBRIEF
       </button>
-
     </div>
   </div>
 </div>
 
-<!-- Phase controls -->
-<div class="phase-controls" id="phase-controls" style="display:none">
-  <button class="phase-btn done" id="ph-predep">PRE-DEP</button>
-  <button class="phase-btn current" id="ph-dep">DÉPART</button>
-  <button class="phase-btn available" id="ph-cruise" onclick="setPhase('cruise')">CROISIÈRE</button>
-  <button class="phase-btn available" id="ph-arr" onclick="setPhase('arrival')">ARRIVÉE</button>
-  <button class="phase-btn available" id="ph-onblk" onclick="setPhase('onblocks')">ON BLKS</button>
+<!-- PHASE BAR -->
+<div class="phase-bar" id="phase-bar" style="display:none">
+  <button class="ph-btn done" id="ph-0">PRE-DEP</button>
+  <button class="ph-btn cur" id="ph-1" onclick="setPhase(1)">DÉPART</button>
+  <button class="ph-btn avail" id="ph-2" onclick="setPhase(2)">CRUISE</button>
+  <button class="ph-btn avail" id="ph-3" onclick="setPhase(3)">ARRIVÉE</button>
+  <button class="ph-btn avail" id="ph-4" onclick="setPhase(4)">ON BLKS</button>
 </div>
 
-<!-- ═══ CALL OVERLAY ═══ -->
-<div class="call-overlay" id="call-overlay">
-  <div class="call-ring" id="call-avatar-ring">📞</div>
-  <div class="call-dispatcher-name" id="call-disp-name">Marc Lebrun</div>
-  <div class="call-subtitle" id="call-subtitle">WABA OPS CENTER · NANTES</div>
-  <div class="call-status" id="call-status">Connexion en cours...</div>
-
-  <div class="call-transcript" id="call-transcript"></div>
-
-  <div class="call-controls">
-    <button class="call-ctrl-btn ctrl-secondary" onclick="toggleSpeaker()" title="Haut-parleur">🔊</button>
-    <button class="call-ctrl-btn ctrl-end" onclick="endCall()" title="Raccrocher">📵</button>
-    <button class="call-ctrl-btn ctrl-mic" id="mic-btn" onclick="toggleMic()" title="Micro">🎤</button>
+<!-- CALL OVERLAY -->
+<div class="call-ov" id="call-ov">
+  <div class="call-ring" id="call-ring">📞</div>
+  <div class="call-name" id="call-name">—</div>
+  <div class="call-sub" id="call-sub">WABA OPS CENTER · NANTES</div>
+  <div class="call-stat" id="call-stat">Connexion...</div>
+  <div class="call-tx" id="call-tx"></div>
+  <div class="call-ctrl">
+    <button class="cctrl c-sec" onclick="toggleSpk()">🔊</button>
+    <button class="cctrl c-end" onclick="endCall()">📵</button>
+    <button class="cctrl c-mic" id="mic-btn" onclick="toggleMic()">🎤</button>
   </div>
-  <div style="font-size:10px;font-family:var(--font-mono);color:var(--text3);margin-top:12px" id="mic-status">
-    Appuyez sur 🎤 pour parler
-  </div>
+  <div class="mic-tip" id="mic-tip">Appuyez sur 🎤 pour parler</div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-const { createClient } = supabase;
-const db = createClient('https://ncawfnwgihmebztfrekg.supabase.co','sb_publishable_cF4czohNpkG2Nb4nYz45Ug_4JglChlU');
+// ═══════════════════════════════════════════════════════
+// DONNÉES
+// ═══════════════════════════════════════════════════════
+const AIRCRAFT_DATA = {
+  C750:{ name:'Citation X', reg:'F-EVOK', pax_max:8, range_nm:3460, cruise_kt:470, cruise_fl:'FL430', fuel_burn_kgh:1800, fuel_taxi:150, fuel_reserve:480, mtow:16375, fuel_cap:6000 },
+  C700:{ name:'Citation Longitude', reg:'F-EXZA', pax_max:8, range_nm:3500, cruise_kt:440, cruise_fl:'FL450', fuel_burn_kgh:1600, fuel_taxi:130, fuel_reserve:420, mtow:16920, fuel_cap:5800 },
+  B738:{ name:'Boeing BBJ2', reg:'F-LIMB', pax_max:28, range_nm:6600, cruise_kt:450, cruise_fl:'FL410', fuel_burn_kgh:4500, fuel_taxi:400, fuel_reserve:1200, mtow:79015, fuel_cap:26000 },
+};
+
+const AIRPORTS = [
+  {icao:'LFRS',city:'Nantes',country:'France',lat:47.153,lon:-1.608,handling:'Nantes Handling',parking:'M-07'},
+  {icao:'LFPB',city:'Paris',country:'France',lat:48.969,lon:2.441,handling:'Signature Aviation',parking:'G-12',notes:'PPR requis. Slot obligatoire. Curfew 23h.'},
+  {icao:'LFPO',city:'Paris',country:'France',lat:48.723,lon:2.379,handling:'Alyzia',parking:'T2-Apron',notes:'Curfew 23h30-06h.'},
+  {icao:'LFMN',city:'Nice',country:'France',lat:43.658,lon:7.216,handling:'Jet Aviation Nice',parking:'GAT',notes:'Mistral possible.'},
+  {icao:'LFML',city:'Marseille',country:'France',lat:43.439,lon:5.221,handling:'Euro Aviation',parking:'Piste 31R'},
+  {icao:'LFLL',city:'Lyon',country:'France',lat:45.726,lon:5.081,handling:'Swissport Lyon',parking:'GA Nord'},
+  {icao:'LFBO',city:'Toulouse',country:'France',lat:43.629,lon:1.364,handling:'Toulouse Handling',parking:'Piste 14L'},
+  {icao:'LFBD',city:'Bordeaux',country:'France',lat:44.828,lon:-0.716,handling:'Bordeaux Handling',parking:'GA Est'},
+  {icao:'LFKJ',city:'Ajaccio',country:'France',lat:41.924,lon:8.803,handling:'Corsica Handling',parking:'GA',notes:'Relief proche. Vent NW.'},
+  {icao:'LFKB',city:'Bastia',country:'France',lat:42.553,lon:9.484,handling:'Bastia Handling',parking:'GA'},
+  {icao:'EGLF',city:'Farnborough',country:'UK',lat:51.278,lon:-0.776,handling:'Signature Aviation',parking:'Terminal GA',notes:'PPR obligatoire. Curfew 23h-07h. Non-Schengen.'},
+  {icao:'EGKB',city:'Londres',country:'UK',lat:51.331,lon:0.033,handling:'Inflite Jet Centre',parking:'IFC',notes:'PPR requis. Non-Schengen.'},
+  {icao:'EGPH',city:'Édimbourg',country:'UK',lat:55.950,lon:-3.373,handling:'Signature',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'LSZH',city:'Zurich',country:'Suisse',lat:47.465,lon:8.549,handling:'Jet Aviation',parking:'Jet Aviation FBO',notes:'Curfew 23h30. Altitude 1416ft.'},
+  {icao:'LSGG',city:'Genève',country:'Suisse',lat:46.238,lon:6.109,handling:'Jet Aviation Genève',parking:'Jet Aviation',notes:'Hub diplomatique.'},
+  {icao:'LSZA',city:'Lugano',country:'Suisse',lat:46.004,lon:8.911,handling:'Lugano Handling',parking:'GA',notes:'Piste courte 1414m. PPR.'},
+  {icao:'LEMD',city:'Madrid',country:'Espagne',lat:40.494,lon:-3.567,handling:'Iberia Airport Services',parking:'T4S',notes:'Altitude 2000ft.'},
+  {icao:'LEBL',city:'Barcelone',country:'Espagne',lat:41.297,lon:2.079,handling:'Swissport BCN',parking:'GA'},
+  {icao:'LEMG',city:'Málaga',country:'Espagne',lat:36.675,lon:-4.499,handling:'Swissport AGP',parking:'GA'},
+  {icao:'LEPA',city:'Palma',country:'Espagne',lat:39.552,lon:2.739,handling:'Swissport PMI',parking:'GA'},
+  {icao:'LEBB',city:'Bilbao',country:'Espagne',lat:43.301,lon:-2.911,handling:'Bilbao Handling',parking:'GA'},
+  {icao:'LIRF',city:'Rome',country:'Italie',lat:41.800,lon:12.239,handling:'Aviapartner FCO',parking:'GA'},
+  {icao:'LIRA',city:'Rome',country:'Italie',lat:41.799,lon:12.595,handling:'ADR Handling',parking:'GA',notes:'Curfew 23h-06h. PPR.'},
+  {icao:'LIMC',city:'Milan',country:'Italie',lat:45.631,lon:8.728,handling:'Aviapartner MXP',parking:'GA'},
+  {icao:'LIML',city:'Milan',country:'Italie',lat:45.446,lon:9.277,handling:'SEA Handling',parking:'GA',notes:'Slot. Curfew 23h.'},
+  {icao:'LIPZ',city:'Venise',country:'Italie',lat:45.505,lon:12.352,handling:'Marco Polo Handling',parking:'GA'},
+  {icao:'LICJ',city:'Palerme',country:'Italie',lat:38.180,lon:13.091,handling:'Gesap',parking:'GA'},
+  {icao:'EBBR',city:'Bruxelles',country:'Belgique',lat:50.901,lon:4.484,handling:'Aviapartner BRU',parking:'GA',notes:'Curfew 23h.'},
+  {icao:'EBAW',city:'Anvers',country:'Belgique',lat:51.189,lon:4.460,handling:'Abelag Aviation',parking:'Abelag',notes:'PPR. Piste courte.'},
+  {icao:'EHAM',city:'Amsterdam',country:'Pays-Bas',lat:52.309,lon:4.764,handling:'Aviapartner AMS',parking:'GA',notes:'Curfew. Slot.'},
+  {icao:'EDDF',city:'Francfort',country:'Allemagne',lat:50.033,lon:8.571,handling:'Fraport',parking:'GA',notes:'Curfew strict 23h-05h.'},
+  {icao:'EDDM',city:'Munich',country:'Allemagne',lat:48.354,lon:11.786,handling:'Aviapartner MUC',parking:'GA',notes:'Altitude 1487ft.'},
+  {icao:'EDDB',city:'Berlin',country:'Allemagne',lat:52.367,lon:13.503,handling:'Swissport BER',parking:'GA'},
+  {icao:'LPPT',city:'Lisbonne',country:'Portugal',lat:38.781,lon:-9.136,handling:'Groundforce LIS',parking:'GA'},
+  {icao:'LPMA',city:'Funchal',country:'Portugal',lat:32.698,lon:-16.774,handling:'Groundforce Madeira',parking:'GA',notes:'TERRAIN REMARQUABLE. Piste sur pilotis. Vents catabatiques.'},
+  {icao:'LGAV',city:'Athènes',country:'Grèce',lat:37.936,lon:23.945,handling:'Swissport ATH',parking:'GA'},
+  {icao:'LGMK',city:'Mykonos',country:'Grèce',lat:37.435,lon:25.348,handling:'Mykonos Handling',parking:'GA',notes:'Piste courte. Meltemi.'},
+  {icao:'LGST',city:'Skiathos',country:'Grèce',lat:39.177,lon:23.503,handling:'Skiathos Handling',parking:'GA',notes:'TERRAIN REMARQUABLE. Piste 1627m au-dessus de la mer.'},
+  {icao:'LOWI',city:'Innsbruck',country:'Autriche',lat:47.260,lon:11.344,handling:'INN Handling',parking:'GA',notes:'ALPIN. Qualification montagne recommandée. Foehn possible.'},
+  {icao:'LOWW',city:'Vienne',country:'Autriche',lat:48.110,lon:16.570,handling:'Aviapartner VIE',parking:'GA'},
+  {icao:'ENGM',city:'Oslo',country:'Norvège',lat:60.194,lon:11.100,handling:'Aviator OSL',parking:'GA',notes:'Altitude 681ft. Givrage possible. Non-Schengen.'},
+  {icao:'ENTC',city:'Tromsø',country:'Norvège',lat:69.683,lon:18.919,handling:'Aviator TOS',parking:'GA',notes:'ARCTIQUE. 69°N. Aurores boréales. Non-Schengen.'},
+  {icao:'ESSA',city:'Stockholm',country:'Suède',lat:59.652,lon:17.919,handling:'Aviator ARN',parking:'GA'},
+  {icao:'EKCH',city:'Copenhague',country:'Danemark',lat:55.618,lon:12.651,handling:'Aviator CPH',parking:'GA',notes:'Curfew 23h.'},
+  {icao:'OMDB',city:'Dubai',country:'UAE',lat:25.253,lon:55.366,handling:'dnata',parking:'Business Aviation Terminal',notes:'Chaleur extrême été. Non-Schengen. Réglementation islamique.'},
+  {icao:'OMAA',city:'Abu Dhabi',country:'UAE',lat:24.433,lon:54.651,handling:'Abu Dhabi Aviation',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'OTBD',city:'Doha',country:'Qatar',lat:25.273,lon:51.608,handling:'Qatar Aviation Services',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'GMMN',city:'Casablanca',country:'Maroc',lat:33.368,lon:-7.590,handling:'RAM Handling',parking:'GA',notes:'Non-Schengen.'},
+  {icao:'KTEB',city:'New York',country:'USA',lat:40.850,lon:-74.061,handling:'Signature Aviation TEB',parking:'Signature',notes:'APIS requis 60min. Non-Schengen. MTOW 100 000lbs.'},
+  {icao:'KMIA',city:'Miami',country:'USA',lat:25.796,lon:-80.287,handling:'Signature MIA',parking:'GA',notes:'Non-Schengen. APIS requis.'},
+];
+
+const ROUTES = {
+  C750:['LFPB','EGLF','EGKB','EBBR','EBAW','LFMN','LFML','LFLL','LFBO','LFBD','LFKJ','LFKB','LSZH','LSGG','LSZA','LIRF','LIRA','LIMC','LIML','LIPZ','LICJ','LEMD','LEBL','LEMG','LEPA','LEBB','EHAM','EDDF','EDDM','EDDB','LPPT','LPMA','LGAV','LGMK','LGST','LOWI','LOWW','ENGM','ESSA','EKCH'],
+  C700:['LFPB','EGLF','EGKB','EBBR','EBAW','LFMN','LFML','LFLL','LFBO','LFBD','LFKJ','LFKB','LSZH','LSGG','LSZA','LIRF','LIRA','LIMC','LIML','LIPZ','LICJ','LEMD','LEBL','LEMG','LEPA','LEBB','EHAM','EDDF','EDDM','EDDB','LPPT','LPMA','LGAV','LGMK','LGST','LOWI','LOWW','ENGM','ENTC','ESSA','EKCH'],
+  B738:['LFPB','EGLF','LSZH','LSGG','LIRF','LIMC','LEMD','EHAM','EDDF','EDDM','LGAV','LOWW','ENGM','ESSA','EKCH','LPPT','LPMA','OMDB','OMAA','OTBD','GMMN','KTEB','KMIA'],
+};
+
+const PAX_POOL = [
+  ['François Dumont','PDG',true],['Sophie Martin','DG',true],
+  ['Pierre Leblanc','Avocat',false],['Claire Rousseau','Consultante',false],
+  ['Antoine Ferrandez','Architecte',false],['Jean-Pierre Aubert','Banquier',true],
+  ['Marie Delacroix','Chanteuse',true],['Thomas Nguyen','Ingénieur',false],
+  ['Sarah Cohen','Journaliste',false],['Hassan Al-Rashid','Cheikh',true],
+  ['Victoria Sinclair','CEO',true],['Marco Ricci','Designer',false],
+  ['Natasha Volkov','Diplomate',true],['Philippe Arnaud','Entrepreneur',true],
+  ['Céline Dupont','Avocate',false],['Luca Ferrari','Chef étoilé',false],
+  ['Amira Al-Said','Princesse',true],['David Kim','Investisseur',true],
+];
+
+const SPECIALS = ['Végétarien','Casher','Halal','Sans gluten','Allergie noix',
+  'Champagne à bord','Température fraîche','Journaux français','Confidentialité max','Fauteuil roulant arrivée'];
+
+const DISPATCHERS = [
+  {id:'marc',name:'Marc Lebrun',ini:'ML',col:'#B8973E',bg:'rgba(184,151,62,.1)',role:'Dispatch Senior',shift:[20,8],style:'calme professionnel 20ans experience. Tutoie les commandants. Dit "Voilà" souvent.',greet:'Bonsoir, dispatch WABA, Marc à l appareil.',greet_en:'Good evening, WABA dispatch, Marc speaking.'},
+  {id:'sophie',name:'Sophie Aubert',ini:'SA',col:'#4A9BB8',bg:'rgba(74,155,184,.1)',role:'Planification Ops',shift:[6,20],style:'efficace précise parle vite quand chargée. Très organisée.',greet:'Sophie Aubert, dispatch WABA, j écoute.',greet_en:'Sophie Aubert, WABA dispatch, go ahead.'},
+  {id:'kevin',name:'Kevin Diallo',ini:'KD',col:'#5A9E6F',bg:'rgba(90,158,111,.1)',role:'Dispatch Nuit',shift:[22,6],style:'décontracté mais sérieux. Blague parfois. Très réactif la nuit.',greet:'Kev au dispatch, quoi de neuf ?',greet_en:'Kevin at dispatch, go ahead Captain.'},
+  {id:'isabelle',name:'Isabelle Morin',ini:'IM',col:'#C47A3A',bg:'rgba(196,122,58,.1)',role:'Senior Urgences',shift:[6,20],style:'rassurante et ferme. 30ans expérience. Très calme en urgence.',greet:'Isabelle Morin, dispatch. Je vous écoute.',greet_en:'Isabelle Morin, WABA dispatch. Go ahead.'},
+  {id:'thomas',name:'Thomas Keller',ini:'TK',col:'#7A7880',bg:'rgba(122,120,128,.1)',role:'Spécialiste Météo',shift:[6,20],style:'jeune enthousiaste très fort en météo. Parle beaucoup des conditions.',greet:'Thomas Keller, dispatch météo WABA !',greet_en:'Thomas Keller, WABA weather dispatch!'},
+  {id:'antoine',name:'Antoine Ferrara',ini:'AF',col:'#B85A4A',bg:'rgba(184,90,74,.1)',role:'ACARS & En vol',shift:[14,22],style:'chaleureux ancien navigant converti. Passion pour l aviation.',greet:'Antoine, dispatch WABA. Bonsoir Commandant.',greet_en:'Antoine, WABA dispatch. Good evening Captain.'},
+  {id:'hind',name:'Hind Amrani',ini:'HA',col:'#4A9BB8',bg:'rgba(74,155,184,.08)',role:'VIP & International',shift:[8,20],style:'multilingue très professionnelle spécialiste clients VIP. Switch FR/EN naturellement.',greet:'Dispatch WABA, Hind Amrani, bonsoir.',greet_en:'WABA dispatch, Hind Amrani, good evening.'},
+  {id:'laurent',name:'Laurent Szabo',ini:'LS',col:'#B8973E',bg:'rgba(184,151,62,.08)',role:'Ex-Commandant · Briefings',shift:[6,18],style:'ancien pilote de ligne très complice avec les équipages. Donne conseils techniques non demandés.',greet:'Laurent au dispatch. Content de vous avoir ce soir.',greet_en:'Laurent at dispatch. Glad to have you tonight Captain.'},
+  {id:'nathalie',name:'Nathalie Roux',ini:'NR',col:'#9A9899',bg:'rgba(154,152,153,.1)',role:'Réglementation Ops',shift:[8,20],style:'très carrée sur les procédures. Précise. Rappelle les règles EASA si nécessaire.',greet:'Nathalie Roux, opérations WABA. Bonjour.',greet_en:'Nathalie Roux, WABA operations. Good day.'},
+  {id:'claire',name:'Claire Beaumont',ini:'CB',col:'#7A7880',bg:'rgba(122,120,128,.08)',role:'Dispatch Support',shift:[8,18],style:'nouvelle appliquée. Cherche confirmation auprès collègues. Sympathique mais parfois hésitante.',greet:'Euh... dispatch WABA, Claire à l appareil, bonjour !',greet_en:'WABA dispatch, Claire speaking, hello!'},
+];
+
+const EASA = `RÉGLEMENTATION EASA Part-NCC applicable à WABA:
+FTL: FDP max 14h, repos min 12h, 100h vol/28j, 900h/an. Duty nuit (02-05h locale): -1h FDP max.
+CARBURANT NCC.OP.151: Trip+Contingence 5%+Alternate+Réserve finale 30min+Taxi. Extra à discrétion commandant.
+MÉTÉO MINIMUMS: CAT I: DH200ft RVR550m. CAT II: DH100ft RVR300m. Alternate requis si météo <minimums+1h.
+MTOW: C750=16375kg, C700=16920kg, B738=79015kg.
+URGENCES: Dépressurisation→O2+descente FL100. TCAS RA→suivre RA priorité sur ATC. GPWS→thrust max pitch max.
+PIC: Autorité finale. Peut refuser vol. Carburant extra sans justification. Peut déclarer urgence.`;
 
 // ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
-const STATE = {
-  pilot: null, aircraft: null, dutyStart: null, dutyEnd: null,
-  mode: 'normal', phase: 'pre-duty', dispatcher: null,
-  flight: null, callType: null, callActive: false,
-  acarsUnread: 0, micActive: false, recognition: null,
+const S = {
+  pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null,
+  mode:'normal', phase:0, dispatcher:null,
+  currentFlight:null, sessionFlights:[], callType:null, callActive:false,
+  inFlight:false, acarsUnread:0, micActive:false, recognition:null,
+  convHistory:[],
 };
 
 // ═══════════════════════════════════════════════════════
-// DISPATCHERS
+// UTILS
 // ═══════════════════════════════════════════════════════
-const DISPATCHERS = [
-  { id:'marc', name:'Marc Lebrun', initials:'ML', color:'#B8973E', bg:'rgba(184,151,62,.1)',
-    role:'Dispatch Senior', shift:'jour', lang:'fr', style:'calme et professionnel, 20 ans de metier, tutoie les commandants qu il connait bien',
-    greeting:'Bonsoir, dispatch WABA, Marc a l appareil.',
-    en_greeting:'Good evening, WABA dispatch, Marc speaking.' },
-  { id:'sophie', name:'Sophie Aubert', initials:'SA', color:'#4A9BB8', bg:'rgba(74,155,184,.1)',
-    role:'Planification Ops', shift:'jour', lang:'fr', style:'efficace et precise, parle vite quand elle est chargee, tres organisee',
-    greeting:'Sophie Aubert, dispatch WABA, j ecoute.',
-    en_greeting:'Sophie Aubert, WABA dispatch, go ahead.' },
-  { id:'kevin', name:'Kevin Diallo', initials:'KD', color:'#5A9E6F', bg:'rgba(90,158,111,.1)',
-    role:'Dispatch Nuit', shift:'nuit', lang:'fr', style:'decontracte mais serieux, blague parfois, tres reactif la nuit',
-    greeting:'Kev au dispatch, quoi de neuf ?',
-    en_greeting:'Kevin at dispatch, go ahead Captain.' },
-  { id:'isabelle', name:'Isabelle Morin', initials:'IM', color:'#C47A3A', bg:'rgba(196,122,58,.1)',
-    role:'Senior Urgences', shift:'jour', lang:'fr', style:'rassurante et ferme, 30 ans experience, tres calme en urgence',
-    greeting:'Isabelle Morin, dispatch. Je vous ecoute.',
-    en_greeting:'Isabelle Morin, WABA dispatch. Go ahead.' },
-  { id:'thomas', name:'Thomas Keller', initials:'TK', color:'#7A7880', bg:'rgba(122,120,128,.1)',
-    role:'Specialiste Meteo', shift:'jour', lang:'fr', style:'jeune et enthousiaste, tres fort en meteo, parle beaucoup',
-    greeting:'Thomas Keller, dispatch meteo WABA !',
-    en_greeting:'Thomas Keller, WABA weather dispatch !' },
-  { id:'antoine', name:'Antoine Ferrara', initials:'AF', color:'#B85A4A', bg:'rgba(184,90,74,.1)',
-    role:'ACARS & En vol', shift:'nuit', lang:'fr', style:'chaleureux, ancien navigant converti, passion pour l aviation',
-    greeting:'Antoine, dispatch WABA. Bonsoir Commandant.',
-    en_greeting:'Antoine, WABA dispatch. Good evening Captain.' },
-  { id:'hind', name:'Hind Amrani', initials:'HA', color:'#4A9BB8', bg:'rgba(74,155,184,.08)',
-    role:'VIP & International', shift:'jour', lang:'both', style:'multilingue, tres professionnelle, specialiste clients VIP',
-    greeting:'Dispatch WABA, Hind Amrani, bonsoir.',
-    en_greeting:'WABA dispatch, Hind Amrani, good evening.' },
-  { id:'laurent', name:'Laurent Szabo', initials:'LS', color:'#B8973E', bg:'rgba(184,151,62,.08)',
-    role:'Ex-Commandant · Briefings', shift:'jour', lang:'fr', style:'ancien pilote de ligne, tres complice avec les equipages, expertise technique elevee',
-    greeting:'Laurent au dispatch. Content de vous avoir ce soir.',
-    en_greeting:'Laurent at dispatch. Glad to have you tonight Captain.' },
-  { id:'nathalie', name:'Nathalie Roux', initials:'NR', color:'#9A9899', bg:'rgba(154,152,153,.1)',
-    role:'Reglementation Ops', shift:'jour', lang:'fr', style:'tres carree sur les procedures, precise, rappelle les regles si necessaire',
-    greeting:'Nathalie Roux, operations WABA. Bonjour.',
-    en_greeting:'Nathalie Roux, WABA operations. Good day.' },
-  { id:'claire', name:'Claire Beaumont', initials:'CB', color:'#7A7880', bg:'rgba(122,120,128,.08)',
-    role:'Dispatch Support', shift:'jour', lang:'fr', style:'nouvelle, appliquee, cherche confirmation aupres de ses collegues, sympathique',
-    greeting:'Euh... dispatch WABA, Claire a l appareil, bonjour !',
-    en_greeting:'WABA dispatch, Claire speaking, hello !' },
-];
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+const $=id=>document.getElementById(id);
+function fmt2(n){return String(n).padStart(2,'0')}
+function utcNow(){const n=new Date();return fmt2(n.getUTCHours())+':'+fmt2(n.getUTCMinutes())+'Z'}
+function fmtDur(min){return `${Math.floor(min/60)}h${fmt2(min%60)}`}
 
-function getDispatcherForShift() {
-  const h = new Date().getUTCHours();
-  const isNight = h >= 20 || h < 8;
-  const pool = DISPATCHERS.filter(d => d.shift === (isNight ? 'nuit' : 'jour'));
-  return pool[Math.floor(Math.random() * pool.length)];
+function showToast(msg, dur=3000){
+  const t=$('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
 }
 
-// ═══════════════════════════════════════════════════════
-// UTC CLOCK
-// ═══════════════════════════════════════════════════════
-function updateClock() {
-  const now = new Date();
-  const h = String(now.getUTCHours()).padStart(2,'0');
-  const m = String(now.getUTCMinutes()).padStart(2,'0');
-  document.getElementById('utc-clock').textContent = h + ':' + m + 'Z';
+function distNM(lat1,lon1,lat2,lon2){
+  const R=3440.065,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
-setInterval(updateClock, 1000);
-updateClock();
+
+function getAP(icao){return AIRPORTS.find(a=>a.icao===icao)}
+
+// ═══════════════════════════════════════════════════════
+// CLOCK
+// ═══════════════════════════════════════════════════════
+setInterval(()=>{$('utc-clock').textContent=utcNow()},1000);
+$('utc-clock').textContent=utcNow();
 
 // ═══════════════════════════════════════════════════════
 // DUTY SETUP
 // ═══════════════════════════════════════════════════════
-function startDuty() {
-  const firstname = document.getElementById('setup-firstname').value.trim();
-  const lastname = document.getElementById('setup-lastname').value.trim();
-  const rank = document.getElementById('setup-rank').value;
-  const ac = document.getElementById('setup-ac').value;
-  const start = document.getElementById('setup-start').value;
-  const end = document.getElementById('setup-end').value;
-  if(!firstname || !lastname) { alert('Renseignez votre prénom et nom'); return; }
-
-  const pilotName = rank + ' ' + firstname + ' ' + lastname;
-  STATE.pilot = pilotName;
-  STATE.rank = rank;
-  STATE.aircraft = ac;
-  STATE.dutyStart = start;
-  STATE.dutyEnd = end;
-  // Mode aléatoire — pondéré
-  const modeRoll = Math.random();
-  STATE.mode = modeRoll < 0.50 ? 'normal' : modeRoll < 0.80 ? 'challenging' : 'fullops';
-  STATE.dispatcher = getDispatcherForShift();
-
-  // Update UI
-  document.getElementById('bar-pilot').textContent = rank + ' ' + lastname;
-  document.getElementById('bar-acft').textContent = ac;
-  document.getElementById('bar-duty').textContent = start + '→' + end;
-  document.getElementById('status-dot').classList.add('active');
-
-  // Set dispatcher
-  updateDispatcherUI();
-
-  // Update call button
-  document.getElementById('main-call-btn').textContent = '📞 APPELER LES OPS — BRIEFING';
-  document.getElementById('main-call-btn').onclick = () => initiateCall('briefing');
-
-  // Hide setup
-  document.getElementById('duty-setup').style.display = 'none';
-
-  // Notify via ACARS
-  setTimeout(() => {
-    addAcarsMessage('ops', 'INFO', `WABA OPS — DUTY CONFIRMED ${start}-${end}Z // ${STATE.dispatcher.name.toUpperCase()} EN SERVICE // BON VOL`);
-  }, 2000);
+function startDuty(){
+  const fn=$('s-fn').value.trim(), ln=$('s-ln').value.trim();
+  if(!fn||!ln){alert('Renseignez votre prénom et nom');return;}
+  S.pilot=fn+' '+ln;
+  S.rank=$('s-rank').value;
+  S.aircraft=$('s-ac').value;
+  S.dutyStart=$('s-start').value;
+  S.dutyEnd=$('s-end').value;
+  // Mode aléatoire
+  const r=Math.random();
+  S.mode=r<0.5?'normal':r<0.8?'challenging':'fullops';
+  // Dispatcher selon heure
+  S.dispatcher=getDispatcher();
+  $('setup').style.display='none';
+  $('status-dot').className='dot on';
+  $('b-pilot').textContent=S.rank+' '+ln;
+  $('b-acft').textContent=S.aircraft;
+  $('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
+  updateDispUI();
+  // ACARS welcome
+  setTimeout(()=>{
+    addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE // MODE: ${S.mode.toUpperCase()}`);
+  },2000);
 }
 
-function updateDispatcherUI() {
-  const d = STATE.dispatcher;
-  document.getElementById('disp-avatar').textContent = d.initials;
-  document.getElementById('disp-avatar').style.background = d.bg;
-  document.getElementById('disp-avatar').style.color = d.color;
-  document.getElementById('disp-name').textContent = d.name;
-  document.getElementById('disp-role').textContent = d.role.toUpperCase() + ' · NANTES OPS';
-  document.getElementById('disp-status').textContent = '● En service';
-}
-
-// ═══════════════════════════════════════════════════════
-// TAB NAVIGATION
-// ═══════════════════════════════════════════════════════
-function switchTab(tab) {
-  ['ops','acars','dossier'].forEach(t => {
-    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
-    document.getElementById('page-'+t).classList.toggle('active', t===tab);
+function getDispatcher(){
+  const h=new Date().getUTCHours();
+  const avail=DISPATCHERS.filter(d=>{
+    const[s,e]=d.shift;
+    return s>e ? (h>=s||h<e) : (h>=s&&h<e);
   });
-  if(tab === 'acars') {
-    STATE.acarsUnread = 0;
-    document.getElementById('acars-badge').style.display = 'none';
+  return avail.length ? avail[Math.floor(Math.random()*avail.length)] : DISPATCHERS[0];
+}
+
+function updateDispUI(){
+  const d=S.dispatcher;
+  $('disp-av').textContent=d.ini;
+  $('disp-av').style.background=d.bg;
+  $('disp-av').style.color=d.col;
+  $('disp-name').textContent=d.name;
+  $('disp-role').textContent=d.role.toUpperCase()+' · NANTES OPS';
+  $('disp-stat').textContent='● En service';
+}
+
+// ═══════════════════════════════════════════════════════
+// ROTATION
+// ═══════════════════════════════════════════════════════
+function generateRotation(){
+  const ac=AIRCRAFT_DATA[S.aircraft];
+  const routes=ROUTES[S.aircraft];
+  const recent=S.sessionFlights.map(f=>f.arr);
+  const avail=routes.filter(r=>!recent.includes(r));
+  const pool=avail.length?avail:routes;
+  const dest=pool[Math.floor(Math.random()*pool.length)];
+  const arrAp=getAP(dest);
+  if(!arrAp)return null;
+  const depAp=getAP('LFRS');
+  const dist=Math.round(distNM(depAp.lat,depAp.lon,arrAp.lat,arrAp.lon));
+  const durH=dist/ac.cruise_kt;
+  const durMin=Math.round(durH*60)+20;
+  const now=new Date();
+  const depMin=now.getUTCHours()*60+now.getUTCMinutes()+15;
+  const arrMin=depMin+durMin;
+  const depT=fmt2(Math.floor(depMin/60)%24)+':'+fmt2(depMin%60)+'Z';
+  const arrT=fmt2(Math.floor(arrMin/60)%24)+':'+fmt2(arrMin%60)+'Z';
+  // Fuel EASA
+  const trip=Math.round(ac.fuel_burn_kgh*durH);
+  const cont=Math.round(trip*0.05);
+  const altF=Math.round(ac.fuel_burn_kgh*0.5);
+  const res=ac.fuel_reserve;
+  const taxi=ac.fuel_taxi;
+  const total=trip+cont+altF+res+taxi;
+  const fuel={trip,cont,altF,res,taxi,total};
+  // PAX
+  const paxN=Math.floor(Math.random()*(ac.pax_max-1))+1;
+  const pax=[...PAX_POOL].sort(()=>Math.random()-.5).slice(0,paxN).map((p,i)=>({
+    seat:i<4?`${i+1}A`:`${i-3}B`,name:p[0],role:p[1],vip:p[2],
+    special:Math.random()>.6?SPECIALS[Math.floor(Math.random()*SPECIALS.length)]:null
+  }));
+  // Flight no
+  const isIntl=['OMDB','OMAA','OTBD','GMMN','KTEB','KMIA'].includes(dest);
+  const prefix=isIntl?'4':'3';
+  let num;
+  const usedNos=S.sessionFlights.map(f=>f.flightNo);
+  do{num=prefix+String(Math.floor(Math.random()*99+10))}
+  while(usedNos.includes('WAB'+num));
+  const flightNo='WAB'+num;
+  // FL
+  const fl=dist<200?'FL250':dist<600?'FL350':ac.cruise_fl;
+  // Alternate
+  const alts={LFPB:'LFPO',LFPO:'LFPB',EGLF:'EGKB',EGKB:'EGLF',LSZH:'LSGG',LSGG:'LSZH',LIRF:'LIRA',LIRA:'LIRF',LEMD:'LEBL',LGAV:'LGTS',OMDB:'OMAA'};
+  const alt=alts[dest]||'LFRS';
+  return{flightNo,dep:'LFRS',arr:dest,depAp,arrAp,dist,durMin,depT,arrT,fl,alt,fuel,pax,flightIdx:S.sessionFlights.length};
+}
+
+async function fetchWX(icao,lat,lon){
+  try{
+    const r=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=wind_speed_10m,wind_direction_10m,visibility,cloud_cover,precipitation,temperature_2m&wind_speed_unit=kn`);
+    const d=await r.json();const c=d.current;
+    const wkt=Math.round(c.wind_speed_10m||0);
+    const wdir=String(Math.round((c.wind_direction_10m||0)/10)*10).padStart(3,'0');
+    const vis=c.visibility>9000?'>10km':Math.round((c.visibility||9999)/100)*100+'m';
+    const tmp=Math.round(c.temperature_2m||15);
+    const cl=c.cloud_cover||0;
+    const cls=cl<10?'SKC':cl<30?'FEW025':cl<60?'SCT020':'BKN015';
+    const prec=c.precipitation>.1?'-RA':'';
+    const ic=wkt>25?'🌬️':cl>60?'☁️':cl>30?'⛅':prec?'🌧️':'☀️';
+    return{icon:ic,wind:`${wdir}°/${wkt}kt`,vis,temp:`${tmp}°C`,clouds:cls,ok:true};
+  }catch{return{icon:'❓',wind:'---',vis:'---',temp:'---',clouds:'---',ok:false};}
+}
+
+function populateDossier(f){
+  $('dos-empty').style.display='none';
+  const dc=$('dos-content');dc.style.display='flex';dc.style.flexDirection='column';
+  $('d-dep').textContent=f.dep;
+  $('d-dep-city').textContent=f.depAp.city;
+  $('d-arr').textContent=f.arr;
+  $('d-arr-city').textContent=f.arrAp.city+', '+f.arrAp.country;
+  $('d-dur').textContent=fmtDur(f.durMin);
+  $('d-fltno').textContent=f.flightNo;
+  $('d-acft').textContent=AIRCRAFT_DATA[S.aircraft].name+' · '+AIRCRAFT_DATA[S.aircraft].reg;
+  $('d-dep-t').textContent=f.depT;
+  $('d-arr-t').textContent=f.arrT;
+  $('d-fl').textContent=f.fl;
+  $('d-dist').textContent=f.dist+' NM';
+  $('d-alt').textContent=f.alt;
+  $('d-handling').textContent=f.arrAp.handling||'—';
+  $('d-parking').textContent=f.arrAp.parking||'—';
+  // WX
+  $('wx-dep-lbl').textContent='DEP '+f.dep;
+  $('wx-arr-lbl').textContent='ARR '+f.arr;
+  $('wx-dep').textContent='Chargement...';
+  $('wx-arr').textContent='Chargement...';
+  fetchWX(f.dep,f.depAp.lat,f.depAp.lon).then(w=>{
+    $('wx-dep-ic').textContent=w.icon;
+    $('wx-dep').innerHTML=`<span class="wx-tag">VENT</span> ${w.wind}<br><span class="wx-tag">VIS</span> ${w.vis}<br><span class="wx-tag">NUAG</span> ${w.clouds}<br><span class="wx-tag">TEMP</span> ${w.temp}`;
+  });
+  fetchWX(f.arr,f.arrAp.lat,f.arrAp.lon).then(w=>{
+    $('wx-arr-ic').textContent=w.icon;
+    $('wx-arr').innerHTML=`<span class="wx-tag">VENT</span> ${w.wind}<br><span class="wx-tag">VIS</span> ${w.vis}<br><span class="wx-tag">NUAG</span> ${w.clouds}<br><span class="wx-tag">TEMP</span> ${w.temp}`;
+  });
+  // PAX
+  $('d-pax-list').innerHTML=f.pax.map(p=>`
+    <div class="pax-item">
+      <div class="pseat ${p.vip?'vip':''}">${p.seat}</div>
+      <div style="flex:1">
+        <div class="pname">${p.name}</div>
+        <div class="pdet">${p.role}${p.special?' · '+p.special:''}</div>
+      </div>
+      ${p.vip?'<div class="pbadge2 vip">VIP</div>':''}
+      ${p.special&&!p.vip?'<div class="pbadge2 spec">SPEC</div>':''}
+    </div>`).join('');
+  // Fuel
+  const fu=f.fuel;
+  $('f-trip').textContent=fu.trip.toLocaleString('fr-FR')+' kg';
+  $('f-cont').textContent=fu.cont.toLocaleString('fr-FR')+' kg';
+  $('f-alt').textContent=fu.altF.toLocaleString('fr-FR')+' kg';
+  $('f-res').textContent=fu.res.toLocaleString('fr-FR')+' kg';
+  $('f-taxi').textContent=fu.taxi.toLocaleString('fr-FR')+' kg';
+  $('f-tot').textContent=fu.total.toLocaleString('fr-FR')+' kg';
+  const pct=Math.min(95,Math.max(40,Math.round(fu.total/AIRCRAFT_DATA[S.aircraft].fuel_cap*100)));
+  $('f-bar').style.width=pct+'%';
+  // Notes terrain
+  if(f.arrAp.notes){
+    $('d-notes-card').style.display='block';
+    $('d-notes').textContent=f.arrAp.notes;
+  } else {
+    $('d-notes-card').style.display='none';
   }
+  // Phase bar
+  $('phase-bar').style.display='flex';
+  $('b-flt').textContent=f.flightNo;
+  $('acars-fltno').textContent=f.flightNo;
+  $('acars-phase').textContent='PRE-DÉPART · '+f.dep;
+  setPhase(0);
+}
+
+function openSimBrief(){
+  if(!S.currentFlight)return;
+  const f=S.currentFlight;
+  const no=f.flightNo.replace('WAB','');
+  window.open(`https://dispatch.simbrief.com/options/custom?airline=WAB&fltnum=${no}&orig=${f.dep}&dest=${f.arr}&manualrmk=WABA+EFB`,'_blank');
+}
+
+// ═══════════════════════════════════════════════════════
+// PHASES
+// ═══════════════════════════════════════════════════════
+const PHASE_LABELS=['PRE-DEP','DÉPART','CRUISE','ARRIVÉE','ON BLKS'];
+const PHASE_IDS=['ph-0','ph-1','ph-2','ph-3','ph-4'];
+
+function setPhase(n){
+  S.phase=n;
+  S.inFlight=(n===2);
+  PHASE_IDS.forEach((id,i)=>{
+    const b=$(id);if(!b)return;
+    b.className='ph-btn '+(i<n?'done':i===n?'cur':'avail');
+    b.disabled=i<=n;
+    b.onclick=i>n?()=>setPhase(i):null;
+  });
+  // Phase badge
+  const pb=$('phase-badge');
+  pb.textContent=PHASE_LABELS[n];
+  pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
+  // OPS call button
+  const inFlight=(n===2);
+  $('btn-free').disabled=inFlight;
+  $('btn-delay').disabled=inFlight;
+  $('btn-tech').disabled=false;
+  $('btn-client').disabled=inFlight;
+  $('main-call-btn').disabled=inFlight;
+  $('inflight-notice').style.display=inFlight?'block':'none';
+  // ACARS auto-messages
+  if(!S.currentFlight)return;
+  const f=S.currentFlight;
+  const t=utcNow();
+  const msgs={
+    1:`${f.flightNo} — OFFBLK ${t} // PAX ${f.pax.length} // FUEL ${f.fuel.total.toLocaleString('fr-FR')}KG`,
+    2:`${f.flightNo} — AIRBORNE // FL${f.fl.replace('FL','')} // ETA ARR ${f.arrT}`,
+    3:`${f.flightNo} — TOD COMMENCED // ETA ${f.arrT}`,
+    4:`${f.flightNo} — ONBLK ${t} // VOL TERMINÉ`,
+  };
+  if(msgs[n]){
+    addAcars('pilot','UPD',msgs[n]);
+    setTimeout(async()=>{
+      const acks={
+        1:`BON VOL // MÉTÉO ARR NOMINALE // ${S.dispatcher.name.toUpperCase()} DISPONIBLE`,
+        2:`REÇU // WX DEST NOMINALE // PROCHAIN CHECK ETA-30MIN`,
+        3:`REÇU // PARKING ${f.arrAp.parking} CONFIRMÉ // HANDLING ALERTÉ`,
+        4:`BIEN REÇU // BON TRAVAIL // ${n===4&&S.sessionFlights.length<3?'PROCHAIN VOL EN PRÉPARATION':'FIN DUTY'}`,
+      };
+      addAcars('ops','INFO',`${f.flightNo} — ${acks[n]}`);
+      // Après ONBLK — proposer rotation suivante
+      if(n===4){
+        S.sessionFlights.push(S.currentFlight);
+        await sleep(3000);
+        addAcars('ops','INFO',`SESSION: ${S.sessionFlights.length} VOL(S) EFFECTUÉ(S) // APPELEZ-NOUS POUR ROTATION SUIVANTE OU FIN DUTY`);
+        $('main-call-btn').textContent='📞 APPELER LES OPS — ROTATION SUIVANTE';
+        $('main-call-btn').disabled=false;
+        $('main-call-btn').onclick=()=>initiateCall('next');
+        setPhase(0);
+        $('phase-bar').style.display='none';
+        S.currentFlight=null;
+        $('b-flt').textContent='—';
+      }
+    },3000);
+  }
+  $('acars-phase').textContent=['PRE-DÉPART','ROULAGE/DÉCOLLAGE','EN CROISIÈRE','DESCENTE/ARRIVÉE','AU SOL'][n]+' · '+(n<4?f.dep:f.arr);
+  // Scénarios imprévus
+  if(n===2&&(S.mode==='challenging'||S.mode==='fullops')){
+    scheduleScenario(f);
+  }
+}
+
+function scheduleScenario(f){
+  const delay=(S.mode==='fullops'?1:2)*60000+Math.random()*120000;
+  setTimeout(async()=>{
+    if(S.phase!==2)return;
+    const scenarios=[
+      {code:'WX',msg:`WX UPDATE — DÉGRADATION EN COURS SUR ${f.arr} // VENT ${Math.floor(Math.random()*20+15)}KT RAFALES ${Math.floor(Math.random()*10+25)}KT // ALTERNATE ${f.alt} CONFIRM ?`},
+      {code:'OPS',msg:`CLIENT SOUHAITE MODIFIER DESTINATION RETOUR — ATTENTE CONFIRMATION VOTRE PART`},
+      {code:'ALERT',msg:`SLOT ATC IMPOSÉ ARR ${f.arr} — NOUVELLE HDG ${f.arrT} // HOLDING POSSIBLE 15-20MIN`},
+      {code:'INFO',msg:`PARKING MODIFIÉ À L ARRIVÉE — NOUVEAU PARKING: ${['A-12','B-07','C-03','G-15'][Math.floor(Math.random()*4)]}`},
+      {code:'OPS',msg:`CAMO — VÉRIFIER TECH LOG ITEM 4.3 À L ARRIVÉE AVANT PROCHAIN VOL`},
+    ];
+    const s=scenarios[Math.floor(Math.random()*scenarios.length)];
+    addAcars('ops',s.code,f.flightNo+' — '+s.msg,s.code==='ALERT');
+    beep(s.code==='ALERT');
+  },delay);
 }
 
 // ═══════════════════════════════════════════════════════
 // CALL SYSTEM
 // ═══════════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════════
-// BASE DE CONNAISSANCE EASA — injectée dans chaque prompt
-// ═══════════════════════════════════════════════════════
-const EASA_KNOWLEDGE = `
-RÉGLEMENTATION EASA APPLICABLE — WABA (Opérateur Part-NCC) :
-
-TEMPS DE VOL ET DE SERVICE (FTL) — Part-NCC / ORO.FTL :
-- Temps de service max : 14h (base), réductible selon heure de début
-- Temps de vol max : 8h en mono-pilote, 10h en bi-pilote
-- Repos min entre services : 12h (sol), 10h (hôtel)
-- Limite hebdomadaire : 60h de service, 100h de vol/28 jours, 900h/an
-- Duty night (02h-05h locale) : réduction 1h du FDP maximum
-
-CARBURANT — Part-NCC / NCC.OP.151 :
-- Trip fuel : carburant jusqu'à destination
-- Contingence : 5% du trip fuel (min)
-- Alternate fuel : destination → alternate (si requis)
-- Réserve finale : 30 min en croisière à altitude trafic
-- Carburant additionnel : à discrétion commandant de bord
-- Extra fuel : commandant peut en demander sans justification
-
-MINIMUMS MÉTÉO — Part-NCC / NCC.OP.190 :
-- Décollage : RVR 150m (CAT I), 75m (CAT II/III avec procédure)
-- Approche CAT I : DH 200ft, RVR 550m (ou VIS 800m)
-- Approche CAT II : DH 100ft, RVR 300m
-- Approche CAT III : DH <100ft, RVR 200m (IIIa) / 75m (IIIb)
-- Alternate requis si météo destination < minimums + 1h avant/après ETA
-
-MASSE ET CENTRAGE — CS-23 / CS-25 selon avion :
-- MTOW Citation X (C750) : 16 375 kg
-- MTOW Citation Longitude (C700) : 16 920 kg
-- MTOW BBJ2 (B738) : 79 015 kg
-- MZFW, MLW à respecter selon manuel de vol
-- Centrage : entre CG avant et arrière à toutes phases
-
-PROCÉDURES D'URGENCE :
-- Dépressurisation : O2 imm., descente urgence FL100/MEA, PAN PAN
-- Feu moteur : procédure mémoire, MAYDAY si non maîtrisé
-- TCAS RA : suivre les indications RA en priorité sur ATC
-- GPWS/EGPWS : thrust max, pitch max, no flap retract
-- Passager malade : PAN PAN, assistance médicale, décision commandant
-
-DOCUMENTS DE VOL OBLIGATOIRES :
-- OFP (Operational Flight Plan) — SimBrief
-- NOTAM dep/arr/alternate — consultation obligatoire
-- Météo (METAR, TAF, SIGMET) — validité TAF 9h
-- MEL (Minimum Equipment List) — signature commandant
-- Carnet de route — remplir avant départ
-
-RESPONSABILITÉS COMMANDANT (PIC) :
-- Autorité finale sur toutes décisions en vol
-- Peut déclarer urgence/détresse sans accord compagnie
-- Responsable sécurité PAX et équipage
-- Peut refuser un vol si conditions non satisfaisantes (EASA ORO.MLR.100)
-- Carburant additionnel : décision finale appartient au commandant
-`;
-
-const CALL_CONTEXTS = {
-  briefing: {
-    fr: 'Tu es {name}, dispatcher chez West Atlantic Business Aviation (WABA), une compagnie d\'aviation d\'affaires basee a Nantes. Tu appelles le pilote {pilot} pour lui briefer sa rotation du soir. L\'avion est le {aircraft}. Le mode operationnel est {mode}. Genere une rotation realiste (route, horaires, PAX, meteo) et brief-le de maniere professionnelle et naturelle. Style: {style}. Reste concis mais complet.',
-    en: 'You are {name}, dispatcher at West Atlantic Business Aviation (WABA), a business aviation company based in Nantes. You are calling pilot {pilot} to brief their evening rotation. Aircraft is {aircraft}. Operational mode is {mode}. Generate a realistic rotation and brief them professionally. Style: {style}. Be concise but complete.'
+const CALL_SYS = {
+  briefing:{
+    fr:(d,f,ac)=>`Tu es ${d.name}, dispatcher WABA (West Atlantic Business Aviation), compagnie aviation affaires Nantes. Tu appelles le ${f.rank} ${f.pilot} pour briefing rotation du soir. Avion: ${AIRCRAFT_DATA[ac].name} (${ac}). Mode: ${f.mode} (normal=classique, challenging=imprévu possible, fullops=imprévu certain). Génère rotation réaliste avec destination variée parmi nos aéroports européens, horaires UTC, météo simplifiée, nb PAX (max ${AIRCRAFT_DATA[ac].pax_max}), fuel estimé. Sois naturel et professionnel. Style: ${d.style}. ${EASA}`,
+    en:(d,f,ac)=>`You are ${d.name}, WABA dispatcher. Calling ${f.rank} ${f.pilot} for evening rotation briefing. Aircraft: ${AIRCRAFT_DATA[ac].name}. Mode: ${f.mode}. Generate realistic rotation. Style: ${d.style}. ${EASA}`,
   },
-  delay: {
-    fr: `Tu es {name}, dispatcher WABA. Le pilote {pilot} declare un retard. Prends note, cause, nouveau temps estime. Verifie si le retard impacte le FDP EASA (max 14h). Style: {style}.`,
-    en: 'You are {name}, WABA dispatcher. Pilot {pilot} is calling to declare a delay. Take note, ask for the cause and new estimated time. Style: {style}.'
+  free:{
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le ${f.rank} ${f.pilot} t appelle librement. Réponds naturellement à ses questions et demandes. Style: ${d.style}. ${EASA}`,
+    en:(d,f)=>`You are ${d.name}, WABA dispatcher. ${f.rank} ${f.pilot} is calling freely. Answer naturally. Style: ${d.style}. ${EASA}`,
   },
-  technical: {
-    fr: `Tu es {name}, dispatcher WABA. Le pilote {pilot} signale un probleme technique sur le {aircraft}. Prends les details, refere-toi a la MEL si applicable, contacte le CAMO si necessaire, aide la decision Go/No-Go selon reglementation EASA Part-NCC. Style: {style}.`,
-    en: 'You are {name}, WABA dispatcher. Pilot {pilot} is reporting a technical issue on {aircraft}. Take details, contact CAMO if needed, assist with Go/No-Go decision. Style: {style}.'
+  delay:{
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le pilote déclare un retard. Prends note, demande code et nouveau temps. Vérifie impact FDP EASA. Style: ${d.style}.`,
+    en:(d,f)=>`You are ${d.name}, WABA dispatcher. Pilot declaring a delay. Take note, ask code and new time. Check EASA FDP impact. Style: ${d.style}.`,
   },
-  client: {
-    fr: 'Tu es {name}, dispatcher WABA. Le pilote {pilot} appelle pour un update sur le client. Tu as des informations sur le statut du client et peux communiquer les changements. Style: {style}.',
-    en: 'You are {name}, WABA dispatcher. Pilot {pilot} is calling for a client update. You have information about client status. Style: {style}.'
+  technical:{
+    fr:(d,f,ac)=>`Tu es ${d.name}, dispatcher WABA. Problème technique sur ${AIRCRAFT_DATA[ac]?.name||ac}. Prends les infos, réfère-toi MEL, contacte CAMO si besoin, aide décision Go/No-Go EASA. Style: ${d.style}.`,
+    en:(d,f,ac)=>`You are ${d.name}, WABA dispatcher. Technical issue on ${AIRCRAFT_DATA[ac]?.name||ac}. Get details, check MEL, contact CAMO if needed. Style: ${d.style}.`,
   },
-  emergency: {
-    fr: 'Tu es {name}, dispatcher WABA. APPEL D\'URGENCE du pilote {pilot}. Reste calme, professionnel, collecte rapidement les informations, active les procedures d\'urgence appropriees. Style: {style}. Priorite absolue.',
-    en: 'You are {name}, WABA dispatcher. EMERGENCY CALL from pilot {pilot}. Stay calm, professional, quickly gather information, activate appropriate emergency procedures. Style: {style}. Absolute priority.'
-  }
+  client:{
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Update sur le client/passagers. Tu as des infos sur leur statut et peux communiquer les changements. Génère une situation réaliste (retard client, demande spéciale, changement itinéraire). Style: ${d.style}.`,
+    en:(d,f)=>`You are ${d.name}, WABA dispatcher. Client update. Generate realistic situation. Style: ${d.style}.`,
+  },
+  next:{
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le pilote a terminé une rotation et rappelle pour la suivante. Génère une nouvelle rotation différente. Style: ${d.style}. ${EASA}`,
+    en:(d,f)=>`You are ${d.name}, WABA dispatcher. Pilot finished a rotation and calls for the next one. Generate new different rotation. Style: ${d.style}. ${EASA}`,
+  },
+  emergency:{
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. URGENCE. Reste calme, collecte infos rapidement, active procédures. Style: calme et professionnel. ${EASA}`,
+    en:(d,f)=>`You are ${d.name}, WABA dispatcher. EMERGENCY. Stay calm, get info fast, activate procedures. ${EASA}`,
+  },
 };
 
-let conversationHistory = [];
-
-async function initiateCall(type) {
-  if(!STATE.pilot) { alert('Prenez votre service d\'abord'); return; }
-  STATE.callType = type;
-  STATE.callActive = true;
-  conversationHistory = [];
-
-  const d = STATE.dispatcher;
-
-  // Show overlay
-  const overlay = document.getElementById('call-overlay');
-  overlay.classList.add('active');
-  document.getElementById('call-disp-name').textContent = d.name;
-  document.getElementById('call-subtitle').textContent = d.role.toUpperCase() + ' · NANTES OPS CENTER';
-  document.getElementById('call-avatar-ring').textContent = '📞';
-  document.getElementById('call-transcript').innerHTML = '';
-  document.getElementById('call-status').textContent = 'Connexion en cours...';
-  document.getElementById('status-dot').className = 'status-dot call';
-
-  // Simulate ring delay
+async function initiateCall(type){
+  if(!S.pilot){alert('Prenez votre service d abord');return;}
+  if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
+  S.callType=type;S.callActive=true;S.convHistory=[];
+  const d=S.dispatcher;
+  $('call-ov').classList.add('on');
+  $('call-ring').textContent='📞';
+  $('call-name').textContent=d.name;
+  $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
+  $('call-tx').innerHTML='';
+  $('call-stat').textContent='Connexion en cours...';
+  $('status-dot').className='dot call';
   await sleep(1500);
-  document.getElementById('call-status').textContent = d.name + ' décroche...';
+  $('call-stat').textContent=d.name+' décroche...';
+  await sleep(700);
+  $('call-stat').textContent='🔴 En communication';
+  const lang=navigator.language?.startsWith('en')?'en':'fr';
+  const greet=lang==='en'?d.greet_en:d.greet;
+  addTx('ops',d.name,greet);speak(greet);
   await sleep(800);
+  const ctx=S;
+  const sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
+  const intro=await callAI(sysPrompt,'Commence le briefing/appel après ton greeting. Sois naturel et concis.');
+  if(intro){addTx('ops',d.name,intro);speak(intro);
+    if(type==='briefing'||type==='next'){handleBriefingResponse(intro);}
+  }
+  addCallHist(type);
+}
 
-  // Get opening line from dispatcher
-  const lang = detectLang();
-  const greeting = lang === 'en' ? d.en_greeting : d.greeting;
-  document.getElementById('call-status').textContent = '🔴 En communication';
-
-  addTranscriptLine('ops', d.name, greeting);
-  speak(greeting);
-
-  // Get AI response for context
-  await sleep(1000);
-  const ctx = CALL_CONTEXTS[type][lang];
-  const prompt = ctx
-    .replace('{name}', d.name)
-    .replace('{pilot}', STATE.pilot)
-    .replace('{aircraft}', STATE.aircraft)
-    .replace('{mode}', STATE.mode)
-    .replace('{style}', d.style);
-
-  const aiIntro = await callClaude(prompt, 'Commence le briefing apres le greeting initial. Sois naturel.');
-  if(aiIntro) {
-    await sleep(500);
-    addTranscriptLine('ops', d.name, aiIntro);
-    speak(aiIntro);
-
-    // If briefing, populate dossier
-    if(type === 'briefing') {
-      populateDossierFromBriefing(aiIntro);
-    }
+function handleBriefingResponse(text){
+  const rot=generateRotation();
+  if(rot){
+    S.currentFlight=rot;
+    setTimeout(()=>{populateDossier(rot);},1000);
+    setTimeout(()=>{
+      addAcars('ops','INFO',`DOSSIER VOL ${rot.flightNo} TRANSMIS // ${rot.dep}→${rot.arr} // DEP ${rot.depT} // ${rot.pax.length} PAX // FUEL ${rot.fuel.total.toLocaleString('fr-FR')}KG`);
+    },2000);
   }
 }
 
-async function callClaude(systemPrompt, userMsg) {
-  try {
-    const messages = [...conversationHistory];
-    if(userMsg) messages.push({ role: 'user', content: userMsg });
-    if(!messages.length) messages.push({ role: 'user', content: 'Commence.' });
-
-    const res = await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        system: systemPrompt,
-        messages
-      })
+async function callAI(systemPrompt,userMsg){
+  try{
+    const msgs=[...S.convHistory];
+    if(userMsg)msgs.push({role:'user',content:userMsg});
+    if(!msgs.length)msgs.push({role:'user',content:'Commence.'});
+    const res=await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:400,system:systemPrompt,messages:msgs})
     });
-    const data = await res.json();
-    const reply = data.content?.[0]?.text || '';
-    if(reply) {
-      conversationHistory.push({ role: 'user', content: userMsg || 'Commence.' });
-      conversationHistory.push({ role: 'assistant', content: reply });
+    const data=await res.json();
+    const reply=data.content?.[0]?.text||'';
+    if(reply){
+      S.convHistory.push({role:'user',content:userMsg||'Commence.'});
+      S.convHistory.push({role:'assistant',content:reply});
     }
     return reply;
-  } catch(e) {
-    console.error('API error:', e);
-    return null;
-  }
+  }catch(e){console.error(e);return null;}
 }
 
-function addTranscriptLine(who, name, text) {
-  const wrap = document.getElementById('call-transcript');
-  const div = document.createElement('div');
-  div.className = 'transcript-line ' + who;
-  div.innerHTML = '<div class="transcript-speaker">' + name.toUpperCase() + '</div>' + text;
-  wrap.appendChild(div);
-  wrap.scrollTop = wrap.scrollHeight;
+function addTx(who,name,text){
+  const w=$('call-tx');
+  const d=document.createElement('div');
+  d.className='tx-line tx-'+who;
+  d.innerHTML=`<div class="tx-who">${name.toUpperCase()}</div>${text}`;
+  w.appendChild(d);w.scrollTop=w.scrollHeight;
 }
 
-// ═══════════════════════════════════════════════════════
-// SPEECH
-// ═══════════════════════════════════════════════════════
-function speak(text) {
-  if(!window.speechSynthesis) return;
+function speak(text){
+  if(!window.speechSynthesis)return;
   window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = detectLang() === 'en' ? 'en-GB' : 'fr-FR';
-  utt.rate = 1.0;
-  utt.pitch = 1.0;
-  // Try to pick a suitable voice
-  const voices = window.speechSynthesis.getVoices();
-  const lang = utt.lang;
-  const match = voices.find(v => v.lang.startsWith(lang.split('-')[0]) && !v.name.includes('Google'));
-  if(match) utt.voice = match;
-  window.speechSynthesis.speak(utt);
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang=navigator.language?.startsWith('en')?'en-GB':'fr-FR';
+  u.rate=1.0;
+  const voices=window.speechSynthesis.getVoices();
+  const m=voices.find(v=>v.lang.startsWith(u.lang.split('-')[0])&&!v.name.includes('Google'));
+  if(m)u.voice=m;
+  window.speechSynthesis.speak(u);
 }
 
-function toggleMic() {
-  if(!STATE.callActive) return;
-  if(STATE.micActive) {
-    stopListening();
-  } else {
-    startListening();
-  }
+function toggleMic(){
+  if(!S.callActive)return;
+  S.micActive?stopListen():startListen();
 }
 
-function startListening() {
-  if(!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-    document.getElementById('mic-status').textContent = 'Microphone non disponible sur ce navigateur';
-    return;
+function startListen(){
+  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
+    $('mic-tip').textContent='Microphone non disponible';return;
   }
-  const SRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  STATE.recognition = new SRec();
-  STATE.recognition.lang = detectLang() === 'en' ? 'en-US' : 'fr-FR';
-  STATE.recognition.continuous = false;
-  STATE.recognition.interimResults = false;
-
-  STATE.recognition.onstart = () => {
-    STATE.micActive = true;
-    document.getElementById('mic-btn').className = 'call-ctrl-btn ctrl-mic listening';
-    document.getElementById('mic-status').textContent = '🎤 En écoute...';
-  };
-  STATE.recognition.onresult = async (e) => {
-    const transcript = e.results[0][0].transcript;
-    addTranscriptLine('pilot', STATE.pilot.replace('_',' '), transcript);
-    stopListening();
-    document.getElementById('call-status').textContent = STATE.dispatcher.name + ' répond...';
-
-    // Get AI response
-    const lang = detectLang();
-    const ctx = CALL_CONTEXTS[STATE.callType][lang];
-    const sysPrompt = ctx
-      .replace('{name}', STATE.dispatcher.name)
-      .replace('{pilot}', STATE.pilot)
-      .replace('{aircraft}', STATE.aircraft)
-      .replace('{mode}', STATE.mode)
-      .replace('{style}', STATE.dispatcher.style);
-
-    const reply = await callClaude(sysPrompt, transcript);
-    if(reply) {
-      addTranscriptLine('ops', STATE.dispatcher.name, reply);
-      speak(reply);
-      document.getElementById('call-status').textContent = '🔴 En communication';
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  S.recognition=new SR();
+  S.recognition.lang=navigator.language?.startsWith('en')?'en-US':'fr-FR';
+  S.recognition.continuous=false;S.recognition.interimResults=false;
+  S.recognition.onstart=()=>{S.micActive=true;$('mic-btn').className='cctrl c-mic live';$('mic-tip').textContent='🎤 En écoute...';};
+  S.recognition.onresult=async e=>{
+    const t=e.results[0][0].transcript;
+    addTx('pilot',S.pilot,t);stopListen();
+    $('call-stat').textContent=S.dispatcher.name+' répond...';
+    const lang=navigator.language?.startsWith('en')?'en':'fr';
+    const sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
+    const r=await callAI(sys,t);
+    if(r){addTx('ops',S.dispatcher.name,r);speak(r);
+      if(S.callType==='briefing'&&!S.currentFlight)handleBriefingResponse(r);
     }
+    $('call-stat').textContent='🔴 En communication';
   };
-  STATE.recognition.onerror = () => stopListening();
-  STATE.recognition.onend = () => { if(STATE.micActive) stopListening(); };
-  STATE.recognition.start();
+  S.recognition.onerror=()=>stopListen();
+  S.recognition.onend=()=>{if(S.micActive)stopListen();};
+  S.recognition.start();
 }
 
-function stopListening() {
-  STATE.micActive = false;
-  if(STATE.recognition) STATE.recognition.stop();
-  document.getElementById('mic-btn').className = 'call-ctrl-btn ctrl-mic';
-  document.getElementById('mic-status').textContent = 'Appuyez sur 🎤 pour parler';
+function stopListen(){
+  S.micActive=false;
+  if(S.recognition)S.recognition.stop();
+  $('mic-btn').className='cctrl c-mic';
+  $('mic-tip').textContent='Appuyez sur 🎤 pour parler';
 }
 
-function endCall() {
-  STATE.callActive = false;
-  STATE.micActive = false;
-  if(STATE.recognition) STATE.recognition.stop();
-  if(window.speechSynthesis) window.speechSynthesis.cancel();
-
-  document.getElementById('call-overlay').classList.remove('active');
-  document.getElementById('status-dot').className = 'status-dot active';
-
-  // Add to history
-  addCallHistory(STATE.callType);
-  conversationHistory = [];
+function endCall(){
+  S.callActive=false;S.micActive=false;
+  if(S.recognition)S.recognition.stop();
+  if(window.speechSynthesis)window.speechSynthesis.cancel();
+  $('call-ov').classList.remove('on');
+  $('status-dot').className='dot on';
+  S.convHistory=[];
 }
 
-function toggleSpeaker() {
-  // Volume toggle - visual only for now
-}
+function toggleSpk(){}
 
-function addCallHistory(type) {
-  const labels = { briefing:'Briefing rotation', delay:'Déclaration retard', technical:'Problème technique', client:'Update client', emergency:'Urgence' };
-  const now = new Date();
-  const time = String(now.getUTCHours()).padStart(2,'0') + ':' + String(now.getUTCMinutes()).padStart(2,'0') + 'Z';
-  const hist = document.getElementById('call-history');
-  if(hist.querySelector('div[style]')) hist.innerHTML = '';
-  hist.innerHTML += `<div class="card-row">
-    <span class="card-lbl">${time} · ${labels[type]||type}</span>
-    <span class="card-val" style="font-size:10px;color:var(--green)">✓</span>
-  </div>`;
+function addCallHist(type){
+  const labels={briefing:'Briefing rotation',free:'Appel libre',delay:'Retard',technical:'Problème technique',client:'Update client',next:'Rotation suivante',emergency:'URGENCE'};
+  const h=$('call-hist');
+  if(h.querySelector('div[style]'))h.innerHTML='';
+  const row=document.createElement('div');
+  row.className='crow';
+  row.innerHTML=`<span class="clbl">${utcNow()} · ${labels[type]||type}</span><span class="cval" style="font-size:9px;color:var(--green)">✓</span>`;
+  h.appendChild(row);
 }
 
 // ═══════════════════════════════════════════════════════
 // ACARS
 // ═══════════════════════════════════════════════════════
-function addAcarsMessage(from, code, text, urgent=false) {
-  const now = new Date();
-  const time = String(now.getUTCHours()).padStart(2,'0') + ':' + String(now.getUTCMinutes()).padStart(2,'0') + 'Z';
-  const msgs = document.getElementById('acars-messages');
-
-  // Remove placeholder
-  const placeholder = msgs.querySelector('div[style*="text-align:center"]');
-  if(placeholder) placeholder.remove();
-
-  const div = document.createElement('div');
-  div.className = 'acars-msg from-' + (from === 'ops' ? 'ops' : 'pilot');
-
-  const bubbleClass = urgent ? 'acars-bubble urgent' : (code === 'ALERT' ? 'acars-bubble alert' : 'acars-bubble');
-  div.innerHTML = `
-    <div class="acars-msg-header ${from === 'pilot' ? 'right' : ''}">
-      <span>${time}</span>
-      <span>${from === 'ops' ? 'WABA OPS' : (STATE.pilot||'PILOT').replace('_',' ')}</span>
-    </div>
-    <div class="${bubbleClass}">
-      <span class="acars-code">${code}</span>${text}
-    </div>
-  `;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-
-  // Update badge if not on acars tab
-  if(!document.getElementById('tab-acars').classList.contains('active') && from === 'ops') {
-    STATE.acarsUnread++;
-    const badge = document.getElementById('acars-badge');
-    badge.textContent = STATE.acarsUnread;
-    badge.style.display = 'flex';
+function addAcars(from,code,text,urgent=false){
+  const msgs=$('acars-msgs');
+  const ph=msgs.querySelector('div[style*="text-align:center"]');if(ph)ph.remove();
+  const wrap=document.createElement('div');
+  wrap.className='amsg from-'+(from==='ops'?'ops':'pilot');
+  const bubCls='abub'+(urgent?' urg':code==='ALERT'?' alt':code==='INFO'?' info':'');
+  wrap.innerHTML=`<div class="amsg-hdr ${from==='pilot'?'r':''}">
+    <span>${utcNow()}</span>
+    <span>${from==='ops'?'WABA OPS':(S.pilot||'PILOT')}</span>
+  </div>
+  <div class="${bubCls}"><span class="acode">${code}</span>${text}</div>`;
+  msgs.appendChild(wrap);msgs.scrollTop=msgs.scrollHeight;
+  if(!$('tab-acars').classList.contains('on')&&from==='ops'){
+    S.acarsUnread++;
+    const b=$('acars-bdg');b.textContent=S.acarsUnread;b.style.display='flex';
   }
+  if(urgent)beep(true);
 }
 
-async function sendAcars() {
-  const type = document.getElementById('acars-type').value;
-  const text = document.getElementById('acars-input').value.trim().toUpperCase();
-  if(!text) return;
-
-  const fltno = STATE.flight?.flightNo || 'WAB---';
-  addAcarsMessage('pilot', type, fltno + ' — ' + text);
-  document.getElementById('acars-input').value = '';
-
-  // AI response from OPS after delay
-  await sleep(2000 + Math.random() * 3000);
-  const reply = await getAcarsReply(type, text);
-  if(reply) addAcarsMessage('ops', 'INFO', reply);
-}
-
-async function getAcarsReply(code, msg) {
-  try {
-    const res = await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 150,
-        system: `Tu es ${STATE.dispatcher?.name||'Marc Lebrun'}, dispatcher WABA. Reponds a un message ACARS type ${code} du pilote. Reponse courte, format ACARS, style professionnel aviation. Pas plus de 2 lignes. Si pertinent, applique les reglements EASA Part-NCC (FTL, carburant, meteo minimums). Mode operationnel actuel: ${STATE.mode}.`,
-        messages: [{ role: 'user', content: msg }]
+async function sendAcars(){
+  const type=$('acars-type').value;
+  const txt=$('acars-input').value.trim().toUpperCase();
+  if(!txt)return;
+  const flt=S.currentFlight?.flightNo||'WAB---';
+  addAcars('pilot',type,flt+' — '+txt);
+  $('acars-input').value='';
+  await sleep(1500+Math.random()*3000);
+  // AI response
+  try{
+    const res=await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-haiku-4-5-20251001',max_tokens:120,
+        system:`Tu es ${S.dispatcher?.name||'Marc Lebrun'}, dispatcher WABA. Reponds message ACARS type ${type} du pilote. Format ACARS court. Si CHG demandé, confirme et indique action prise. Si REQ WX, donne météo simplifiée. Si URG, active protocole urgence. Max 2 lignes. Mode: ${S.mode}. ${EASA}`,
+        messages:[{role:'user',content:txt}]
       })
     });
-    const data = await res.json();
-    return data.content?.[0]?.text || null;
-  } catch(e) { return null; }
+    const data=await res.json();
+    const reply=data.content?.[0]?.text;
+    if(reply)addAcars('ops','INFO',reply);
+    // Si CHG de destination — update dossier
+    if(type==='CHG'&&S.currentFlight){
+      const icaoMatch=txt.match(/[A-Z]{4}/g);
+      if(icaoMatch){
+        const newDest=icaoMatch.find(i=>i!==S.currentFlight.dep&&i!=='CHG'&&AIRPORTS.find(a=>a.icao===i));
+        if(newDest){
+          setTimeout(()=>{
+            const newRot=generateRotation();
+            if(newRot){newRot.arr=newDest;S.currentFlight=newRot;populateDossier(newRot);
+              addAcars('ops','INFO',`${S.currentFlight.flightNo} — DOSSIER MIS À JOUR // NOUVELLE DESTINATION ${newDest} // SIMBRIEF DISPONIBLE`);
+            }
+          },2000);
+        }
+      }
+    }
+  }catch(e){console.error(e);}
 }
 
-function quickMsg(code) {
-  const flt = STATE.flight?.flightNo || 'WAB---';
-  const now = new Date();
-  const time = String(now.getUTCHours()).padStart(2,'0') + String(now.getUTCMinutes()).padStart(2,'0') + 'Z';
-  const templates = {
-    OFFBLK: flt + ' — OFFBLK ' + time,
-    ONBLK: flt + ' — ONBLK ' + time,
-    RDY: flt + ' — READY FOR DEPARTURE',
-    DLA: flt + ' — DELAY CODE 93 ETA DEP +',
-    FUEL: flt + ' — FUEL UPLIFT ',
-    PAX: flt + ' — PAX ONBOARD ',
+function qMsg(code){
+  const flt=S.currentFlight?.flightNo||'WAB---';
+  const t=utcNow().replace('Z','');
+  const tpl={
+    OFFBLK:`${flt} — OFFBLK ${t}Z`,
+    ONBLK:`${flt} — ONBLK ${t}Z`,
+    RDY:`${flt} — READY FOR DEPARTURE AWAIT CLEARANCE`,
+    DLA:`${flt} — DELAY CODE 93 NEW DEP +`,
+    FUEL:`${flt} — FUEL UPLIFT `,
+    PAX:`${flt} — PAX ${S.currentFlight?.pax?.length||0} ONBOARD`,
+    WX:`WEATHER REQUEST ARR ${S.currentFlight?.arr||'---'}`,
+    ETA:`${flt} — ETA ARR ${S.currentFlight?.arrT||'---'}`,
   };
-  document.getElementById('acars-type').value = code === 'ONBLK' || code === 'OFFBLK' ? 'UPD' : code;
-  document.getElementById('acars-input').value = templates[code] || '';
-  document.getElementById('acars-input').focus();
+  const tc={OFFBLK:'UPD',ONBLK:'UPD',RDY:'RDY',DLA:'DLA',FUEL:'UPD',PAX:'UPD',WX:'REQ',ETA:'UPD'};
+  $('acars-type').value=tc[code]||'FLT';
+  $('acars-input').value=tpl[code]||'';
+  $('acars-input').focus();
 }
 
 // ═══════════════════════════════════════════════════════
-// DOSSIER
+// SOUND
 // ═══════════════════════════════════════════════════════
-function populateDossierFromBriefing(briefingText) {
-  // Simple parsing - in real use AI would return structured JSON
-  // For now we show a sample rotation
-  document.getElementById('dossier-empty').style.display = 'none';
-  document.getElementById('dossier-content').style.display = 'flex';
-
-  // Sample data - in production this comes from AI structured output
-  const now = new Date();
-  const depH = String(now.getUTCHours() + 1).padStart(2,'0');
-  const arrH = String(now.getUTCHours() + 3).padStart(2,'0');
-
-  document.getElementById('dos-dep').textContent = 'LFRS';
-  document.getElementById('dos-dep-city').textContent = 'Nantes';
-  document.getElementById('dos-arr').textContent = 'LFPB';
-  document.getElementById('dos-arr-city').textContent = 'Paris Le Bourget';
-  document.getElementById('dos-dur').textContent = '1h15';
-  document.getElementById('dos-fltno').textContent = 'WAB317';
-  document.getElementById('dos-acft').textContent = STATE.aircraft + ' — ' + (STATE.aircraft === 'C750' ? 'F-EVOK' : STATE.aircraft === 'C700' ? 'F-EXZA' : 'F-LIMB');
-  document.getElementById('dos-dep-time').textContent = depH + ':00Z';
-  document.getElementById('dos-arr-time').textContent = arrH + ':15Z';
-  document.getElementById('dos-fl').textContent = 'FL350';
-  document.getElementById('dos-alt').textContent = 'LFPO';
-
-  document.getElementById('wx-dep-icao').textContent = 'DEP LFRS';
-  document.getElementById('wx-dep').innerHTML = '<span class="wx-tag">VENT</span> 270/12KT<br><span class="wx-tag">VIS</span> 9999<br><span class="wx-tag">NUAG</span> FEW025<br><span class="wx-tag">TEMP</span> 14/09<br><span class="wx-tag">QNH</span> 1018';
-  document.getElementById('wx-arr-icao').textContent = 'ARR LFPB';
-  document.getElementById('wx-arr').innerHTML = '<span class="wx-tag">VENT</span> 240/08KT<br><span class="wx-tag">VIS</span> 9999<br><span class="wx-tag">NUAG</span> SCT040<br><span class="wx-tag">TEMP</span> 12/07<br><span class="wx-tag">QNH</span> 1016';
-
-  // PAX
-  document.getElementById('dos-pax-list').innerHTML = `
-    <div class="pax-item">
-      <div class="pax-seat vip">1A</div>
-      <div><div class="pax-name">M. François Dumont</div><div class="pax-detail">Bagages: 2 · Préférences: Côté fenêtre</div></div>
-      <div class="pax-badge vip">VIP</div>
-    </div>
-    <div class="pax-item">
-      <div class="pax-seat">1B</div>
-      <div><div class="pax-name">Mme Claire Dumont</div><div class="pax-detail">Bagages: 1</div></div>
-    </div>
-    <div class="pax-item">
-      <div class="pax-seat">2A</div>
-      <div><div class="pax-name">M. Pierre Lefebvre</div><div class="pax-detail">Bagages: 1 · Végétarien</div></div>
-      <div class="pax-badge special">SPEC</div>
-    </div>
-  `;
-
-  document.getElementById('fuel-trip').textContent = '1 840 kg';
-  document.getElementById('fuel-cont').textContent = '92 kg';
-  document.getElementById('fuel-alt').textContent = '380 kg';
-  document.getElementById('fuel-fin').textContent = '480 kg';
-  document.getElementById('fuel-tot').textContent = '2 792 kg';
-
-  // Show phase controls
-  document.getElementById('phase-controls').style.display = 'flex';
-  document.getElementById('phase-badge').textContent = 'BRIEFED';
-  document.getElementById('phase-badge').className = 'phase-badge active';
-
-  // Send ACARS confirmation
-  addAcarsMessage('ops', 'INFO', 'WAB317 — DOSSIER VOL TRANSMIS // LFRS-LFPB // DEP ' + depH + ':00Z // 3 PAX // BON VOL');
-
-  STATE.flight = { flightNo: 'WAB317', dep: 'LFRS', arr: 'LFPB' };
-  document.getElementById('acars-flight-no').textContent = 'WAB317';
-  document.getElementById('acars-phase-lbl').textContent = 'PRE-DÉPART · LFRS';
-}
-
-function openSimBrief() {
-  const dep = document.getElementById('dos-dep').textContent || 'LFRS';
-  const arr = document.getElementById('dos-arr').textContent || 'LFPB';
-  const fltno = document.getElementById('dos-fltno').textContent.replace('WAB','') || '317';
-  const url = `https://dispatch.simbrief.com/options/custom?airline=WAB&fltnum=${fltno}&orig=${dep}&dest=${arr}&manualrmk=WABA+EFB`;
-  window.open(url, '_blank');
+function beep(urgent=false){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=urgent?880:660;
+    g.gain.setValueAtTime(0.3,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(urgent?0.5:0.2));
+    o.start();o.stop(ctx.currentTime+(urgent?0.5:0.2));
+    if(urgent)setTimeout(()=>beep(false),600);
+  }catch{}
 }
 
 // ═══════════════════════════════════════════════════════
-// PHASE MANAGEMENT
+// TABS
 // ═══════════════════════════════════════════════════════
-function setPhase(phase) {
-  STATE.phase = phase;
-  const phases = ['predep','dep','cruise','arr','onblk'];
-  const labels = ['PRE-DEP','DÉPART','CROISIÈRE','ARRIVÉE','ON BLKS'];
-  const phaseMap = { predep:0, dep:1, cruise:2, arrival:3, onblocks:4 };
-  const idx = phaseMap[phase] || 0;
-
-  phases.forEach((p, i) => {
-    const btn = document.getElementById('ph-' + p);
-    if(!btn) return;
-    btn.className = 'phase-btn ' + (i < idx ? 'done' : i === idx ? 'current' : 'available');
-    if(i > idx) btn.onclick = () => setPhase(['predep','dep','cruise','arrival','onblocks'][i]);
+function switchTab(t){
+  ['ops','acars','dossier'].forEach(id=>{
+    $('tab-'+id).classList.toggle('on',id===t);
+    $('page-'+id).classList.toggle('on',id===t);
   });
-
-  const badgeText = labels[idx];
-  document.getElementById('phase-badge').textContent = badgeText;
-  document.getElementById('phase-badge').className = 'phase-badge ' + (phase === 'cruise' ? 'inflight' : 'active');
-
-  // ACARS auto-messages
-  const flt = STATE.flight?.flightNo || 'WAB---';
-  const now = new Date();
-  const time = String(now.getUTCHours()).padStart(2,'0') + String(now.getUTCMinutes()).padStart(2,'0') + 'Z';
-
-  const autoMsg = {
-    dep: `${flt} — OFFBLK ${time}Z`,
-    cruise: `${flt} — AIRBORNE CRUISE LEVEL FL350`,
-    arrival: `${flt} — TOD COMMENCED ETA ARR ${time}`,
-    onblocks: `${flt} — ONBLK ${time}Z // FIN DE ROTATION`,
-  };
-  if(autoMsg[phase]) {
-    addAcarsMessage('pilot', 'UPD', autoMsg[phase]);
-    // OPS acknowledge
-    setTimeout(async () => {
-      const ack = { dep: 'GOOD DEPARTURE // SAFE FLIGHT', cruise: 'RECEIVED // WEATHER NOMINAL EN ROUTE', arrival: 'PARKING CONFIRMED // HANDLING ALERTED', onblocks: 'BON TRAVAIL // DOSSIER CLOS' };
-      addAcarsMessage('ops', 'INFO', flt + ' — ' + (ack[phase] || 'ACKNOWLEDGED'));
-    }, 3000);
-  }
+  if(t==='acars'){S.acarsUnread=0;$('acars-bdg').style.display='none';}
 }
 
-// ═══════════════════════════════════════════════════════
-// UTILS
-// ═══════════════════════════════════════════════════════
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function detectLang() { return navigator.language?.startsWith('en') ? 'en' : 'fr'; }
-
-function showDispatcherTeam() {
-  const names = DISPATCHERS.map(d => d.initials + ' · ' + d.name + ' — ' + d.role).join('\n');
-  alert('ÉQUIPE OPS WABA :\n\n' + names);
+function showTeam(){
+  alert('ÉQUIPE OPS WABA:\n\n'+DISPATCHERS.map(d=>d.ini+' · '+d.name+'\n'+d.role).join('\n\n'));
 }
 
-// Load voices for speech synthesis
+// Init voices
 window.speechSynthesis?.getVoices();
 </script>
 </body>
