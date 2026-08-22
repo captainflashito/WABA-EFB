@@ -327,7 +327,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="hdr-right">
     <div class="dot" id="status-dot"></div>
     <div class="clock" id="utc-clock">--:--Z</div>
-    <div onclick="toggleKokoro()" id="kokoro-btn" title="Voix française ff_siwis" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
+    <div onclick="toggleVoice()" id="kokoro-btn" title="Voix WABA ElevenLabs" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
   </div>
 </div>
 
@@ -704,16 +704,10 @@ const SPECIALS = ['Végétarien','Casher','Halal','Sans gluten','Allergie noix',
   'Champagne à bord','Température fraîche','Journaux français','Confidentialité max','Fauteuil roulant arrivée'];
 
 const DISPATCHERS = [
-  {id:'marc',name:'Marc Lebrun',ini:'ML',col:'#B8973E',bg:'rgba(184,151,62,.1)',role:'Dispatch Senior',shift:[20,8],style:'calme professionnel 20ans experience. Tutoie les commandants. Dit "Voilà" souvent.',greet:'Bonsoir, dispatch WABA, Marc à l appareil.',greet_en:'Good evening, WABA dispatch, Marc speaking.'},
-  {id:'sophie',name:'Sophie Aubert',ini:'SA',col:'#4A9BB8',bg:'rgba(74,155,184,.1)',role:'Planification Ops',shift:[6,20],style:'efficace précise parle vite quand chargée. Très organisée.',greet:'Sophie Aubert, dispatch WABA, j écoute.',greet_en:'Sophie Aubert, WABA dispatch, go ahead.'},
-  {id:'kevin',name:'Kevin Diallo',ini:'KD',col:'#5A9E6F',bg:'rgba(90,158,111,.1)',role:'Dispatch Nuit',shift:[22,6],style:'décontracté mais sérieux. Blague parfois. Très réactif la nuit.',greet:'Kev au dispatch, quoi de neuf ?',greet_en:'Kevin at dispatch, go ahead Captain.'},
-  {id:'isabelle',name:'Isabelle Morin',ini:'IM',col:'#C47A3A',bg:'rgba(196,122,58,.1)',role:'Senior Urgences',shift:[6,20],style:'rassurante et ferme. 30ans expérience. Très calme en urgence.',greet:'Isabelle Morin, dispatch. Je vous écoute.',greet_en:'Isabelle Morin, WABA dispatch. Go ahead.'},
-  {id:'thomas',name:'Thomas Keller',ini:'TK',col:'#7A7880',bg:'rgba(122,120,128,.1)',role:'Spécialiste Météo',shift:[6,20],style:'jeune enthousiaste très fort en météo. Parle beaucoup des conditions.',greet:'Thomas Keller, dispatch météo WABA !',greet_en:'Thomas Keller, WABA weather dispatch!'},
-  {id:'antoine',name:'Antoine Ferrara',ini:'AF',col:'#B85A4A',bg:'rgba(184,90,74,.1)',role:'ACARS & En vol',shift:[14,22],style:'chaleureux ancien navigant converti. Passion pour l aviation.',greet:'Antoine, dispatch WABA. Bonsoir Commandant.',greet_en:'Antoine, WABA dispatch. Good evening Captain.'},
-  {id:'hind',name:'Hind Amrani',ini:'HA',col:'#4A9BB8',bg:'rgba(74,155,184,.08)',role:'VIP & International',shift:[8,20],style:'multilingue très professionnelle spécialiste clients VIP. Switch FR/EN naturellement.',greet:'Dispatch WABA, Hind Amrani, bonsoir.',greet_en:'WABA dispatch, Hind Amrani, good evening.'},
-  {id:'laurent',name:'Laurent Szabo',ini:'LS',col:'#B8973E',bg:'rgba(184,151,62,.08)',role:'Ex-Commandant · Briefings',shift:[6,18],style:'ancien pilote de ligne très complice avec les équipages. Donne conseils techniques non demandés.',greet:'Laurent au dispatch. Content de vous avoir ce soir.',greet_en:'Laurent at dispatch. Glad to have you tonight Captain.'},
-  {id:'nathalie',name:'Nathalie Roux',ini:'NR',col:'#9A9899',bg:'rgba(154,152,153,.1)',role:'Réglementation Ops',shift:[8,20],style:'très carrée sur les procédures. Précise. Rappelle les règles EASA si nécessaire.',greet:'Nathalie Roux, opérations WABA. Bonjour.',greet_en:'Nathalie Roux, WABA operations. Good day.'},
-  {id:'claire',name:'Claire Beaumont',ini:'CB',col:'#7A7880',bg:'rgba(122,120,128,.08)',role:'Dispatch Support',shift:[8,18],style:'nouvelle appliquée. Cherche confirmation auprès collègues. Sympathique mais parfois hésitante.',greet:'Euh... dispatch WABA, Claire à l appareil, bonjour !',greet_en:'WABA dispatch, Claire speaking, hello!'},
+  {id:'marc',name:'Marc Lebrun',ini:'ML',col:'#B8973E',bg:'rgba(184,151,62,.1)',role:'Dispatch Senior · Nuit',shift:[20,8],style:'calme, professionnel et expérimenté. Coordonne les urgences, la technique et les opérations de nuit. Tutoie les commandants qu il connaît.',greet:'Bonsoir, dispatch WABA, Marc à l appareil.',greet_en:'Good evening, WABA dispatch, Marc speaking.'},
+  {id:'sophie',name:'Sophie Aubert',ini:'SA',col:'#4A9BB8',bg:'rgba(74,155,184,.1)',role:'Planification · Réglementation',shift:[6,20],style:'efficace, précise et très organisée. Supervise les rotations, les horaires, la météo et les contraintes réglementaires.',greet:'Sophie Aubert, dispatch WABA, j écoute.',greet_en:'Sophie Aubert, WABA dispatch, go ahead.'},
+  {id:'hind',name:'Hind Amrani',ini:'HA',col:'#5A9E6F',bg:'rgba(90,158,111,.1)',role:'VIP · International',shift:[8,20],style:'multilingue, posée et très professionnelle. Spécialiste des clients VIP, du handling international et des changements de dernière minute.',greet:'Dispatch WABA, Hind Amrani, bonjour.',greet_en:'WABA dispatch, Hind Amrani, good day.'},
+  {id:'antoine',name:'Antoine Ferrara',ini:'AF',col:'#B85A4A',bg:'rgba(184,90,74,.1)',role:'Technique · Suivi en vol',shift:[12,24],style:'chaleureux, réactif et ancien navigant. Coordonne les pannes, les déroutements, l ACARS et le suivi opérationnel en vol.',greet:'Antoine au dispatch WABA, je vous écoute.',greet_en:'Antoine at WABA dispatch, go ahead Captain.'},
 ];
 
 const EASA = `CONTEXTE DE SIMULATION WABA:
@@ -803,23 +797,22 @@ async function startDuty(){
   $('b-acft').textContent=S.aircraft;
   $('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
   updateDispUI();
-  // Précharge la voix française dès la prise de service afin qu'elle soit
-  // disponible avant le premier appel OPS.
+  // Vérifie la voix distante dès la prise de service.
   $('kokoro-btn').style.opacity='.7';
-  $('kokoro-btn').title='Chargement de la voix française...';
+  $('kokoro-btn').title='Connexion à la voix WABA...';
   // Ces appels démarrent immédiatement depuis le clic utilisateur, nécessaire
   // pour que le navigateur puisse afficher la permission microphone.
   const micPromise=requestMicAccess();
-  const voicePromise=initKokoro();
+  const voicePromise=initElevenLabs();
   let progress=12;
-  setBootProgress(progress,'AUTORISATION MICROPHONE ET CHARGEMENT DE LA VOIX...');
+  setBootProgress(progress,'AUTORISATION MICROPHONE ET CONNEXION À LA VOIX...');
   const progressTimer=setInterval(()=>{
     progress=Math.min(92,progress+(progress<55?7:progress<80?3:1));
-    setBootProgress(progress,kokoroReady?'FINALISATION DU CENTRE OPS...':'CHARGEMENT DE LA VOIX FRANÇAISE...');
+    setBootProgress(progress,kokoroReady?'FINALISATION DU CENTRE OPS...':'CONNEXION À LA VOIX WABA...');
   },700);
   await Promise.allSettled([micPromise,voicePromise]);
   clearInterval(progressTimer);
-  setBootProgress(100,kokoroReady?'WABA OPS PRÊT — VOIX FF_SIWIS':'SESSION PRÊTE — FF_SIWIS INDISPONIBLE, VOIX SYSTÈME');
+  setBootProgress(100,kokoroReady?'WABA OPS PRÊT — VOIX ELEVENLABS':'SESSION PRÊTE — ELEVENLABS INDISPONIBLE, VOIX SYSTÈME');
   await sleep(700);
   $('boot-ov').style.display='none';
   // ACARS welcome
@@ -1258,10 +1251,10 @@ async function initiateCall(type){
   $('call-name').textContent=d.name;
   $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
   $('call-tx').innerHTML='';
-  $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Préparation de la voix française...';
+  $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Connexion à la voix WABA...';
   $('status-dot').className='dot call';
   if(!kokoroReady){
-    await Promise.race([initKokoro(),sleep(60000)]);
+    await Promise.race([initElevenLabs(),sleep(10000)]);
     if(!S.callActive)return;
   }
   $('call-stat').textContent='Connexion en cours...';
@@ -1353,68 +1346,61 @@ function addTx(who,name,text){
 }
 
 // ═══════════════════════════════════════════════════════
-// TTS — Kokoro (voix réalistes) + fallback Web Speech API
+// TTS — ElevenLabs via le Worker Cloudflare + fallback Web Speech API
 // ═══════════════════════════════════════════════════════
-let kokoroTTS = null;
-let kokoroLoading = false;
 let kokoroReady = false;
-let kokoroLoadPromise = null;
 let kokoroErrorMessage = '';
 let audioMuted = false;
 let currentAudio = null;
-
-// ff_siwis est la voix française native de Kokoro. Les profils de vitesse
-// donnent un caractère légèrement différent à chaque dispatcher.
-const DISPATCHER_VOICES = {
-  marc: 'ff_siwis', sophie: 'ff_siwis', kevin: 'ff_siwis',
-  isabelle: 'ff_siwis', thomas: 'ff_siwis', antoine: 'ff_siwis',
-  hind: 'ff_siwis', laurent: 'ff_siwis', nathalie: 'ff_siwis', claire: 'ff_siwis',
+const WABA_PROXY='https://waba-proxy.p7gmnjmm7w.workers.dev';
+const DISPATCHER_VOICE_PROFILE={
+  sophie:'1',marc:'2',hind:'3',antoine:'4'
 };
 
-const DISPATCHER_SPEEDS = {
-  marc:.94, sophie:1.06, kevin:1.02, isabelle:.90, thomas:1.08,
-  antoine:.98, hind:.96, laurent:.92, nathalie:.95, claire:1.03,
-};
-
-async function initKokoro() {
-  if(kokoroReady)return true;
-  if(kokoroLoadPromise)return kokoroLoadPromise;
-  kokoroLoading = true;
-  $('kokoro-btn').style.opacity = '.7';
-  $('kokoro-btn').title = 'Chargement de la voix française...';
-  kokoroLoadPromise=(async()=>{try {
-    showToast('Chargement de la voix française... première utilisation uniquement', 8000);
-    const { KokoroTTS } = await import('https://esm.sh/kokoro-js@1.1.1');
-    kokoroTTS = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
-      dtype: 'q4',
-      device: 'wasm',
-    });
-    kokoroReady = true;
-    kokoroLoading = false;
-    $('kokoro-btn').style.opacity = '1';
-    $('kokoro-btn').title = 'Voix française prête';
-    showToast('✓ Voix française prête');
-    console.log('[WABA] Kokoro TTS ready. Voices:', await kokoroTTS.list_voices());
+async function initElevenLabs() {
+  $('kokoro-btn').style.opacity='.7';
+  $('kokoro-btn').title='Vérification de la voix WABA...';
+  try{
+    const res=await fetch(WABA_PROXY,{cache:'no-store'});
+    if(!res.ok)throw new Error(`Worker HTTP ${res.status}`);
+    const state=await res.json();
+    if(!state.elevenlabs_configured||!state.voice_configured)throw new Error('Configuration ElevenLabs incomplète');
+    kokoroReady=true;
+    $('kokoro-btn').style.opacity='1';
+    $('kokoro-btn').title='Voix humaine ElevenLabs prête';
     return true;
-  } catch(e) {
-    console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
+  }catch(e){
+    kokoroReady=false;
     kokoroErrorMessage=String(e?.message||e||'Erreur inconnue');
-    kokoroLoading = false;
-    kokoroReady = false;
-    $('kokoro-btn').style.opacity = '.25';
-    $('kokoro-btn').title = `ff_siwis indisponible: ${kokoroErrorMessage.slice(0,120)} — touchez pour réessayer`;
-    showToast(`ff_siwis indisponible: ${kokoroErrorMessage.slice(0,90)}`,10000);
+    $('kokoro-btn').style.opacity='.25';
+    $('kokoro-btn').title=`ElevenLabs indisponible: ${kokoroErrorMessage}`;
     return false;
-  }finally{kokoroLoading=false;kokoroLoadPromise=null;}})();
-  return kokoroLoadPromise;
+  }
+}
+
+const ICAO_PHONETIC={A:'Alpha',B:'Bravo',C:'Charlie',D:'Delta',E:'Echo',F:'Foxtrot',G:'Golf',H:'Hotel',I:'India',J:'Juliett',K:'Kilo',L:'Lima',M:'Mike',N:'November',O:'Oscar',P:'Papa',Q:'Quebec',R:'Romeo',S:'Sierra',T:'Tango',U:'Uniform',V:'Victor',W:'Whisky',X:'X-ray',Y:'Yankee',Z:'Zulu'};
+const DIGIT_WORDS=['zéro','un','deux','trois','quatre','cinq','six','sept','huit','neuf'];
+function spellDigits(value){return String(value).split('').map(n=>DIGIT_WORDS[Number(n)]).join(' ');}
+function spellIcao(value){return String(value).split('').map(c=>ICAO_PHONETIC[c]||c).join(' ');}
+
+function aviationForSpeech(text){
+  let out=String(text||'');
+  out=out.replace(/\bWAB(\d+)\b/g,(_,n)=>`WestJet ${spellDigits(n)}`);
+  out=out.replace(/\bFL(\d{2,3})\b/g,(_,n)=>`niveau de vol ${Number(n)}`);
+  out=out.replace(/\b(\d{1,2}):(\d{2})Z\b/g,(_,h,m)=>`${Number(h)} heures ${m==='00'?'':Number(m)} Zulu`);
+  out=out.replace(/\b(\d{1,2}):(\d{2}) UTC\b/g,(_,h,m)=>`${Number(h)} heures ${m==='00'?'':Number(m)} Zulu`);
+  AIRPORTS.forEach(ap=>{out=out.replace(new RegExp(`\\b${ap.icao}\\b`,'g'),spellIcao(ap.icao));});
+  out=out.replace(/\bPAX\b/g,'passagers').replace(/\bOPS\b/g,'opérations');
+  out=out.replace(/\bQNH\b/g,'Q N H').replace(/\bMETAR\b/g,'métar').replace(/\bTAF\b/g,'taf').replace(/\bSIGMET\b/g,'sigmet');
+  out=out.replace(/\bOFFBLK\b/g,'heure de départ bloc').replace(/\bONBLK\b/g,'heure arrivée bloc');
+  return out;
 }
 
 function cleanForSpeech(text) {
-  return text
+  return aviationForSpeech(text)
     .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')
     .replace(/[*_~`#●·►◄▶◀■□]/g, '')
-    .replace(/\b(OFFBLK|ONBLK|WAB\d+|FL\d+|QNH|METAR|TAF|SIGMET|FDP|MTOW|MEL|CAMO)\b/g, '')
     .replace(/\[[^\]]*\]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
@@ -1425,15 +1411,23 @@ async function speak(text) {
   const clean = cleanForSpeech(text);
   if(!clean) return;
 
-  // Essayer Kokoro en premier
-  if(kokoroReady && kokoroTTS) {
+  // ElevenLabs reste côté serveur : aucune clé n'est exposée dans le navigateur.
+  if(kokoroReady) {
     try {
-      const dispId = S.dispatcher?.id || 'marc';
-      const voice = DISPATCHER_VOICES[dispId] || 'ff_siwis';
-      const speed = DISPATCHER_SPEEDS[dispId] || 1;
-      const audio = await kokoroTTS.generate(clean, { voice, speed });
-      // Jouer l'audio
-      const blob = new Blob([audio.data], { type: 'audio/wav' });
+      const controller=new AbortController();
+      const timer=setTimeout(()=>controller.abort(),25000);
+      const res=await fetch(`${WABA_PROXY}/tts`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        signal:controller.signal,
+        body:JSON.stringify({
+          text:clean,
+          voice:DISPATCHER_VOICE_PROFILE[S.dispatcher?.id]||'1'
+        })
+      });
+      clearTimeout(timer);
+      if(!res.ok)throw new Error(`TTS HTTP ${res.status}`);
+      const blob=await res.blob();
       const url = URL.createObjectURL(blob);
       const a = new Audio(url);
       currentAudio=a;
@@ -1444,7 +1438,7 @@ async function speak(text) {
       });
       return;
     } catch(e) {
-      console.warn('[WABA] Kokoro speak error, fallback:', e);
+      console.warn('[WABA] ElevenLabs indisponible, fallback système:', e);
     }
   }
 
@@ -1684,14 +1678,14 @@ function showTeam(){
 // Init voices
 window.speechSynthesis?.getVoices();
 
-function toggleKokoro() {
+function toggleVoice() {
   if(kokoroReady) {
-    kokoroReady = false; kokoroTTS = null;
+    kokoroReady = false;
     $('kokoro-btn').style.opacity = '.4';
-    showToast('Voix française désactivée — voix système utilisée');
+    showToast('Voix ElevenLabs désactivée — voix système utilisée');
   } else {
     $('kokoro-btn').style.opacity = '1';
-    initKokoro().then(()=>{
+    initElevenLabs().then(()=>{
       if(kokoroReady) $('kokoro-btn').style.opacity = '1';
     });
   }
