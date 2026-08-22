@@ -542,9 +542,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="call-ctrl">
     <button class="cctrl c-sec" onclick="toggleSpk()">🔊</button>
     <button class="cctrl c-end" onclick="endCall()">📵</button>
-    <button class="cctrl c-mic" id="mic-btn" onclick="toggleMic()">🎤</button>
   </div>
-  <div class="mic-tip" id="mic-tip">Appuyez sur 🎤 pour parler</div>
   <div class="mic-tip" id="mic-tip">Microphone en attente</div>
 </div>
 
@@ -703,7 +701,6 @@ const S = {
   pilot:null, rank:null, aircraft:null, dutyStart:null, dutyEnd:null,
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
-  inFlight:false, acarsUnread:0, micActive:false, recognition:null,
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
   convHistory:[], position:'LFRS', callController:null,
@@ -1104,8 +1101,6 @@ async function initiateCall(type){
   $('call-stat').textContent='🔴 En communication';
   const lang=navigator.language?.startsWith('en')?'en':'fr';
   const greet=lang==='en'?d.greet_en:d.greet;
-  addTx('ops',d.name,greet);speak(greet);
-  await sleep(800);
   addTx('ops',d.name,greet);await speak(greet);
   const ctx=S;
   const sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
@@ -1117,7 +1112,6 @@ async function initiateCall(type){
     userPrompt=`Présente exactement cette rotation, sans modifier ni inventer ses données: ${planned.flightNo}, ${planned.dep} vers ${planned.arr}, départ ${planned.depT}, arrivée ${planned.arrT}, ${planned.pax.length} passagers, niveau ${planned.fl}, estimation carburant ${planned.fuel.total} kg. Rappelle que météo et carburant sont des données de simulation.`;
   }
   const intro=await callAI(sysPrompt,userPrompt);
-  if(intro){addTx('ops',d.name,intro);speak(intro);}
   if(intro){addTx('ops',d.name,intro);await speak(intro);}
   if(planned)handleBriefingResponse(planned);
   addCallHist(type);
@@ -1253,8 +1247,6 @@ async function speak(text) {
       const url = URL.createObjectURL(blob);
       const a = new Audio(url);
       currentAudio=a;
-      a.onended = () => {URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;};
-      await a.play();
       await new Promise(async(resolve,reject)=>{
         a.onended=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;resolve();};
         a.onerror=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;reject(new Error('Lecture audio impossible'));};
@@ -1277,14 +1269,10 @@ async function speak(text) {
   if(m) u.voice = m;
   await new Promise(resolve=>{
     u.onend=resolve;u.onerror=resolve;
-  window.speechSynthesis.speak(u);
     window.speechSynthesis.speak(u);
   });
 }
 
-function toggleMic(){
-  if(!S.callActive)return;
-  S.micActive?stopListen():startListen();
 async function requestMicAccess(){
   if(!navigator.mediaDevices?.getUserMedia){
     showToast('Microphone mains libres non disponible sur ce navigateur',5000);return false;
@@ -1302,21 +1290,9 @@ async function requestMicAccess(){
   }
 }
 
-function startListen(){
-  if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
-    $('mic-tip').textContent='Microphone non disponible';return;
-  }
 function startAutoListen(){
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  S.recognition=new SR();
-  S.recognition.lang=navigator.language?.startsWith('en')?'en-US':'fr-FR';
-  S.recognition.continuous=false;S.recognition.interimResults=false;
-  S.recognition.onstart=()=>{S.micActive=true;$('mic-btn').className='cctrl c-mic live';$('mic-tip').textContent='🎤 En écoute...';};
-  S.recognition.onresult=async e=>{
-    const t=e.results[0][0].transcript;
-    addTx('pilot',S.pilot,t);stopListen();
-    $('call-stat').textContent=S.dispatcher.name+' répond...';
   if(!SR){$('mic-tip').textContent='Reconnaissance vocale indisponible — utilisez ACARS';return;}
   const recognition=new SR();
   S.recognition=recognition;
@@ -1333,19 +1309,11 @@ function startAutoListen(){
     $('mic-tip').textContent='OPS prépare sa réponse...';
     const lang=navigator.language?.startsWith('en')?'en':'fr';
     const sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
-    const r=await callAI(sys,t);
-    if(r){addTx('ops',S.dispatcher.name,r);speak(r);
-      if(S.callType==='briefing'&&!S.currentFlight)handleBriefingResponse(r);
-    }
-    $('call-stat').textContent='🔴 En communication';
     const reply=await callAI(sys,text);
     if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
     S.processingSpeech=false;
     if(S.callActive)setTimeout(startAutoListen,300);
   };
-  S.recognition.onerror=()=>stopListen();
-  S.recognition.onend=()=>{if(S.micActive)stopListen();};
-  S.recognition.start();
   recognition.onerror=event=>{
     S.micActive=false;
     if(event.error==='not-allowed')S.micGranted=false;
@@ -1358,16 +1326,7 @@ function startAutoListen(){
   try{recognition.start();}catch(e){S.micActive=false;}
 }
 
-function stopListen(){
-  S.micActive=false;
-  if(S.recognition)S.recognition.stop();
-  $('mic-btn').className='cctrl c-mic';
-  $('mic-tip').textContent='Appuyez sur 🎤 pour parler';
-}
-
 function endCall(){
-  S.callActive=false;S.micActive=false;
-  if(S.recognition)S.recognition.stop();
   S.callActive=false;
   S.processingSpeech=false;S.micActive=false;
   if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
