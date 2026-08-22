@@ -302,6 +302,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="hdr-right">
     <div class="dot" id="status-dot"></div>
     <div class="clock" id="utc-clock">--:--Z</div>
+    <div onclick="toggleKokoro()" id="kokoro-btn" title="Voix Kokoro" style="font-size:14px;cursor:pointer;opacity:.4">🎙</div>
   </div>
 </div>
 
@@ -970,8 +971,8 @@ function scheduleScenario(f){
 // ═══════════════════════════════════════════════════════
 const CALL_SYS = {
   briefing:{
-    fr:(d,f,ac)=>`Tu es ${d.name}, dispatcher WABA (West Atlantic Business Aviation), compagnie aviation affaires Nantes. Tu appelles le ${f.rank} ${f.pilot} pour briefing rotation du soir. Avion: ${AIRCRAFT_DATA[ac].name} (${ac}). Mode: ${f.mode} (normal=classique, challenging=imprévu possible, fullops=imprévu certain). Génère rotation réaliste avec destination variée parmi nos aéroports européens, horaires UTC, météo simplifiée, nb PAX (max ${AIRCRAFT_DATA[ac].pax_max}), fuel estimé. Sois naturel et professionnel. Style: ${d.style}. ${EASA}`,
-    en:(d,f,ac)=>`You are ${d.name}, WABA dispatcher. Calling ${f.rank} ${f.pilot} for evening rotation briefing. Aircraft: ${AIRCRAFT_DATA[ac].name}. Mode: ${f.mode}. Generate realistic rotation. Style: ${d.style}. ${EASA}`,
+    fr:(d,f,ac)=>`IMPORTANT: Réponds en langage oral naturel UNIQUEMENT. Pas d astérisques, pas de bullets, pas de codes ACARS, pas d emojis, pas de majuscules excessives. Parle comme au téléphone. Tu es ${d.name}, dispatcher WABA (West Atlantic Business Aviation), compagnie aviation affaires Nantes. Tu appelles le ${f.rank} ${f.pilot} pour briefing rotation du soir. Avion: ${AIRCRAFT_DATA[ac].name} (${ac}). Mode: ${f.mode} (normal=classique, challenging=imprévu possible, fullops=imprévu certain). Génère rotation réaliste avec destination variée parmi nos aéroports européens, horaires UTC, météo simplifiée, nb PAX (max ${AIRCRAFT_DATA[ac].pax_max}), fuel estimé. Sois naturel et professionnel. Style: ${d.style}. ${EASA}`,
+    en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language ONLY. No asterisks, no bullets, no ACARS codes, no emojis. Speak as on the phone. You are ${d.name}, WABA dispatcher. Calling ${f.rank} ${f.pilot} for evening rotation briefing. Aircraft: ${AIRCRAFT_DATA[ac].name}. Mode: ${f.mode}. Generate realistic rotation. Style: ${d.style}. ${EASA}`,
   },
   free:{
     fr:(d,f)=>`Tu es ${d.name}, dispatcher WABA. Le ${f.rank} ${f.pilot} t appelle librement. Réponds naturellement à ses questions et demandes. Style: ${d.style}. ${EASA}`,
@@ -1003,6 +1004,8 @@ async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
   S.callType=type;S.callActive=true;S.convHistory=[];
+  // Démarrer Kokoro en arrière-plan si pas encore prêt
+  if(!kokoroReady && !kokoroLoading) initKokoro();
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
   $('call-ring').textContent='📞';
@@ -1067,15 +1070,90 @@ function addTx(who,name,text){
   w.appendChild(d);w.scrollTop=w.scrollHeight;
 }
 
-function speak(text){
-  if(!window.speechSynthesis)return;
+// ═══════════════════════════════════════════════════════
+// TTS — Kokoro (voix réalistes) + fallback Web Speech API
+// ═══════════════════════════════════════════════════════
+let kokoroTTS = null;
+let kokoroLoading = false;
+let kokoroReady = false;
+
+// Voix par dispatcher — masculin/féminin
+const DISPATCHER_VOICES = {
+  marc: 'bm_lewis',       // Voix masculine britannique
+  sophie: 'bf_emma',      // Voix féminine britannique
+  kevin: 'am_adam',       // Voix masculine américaine
+  isabelle: 'bf_isabella',// Voix féminine britannique
+  thomas: 'am_michael',   // Voix masculine américaine
+  antoine: 'bm_george',   // Voix masculine britannique
+  hind: 'bf_emma',        // Voix féminine britannique
+  laurent: 'bm_lewis',    // Voix masculine britannique
+  nathalie: 'bf_isabella',// Voix féminine britannique
+  claire: 'bf_emma',      // Voix féminine britannique
+};
+
+async function initKokoro() {
+  if(kokoroReady || kokoroLoading) return;
+  kokoroLoading = true;
+  try {
+    showToast('Chargement voix Kokoro... (première fois ~30s)', 8000);
+    const { KokoroTTS } = await import('https://esm.sh/kokoro-js@1.1.1');
+    kokoroTTS = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-ONNX', {
+      dtype: 'q8',
+      device: 'wasm',
+    });
+    kokoroReady = true;
+    kokoroLoading = false;
+    showToast('✓ Voix Kokoro prête !');
+    console.log('[WABA] Kokoro TTS ready. Voices:', await kokoroTTS.list_voices());
+  } catch(e) {
+    console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
+    kokoroLoading = false;
+    kokoroReady = false;
+  }
+}
+
+function cleanForSpeech(text) {
+  return text
+    .replace(/[\u{1F300}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[*_~`#●·►◄▶◀■□]/g, '')
+    .replace(/\b(OFFBLK|ONBLK|WAB\d+|FL\d+|QNH|METAR|TAF|SIGMET|FDP|MTOW|MEL|CAMO)\b/g, '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+async function speak(text) {
+  const clean = cleanForSpeech(text);
+  if(!clean) return;
+
+  // Essayer Kokoro en premier
+  if(kokoroReady && kokoroTTS) {
+    try {
+      const dispId = S.dispatcher?.id || 'marc';
+      const voice = DISPATCHER_VOICES[dispId] || 'bm_lewis';
+      const audio = await kokoroTTS.generate(clean, { voice });
+      // Jouer l'audio
+      const blob = new Blob([audio.data], { type: 'audio/wav' });
+      const url = URL.createObjectURL(blob);
+      const a = new Audio(url);
+      a.onended = () => URL.revokeObjectURL(url);
+      await a.play();
+      return;
+    } catch(e) {
+      console.warn('[WABA] Kokoro speak error, fallback:', e);
+    }
+  }
+
+  // Fallback Web Speech API
+  if(!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text);
-  u.lang=navigator.language?.startsWith('en')?'en-GB':'fr-FR';
-  u.rate=1.0;
-  const voices=window.speechSynthesis.getVoices();
-  const m=voices.find(v=>v.lang.startsWith(u.lang.split('-')[0])&&!v.name.includes('Google'));
-  if(m)u.voice=m;
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = navigator.language?.startsWith('en') ? 'en-GB' : 'fr-FR';
+  u.rate = 1.0; u.pitch = 1.0;
+  const voices = window.speechSynthesis.getVoices();
+  const m = voices.find(v => v.lang.startsWith(u.lang.split('-')[0]) && !v.name.includes('Google'));
+  if(m) u.voice = m;
   window.speechSynthesis.speak(u);
 }
 
@@ -1251,6 +1329,19 @@ function showTeam(){
 
 // Init voices
 window.speechSynthesis?.getVoices();
+
+function toggleKokoro() {
+  if(kokoroReady) {
+    kokoroReady = false; kokoroTTS = null;
+    $('kokoro-btn').style.opacity = '.4';
+    showToast('Voix Kokoro désactivée — Web Speech API');
+  } else {
+    $('kokoro-btn').style.opacity = '1';
+    initKokoro().then(()=>{
+      if(kokoroReady) $('kokoro-btn').style.opacity = '1';
+    });
+  }
+}
 </script>
 </body>
 </html>
