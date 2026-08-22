@@ -2230,7 +2230,20 @@ async function requestedLiveContext(text){
   }
 }
 
-function startAutoListen(){
+async function startAutoListen(){
+  if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted||S.listenRestartPending)return;
+  S.listenRestartPending=true;
+  // WebKit iOS peut figer SpeechRecognition lorsqu on le relance juste apres
+  // la lecture d un fichier audio. Une courte temporisation suivie d un
+  // reamorcage getUserMedia restaure l entree micro sur iPad/iPhone.
+  if(usesAppleTouchAudio()){
+    $('mic-tip').textContent='Reconnexion du microphone iPad...';
+    await sleep(4000);
+    if(!S.callActive){S.listenRestartPending=false;return;}
+    await requestMicAccess(false);
+    await sleep(350);
+  }
+  S.listenRestartPending=false;
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){$('mic-tip').textContent='Reconnaissance vocale indisponible — utilisez ACARS';return;}
@@ -2279,6 +2292,7 @@ function startAutoListen(){
 
 function endCall(){
   S.callActive=false;
+  S.listenRestartPending=false;
   stopRingback();stopOpsAmbience();playHangup();
   S.processingSpeech=false;S.micActive=false;
   if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
