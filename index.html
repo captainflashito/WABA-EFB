@@ -574,6 +574,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="call-tx" id="call-tx"></div>
   <div class="call-ctrl">
     <button class="cctrl c-sec" onclick="toggleSpk()">🔊</button>
+    <button class="cctrl c-sec" onclick="toggleAmbience()" title="Ambiance centre OPS">🎧</button>
     <button class="cctrl c-end" onclick="endCall()">📵</button>
   </div>
   <div class="mic-tip" id="mic-tip">Microphone en attente</div>
@@ -731,7 +732,7 @@ const S = {
   rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
-  convHistory:[], position:'LFRS', callController:null,
+  convHistory:[], position:'LFRS', callController:null,briefingStage:null,
 };
 
 const SESSION_STORAGE_KEY='waba_efb_session_v1';
@@ -1383,7 +1384,8 @@ const CALL_SYS = {
 async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
-  S.callType=type;S.callActive=true;S.convHistory=[];
+  S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
+  startRingback(type==='emergency');
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
   $('call-ring').textContent='📞';
@@ -1400,6 +1402,7 @@ async function initiateCall(type){
   await sleep(1500);
   $('call-stat').textContent=d.name+' décroche...';
   await sleep(700);
+  stopRingback();playPickup();startOpsAmbience();
   $('call-stat').textContent='🔴 En communication';
   const lang=navigator.language?.startsWith('en')?'en':'fr';
   const greet=lang==='en'?d.greet_en:d.greet;
@@ -1412,13 +1415,14 @@ async function initiateCall(type){
       : generateBusinessRotation();
     if(!planned){showToast('Impossible de générer une rotation');endCall();return;}
   }
-  // Le briefing initial n'est jamais généré librement par l'IA : il est lu
-  // depuis le même objet Flight que le dossier afin d'éviter toute divergence.
-  const intro=planned
-    ? makeSpokenBriefing(planned,d,lang)
-    : await callAI(sysPrompt,'Commence l appel après ton greeting. Sois naturel et concis.');
-  if(intro){addTx('ops',d.name,intro);await speak(intro);}
-  if(planned)handleBriefingResponse(planned);
+  if(planned){
+    handleBriefingResponse(planned);
+    S.briefingStage='awaiting-introduction';
+    $('mic-tip').textContent='🎤 Présentez-vous, les OPS vous écoutent...';
+  }else{
+    const intro=await callAI(sysPrompt,'Commence l appel après ton greeting. Sois naturel et concis.');
+    if(intro){addTx('ops',d.name,intro);await speak(intro);}
+  }
   addCallHist(type);
   if(S.callActive)startAutoListen();
 }
@@ -1490,7 +1494,87 @@ function addTx(who,name,text){
 let kokoroReady = false;
 let kokoroErrorMessage = '';
 let audioMuted = false;
+let ambienceEnabled = true;
 let currentAudio = null;
+let callAudioCtx=null,callMaster=null,callAmbienceGain=null,ringTimer=null,ambienceTimer=null;
+let callAmbienceNodes=[];
+
+function ensureCallAudio(){
+  if(!callAudioCtx){
+    callAudioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    callMaster=callAudioCtx.createGain();callMaster.gain.value=audioMuted?0:.22;callMaster.connect(callAudioCtx.destination);
+  }
+  if(callAudioCtx.state==='suspended')callAudioCtx.resume();
+  return callAudioCtx;
+}
+
+function callTone(frequencies,duration=.25,level=.08,delay=0,type='sine'){
+  try{
+    const ctx=ensureCallAudio(),start=ctx.currentTime+delay,gain=ctx.createGain();
+    gain.gain.setValueAtTime(.0001,start);gain.gain.exponentialRampToValueAtTime(level,start+.02);
+    gain.gain.setValueAtTime(level,start+Math.max(.03,duration-.04));gain.gain.exponentialRampToValueAtTime(.0001,start+duration);
+    gain.connect(callMaster);
+    frequencies.forEach(freq=>{const osc=ctx.createOscillator();osc.type=type;osc.frequency.value=freq;osc.connect(gain);osc.start(start);osc.stop(start+duration+.03);});
+  }catch{}
+}
+
+function startRingback(urgent=false){
+  stopRingback();ensureCallAudio();
+  const ring=()=>{
+    if(!S.callActive)return;
+    callTone(urgent ? [620,780] : [425,450], urgent ? 0.38 : 0.75, urgent ? 0.065 : 0.05);
+    if(urgent)callTone([620,780],.38,.065,.52);
+  };
+  ring();ringTimer=setInterval(ring,urgent?1800:3000);
+}
+
+function stopRingback(){if(ringTimer){clearInterval(ringTimer);ringTimer=null;}}
+
+function playPickup(){callTone([520],.08,.045,0,'triangle');callTone([760],.06,.035,.1,'triangle');}
+function playHangup(){callTone([480],.09,.045);callTone([360],.18,.04,.11);}
+
+function scheduleRadioChirp(){
+  if(!S.callActive||!callAmbienceGain)return;
+  ambienceTimer=setTimeout(()=>{
+    if(S.callActive){callTone([1050],.025,.008);callTone([920],.035,.006,.04);scheduleRadioChirp();}
+  },7000+Math.random()*9000);
+}
+
+function startOpsAmbience(){
+  stopOpsAmbience();
+  if(!ambienceEnabled)return;
+  try{
+    const ctx=ensureCallAudio();
+    callAmbienceGain=ctx.createGain();callAmbienceGain.gain.value=.018;callAmbienceGain.connect(callMaster);
+    const buffer=ctx.createBuffer(1,ctx.sampleRate*3,ctx.sampleRate),data=buffer.getChannelData(0);
+    for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.24;
+    const noise=ctx.createBufferSource(),filter=ctx.createBiquadFilter();
+    noise.buffer=buffer;noise.loop=true;filter.type='lowpass';filter.frequency.value=620;
+    noise.connect(filter);filter.connect(callAmbienceGain);noise.start();
+    const hum=ctx.createOscillator(),humGain=ctx.createGain();hum.type='sine';hum.frequency.value=72;humGain.gain.value=.006;
+    hum.connect(humGain);humGain.connect(callAmbienceGain);hum.start();
+    callAmbienceNodes=[noise,hum];scheduleRadioChirp();
+  }catch{}
+}
+
+function setCallAudioDuck(active){
+  if(!callAudioCtx||!callAmbienceGain)return;
+  const now=callAudioCtx.currentTime;
+  callAmbienceGain.gain.cancelScheduledValues(now);
+  callAmbienceGain.gain.linearRampToValueAtTime(active?.004:.018,now+.12);
+}
+
+function stopOpsAmbience(){
+  if(ambienceTimer){clearTimeout(ambienceTimer);ambienceTimer=null;}
+  callAmbienceNodes.forEach(node=>{try{node.stop();}catch{}});callAmbienceNodes=[];
+  if(callAmbienceGain){try{callAmbienceGain.disconnect();}catch{}callAmbienceGain=null;}
+}
+
+function toggleAmbience(){
+  ambienceEnabled=!ambienceEnabled;
+  if(ambienceEnabled&&S.callActive)startOpsAmbience();else stopOpsAmbience();
+  showToast(ambienceEnabled?'Ambiance centre OPS activée':'Ambiance centre OPS coupée');
+}
 const WABA_PROXY='https://waba-proxy.p7gmnjmm7w.workers.dev';
 const DISPATCHER_VOICE_PROFILE={
   sophie:'1',marc:'2',hind:'3',antoine:'4'
@@ -1549,6 +1633,7 @@ async function speak(text) {
   if(audioMuted)return;
   const clean = cleanForSpeech(text);
   if(!clean) return;
+  setCallAudioDuck(true);
 
   // ElevenLabs reste côté serveur : aucune clé n'est exposée dans le navigateur.
   if(kokoroReady) {
@@ -1575,6 +1660,7 @@ async function speak(text) {
         a.onerror=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;reject(new Error('Lecture audio impossible'));};
         try{await a.play();}catch(e){reject(e);}
       });
+      setCallAudioDuck(false);
       return;
     } catch(e) {
       console.warn('[WABA] ElevenLabs indisponible, fallback système:', e);
@@ -1582,7 +1668,7 @@ async function speak(text) {
   }
 
   // Fallback Web Speech API
-  if(!window.speechSynthesis) return;
+  if(!window.speechSynthesis){setCallAudioDuck(false);return;}
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(clean);
   u.lang = navigator.language?.startsWith('en') ? 'en-GB' : 'fr-FR';
@@ -1599,6 +1685,7 @@ async function speak(text) {
     u.onend=resolve;u.onerror=resolve;
     window.speechSynthesis.speak(u);
   });
+  setCallAudioDuck(false);
 }
 
 async function requestMicAccess(){
@@ -1615,6 +1702,55 @@ async function requestMicAccess(){
     S.micGranted=false;
     showToast('Microphone refusé — appels en écoute uniquement',6000);
     return false;
+  }
+}
+
+function rotationContextForAI(){
+  const legs=S.rotationPlan.slice(S.rotationIndex).map((leg,index)=>
+    `Secteur ${index+1}: ${leg.flightNo}, ${leg.dep} vers ${leg.arr}, ${leg.depDate||S.dutyDate} ${leg.depT} à ${leg.arrT}, ${leg.missionRole}, ${leg.pax.length} passagers, ${leg.fl}, alternate ${leg.alt}, carburant simulation ${leg.fuel.total} kg.`
+  ).join(' ');
+  return `DOSSIER STRUCTURÉ WABA, RÉVISION ${S.rotationRevision||0}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}. ${legs}`;
+}
+
+function normalizeSearchText(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
+
+function requestedWeatherAirport(text){
+  const normalized=normalizeSearchText(text).replace(/\b([A-Z])\s+([A-Z])\s+([A-Z])\s+([A-Z])\b/g,'$1$2$3$4');
+  const direct=normalized.match(/\b[A-Z]{4}\b/g)?.find(code=>getAP(code));
+  if(direct)return direct;
+  const byCity=AIRPORTS.find(ap=>normalized.includes(normalizeSearchText(ap.city)));
+  if(byCity)return byCity.icao;
+  if(/EN ROUTE|SUR LA ROUTE|ROUTE WEATHER/.test(normalized)&&S.currentFlight){
+    const f=S.currentFlight,midLat=(f.depAp.lat+f.arrAp.lat)/2,midLon=(f.depAp.lon+f.arrAp.lon)/2;
+    return AIRPORTS.filter(ap=>ap.icao!==f.dep&&ap.icao!==f.arr)
+      .sort((a,b)=>distNM(midLat,midLon,a.lat,a.lon)-distNM(midLat,midLon,b.lat,b.lon))[0]?.icao||f.arr;
+  }
+  return S.currentFlight?.arr||null;
+}
+
+function rawWeatherValue(item,type){
+  if(!item)return null;
+  return item[type==='metar'?'rawOb':'rawTAF']||item.raw_text||item.rawText||item.raw||null;
+}
+
+async function requestedLiveContext(text){
+  const normalized=normalizeSearchText(text);
+  if(/\bNOTAM/.test(normalized)){
+    return `NOTAM: aucun flux NOTAM officiel authentifié n est connecté à WABA. Dis-le clairement et invite le pilote à consulter sa source NOTAM officielle. N invente et ne résume aucun NOTAM.`;
+  }
+  if(!/METEO|WEATHER|METAR|TAF|CONDITIONS/.test(normalized))return '';
+  const icao=requestedWeatherAirport(text);
+  if(!icao)return `MÉTÉO LIVE: terrain non identifié. Demande le code OACI au pilote.`;
+  try{
+    const res=await fetch(`${WABA_PROXY}/weather?icao=${encodeURIComponent(icao)}`,{cache:'no-store'});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    const metar=rawWeatherValue(data.metar?.[0],'metar');
+    const taf=rawWeatherValue(data.taf?.[0],'taf');
+    if(!metar&&!taf)return `MÉTÉO LIVE ${icao}: aucune donnée METAR ou TAF disponible. Dis-le sans inventer.`;
+    return `MÉTÉO LIVE ${icao}, source AviationWeather.gov, récupérée ${data.fetched_at}. METAR: ${metar||'indisponible'}. TAF: ${(taf||'indisponible').slice(0,1800)}. Donne uniquement ce que le pilote demande, cite l heure du METAR et rappelle que la vérification opérationnelle reste nécessaire.`;
+  }catch(e){
+    return `MÉTÉO LIVE ${icao}: service indisponible. Dis-le clairement sans fournir de météo estimée.`;
   }
 }
 
@@ -1637,12 +1773,18 @@ function startAutoListen(){
     $('mic-tip').textContent='OPS prépare sa réponse...';
     const lang=navigator.language?.startsWith('en')?'en':'fr';
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
-    if(S.currentFlight){
-      const f=S.currentFlight;
-      sys+=` ROTATION ACTIVE IMMUTABLE: ${f.flightNo}, ${f.dep} vers ${f.arr}, départ ${f.depT}, arrivée ${f.arrT}, ${f.pax.length} PAX, niveau ${f.fl}, carburant simulation ${f.fuel.total} kg. Ne cite jamais une autre destination sauf si le pilote demande explicitement un changement.`;
+    if(S.currentFlight)sys+=` ${rotationContextForAI()} Ne modifie aucune donnée de ce dossier et ne cite une autre destination que pour répondre à une question explicite.`;
+    if(S.callType==='briefing'||S.callType==='next'){
+      if(S.briefingStage==='awaiting-introduction'){
+        sys+=` Le pilote vient de se présenter. Accuse réception naturellement. Donne uniquement le type de rotation, le nombre de secteurs, puis la route et l heure de départ du premier secteur. Trois phrases courtes maximum. Ne donne pas encore météo, carburant, passagers, handling, alternate ou détails des secteurs suivants. Termine en lui demandant ce qu il souhaite approfondir.`;
+      }else{
+        sys+=` Le briefing est interactif. Réponds uniquement à la question posée, en deux à quatre phrases courtes. Ne récite jamais tout le dossier et ne donne aucune information non demandée.`;
+      }
     }
+    sys+=` ${await requestedLiveContext(text)}`;
     const reply=await callAI(sys,text);
     if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
+    if(S.briefingStage==='awaiting-introduction')S.briefingStage='interactive';
     S.processingSpeech=false;
     if(S.callActive)setTimeout(startAutoListen,300);
   };
@@ -1660,6 +1802,7 @@ function startAutoListen(){
 
 function endCall(){
   S.callActive=false;
+  stopRingback();stopOpsAmbience();playHangup();
   S.processingSpeech=false;S.micActive=false;
   if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
   if(S.callController){S.callController.abort();S.callController=null;}
@@ -1672,6 +1815,7 @@ function endCall(){
 
 function toggleSpk(){
   audioMuted=!audioMuted;
+  if(callMaster&&callAudioCtx)callMaster.gain.setTargetAtTime(audioMuted?0:.22,callAudioCtx.currentTime,.03);
   if(audioMuted){
     if(window.speechSynthesis)window.speechSynthesis.cancel();
     if(currentAudio){currentAudio.pause();currentAudio=null;}
