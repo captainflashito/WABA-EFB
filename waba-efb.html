@@ -965,15 +965,16 @@ async function callClaude(systemPrompt, userMsg) {
   try {
     const messages = [...conversationHistory];
     if(userMsg) messages.push({ role: 'user', content: userMsg });
+    if(!messages.length) messages.push({ role: 'user', content: 'Commence.' });
 
     const res = await fetch('https://waba-proxy.p7gmnjmm7w.workers.dev', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 500,
         system: systemPrompt,
-        messages: messages.length ? messages : [{ role: 'user', content: 'Commence.' }]
+        messages
       })
     });
     const data = await res.json();
@@ -984,7 +985,7 @@ async function callClaude(systemPrompt, userMsg) {
     }
     return reply;
   } catch(e) {
-    console.error('Claude API error:', e);
+    console.error('API error:', e);
     return null;
   }
 }
@@ -1164,7 +1165,7 @@ async function getAcarsReply(code, msg) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 150,
         system: `Tu es ${STATE.dispatcher?.name||'Marc Lebrun'}, dispatcher WABA. Reponds a un message ACARS type ${code} du pilote. Reponse courte, format ACARS, style professionnel aviation. Pas plus de 2 lignes. Si pertinent, applique les reglements EASA Part-NCC (FTL, carburant, meteo minimums). Mode operationnel actuel: ${STATE.mode}.`,
         messages: [{ role: 'user', content: msg }]
