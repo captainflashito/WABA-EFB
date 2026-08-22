@@ -1789,13 +1789,20 @@ function initiateContextualCall(){
   initiateCall(type);
 }
 
+function usesAppleTouchAudio(){
+  return /iPad|iPhone|iPod/i.test(navigator.userAgent)||
+    (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+}
+
 async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol — utilisez ACARS');return;}
   S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
-  // Appelé immédiatement depuis le geste utilisateur afin que Safari puisse
-  // ouvrir le microphone. La piste restera active jusqu à endCall().
-  const micPromise=requestMicAccess(true);
+  // Safari iPad/iPhone gère mal la lecture TTS lorsqu un flux getUserMedia
+  // reste ouvert. Sur ces appareils, la reconnaissance active donc le micro
+  // seulement pendant les tours de parole du pilote (mode semi-duplex).
+  const appleTouchAudio=usesAppleTouchAudio();
+  const micPromise=requestMicAccess(!appleTouchAudio);
   startRingback(type==='emergency');
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
@@ -1803,7 +1810,7 @@ async function initiateCall(type){
   $('call-name').textContent=d.name;
   $('call-sub').textContent=d.role.toUpperCase()+' · NANTES OPS';
   $('call-tx').innerHTML='';
-  $('mic-tip').textContent='Activation du microphone pour cet appel...';
+  $('mic-tip').textContent=appleTouchAudio?'Préparation audio iPad...':'Activation du microphone pour cet appel...';
   $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Connexion à la voix WABA...';
   $('status-dot').className='dot call';
   if(!kokoroReady){
