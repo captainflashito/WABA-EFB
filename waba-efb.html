@@ -545,6 +545,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button class="cctrl c-mic" id="mic-btn" onclick="toggleMic()">🎤</button>
   </div>
   <div class="mic-tip" id="mic-tip">Appuyez sur 🎤 pour parler</div>
+  <div class="mic-tip" id="mic-tip">Microphone en attente</div>
 </div>
 
 <!-- TOAST -->
@@ -703,6 +704,8 @@ const S = {
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
   inFlight:false, acarsUnread:0, micActive:false, recognition:null,
+  inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
+  recognition:null, processingSpeech:false,
   convHistory:[], position:'LFRS', callController:null,
 };
 
@@ -763,6 +766,12 @@ function startDuty(){
   $('b-acft').textContent=S.aircraft;
   $('b-duty').textContent=S.dutyStart+'→'+S.dutyEnd;
   updateDispUI();
+  // Précharge la voix française dès la prise de service afin qu'elle soit
+  // disponible avant le premier appel OPS.
+  $('kokoro-btn').style.opacity='.7';
+  $('kokoro-btn').title='Chargement de la voix française...';
+  initKokoro();
+  requestMicAccess();
   // ACARS welcome
   setTimeout(()=>{
     addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.dispatcher.name.toUpperCase()} EN SERVICE`);
@@ -1097,6 +1106,7 @@ async function initiateCall(type){
   const greet=lang==='en'?d.greet_en:d.greet;
   addTx('ops',d.name,greet);speak(greet);
   await sleep(800);
+  addTx('ops',d.name,greet);await speak(greet);
   const ctx=S;
   const sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
   let planned=null;
@@ -1108,8 +1118,10 @@ async function initiateCall(type){
   }
   const intro=await callAI(sysPrompt,userPrompt);
   if(intro){addTx('ops',d.name,intro);speak(intro);}
+  if(intro){addTx('ops',d.name,intro);await speak(intro);}
   if(planned)handleBriefingResponse(planned);
   addCallHist(type);
+  if(S.callActive)startAutoListen();
 }
 
 function handleBriefingResponse(rotation){
@@ -1188,6 +1200,8 @@ const DISPATCHER_SPEEDS = {
 async function initKokoro() {
   if(kokoroReady || kokoroLoading) return;
   kokoroLoading = true;
+  $('kokoro-btn').style.opacity = '.7';
+  $('kokoro-btn').title = 'Chargement de la voix française...';
   try {
     showToast('Chargement de la voix française... première utilisation uniquement', 8000);
     const { KokoroTTS } = await import('https://esm.sh/kokoro-js@1.1.1');
@@ -1197,12 +1211,17 @@ async function initKokoro() {
     });
     kokoroReady = true;
     kokoroLoading = false;
+    $('kokoro-btn').style.opacity = '1';
+    $('kokoro-btn').title = 'Voix française prête';
     showToast('✓ Voix française prête');
     console.log('[WABA] Kokoro TTS ready. Voices:', await kokoroTTS.list_voices());
   } catch(e) {
     console.warn('[WABA] Kokoro failed, fallback Web Speech API:', e);
     kokoroLoading = false;
     kokoroReady = false;
+    $('kokoro-btn').style.opacity = '.25';
+    $('kokoro-btn').title = 'Voix française indisponible — touchez pour réessayer';
+    showToast('Voix française indisponible — voix système utilisée',6000);
   }
 }
 
@@ -1236,6 +1255,11 @@ async function speak(text) {
       currentAudio=a;
       a.onended = () => {URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;};
       await a.play();
+      await new Promise(async(resolve,reject)=>{
+        a.onended=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;resolve();};
+        a.onerror=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;reject(new Error('Lecture audio impossible'));};
+        try{await a.play();}catch(e){reject(e);}
+      });
       return;
     } catch(e) {
       console.warn('[WABA] Kokoro speak error, fallback:', e);
@@ -1251,18 +1275,39 @@ async function speak(text) {
   const voices = window.speechSynthesis.getVoices();
   const m = voices.find(v => v.lang.startsWith(u.lang.split('-')[0]) && !v.name.includes('Google'));
   if(m) u.voice = m;
+  await new Promise(resolve=>{
+    u.onend=resolve;u.onerror=resolve;
   window.speechSynthesis.speak(u);
+    window.speechSynthesis.speak(u);
+  });
 }
 
 function toggleMic(){
   if(!S.callActive)return;
   S.micActive?stopListen():startListen();
+async function requestMicAccess(){
+  if(!navigator.mediaDevices?.getUserMedia){
+    showToast('Microphone mains libres non disponible sur ce navigateur',5000);return false;
+  }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    stream.getTracks().forEach(track=>track.stop());
+    S.micGranted=true;
+    showToast('✓ Microphone autorisé pour les appels OPS');
+    return true;
+  }catch(e){
+    S.micGranted=false;
+    showToast('Microphone refusé — appels en écoute uniquement',6000);
+    return false;
+  }
 }
 
 function startListen(){
   if(!('webkitSpeechRecognition'in window)&&!('SpeechRecognition'in window)){
     $('mic-tip').textContent='Microphone non disponible';return;
   }
+function startAutoListen(){
+  if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   S.recognition=new SR();
   S.recognition.lang=navigator.language?.startsWith('en')?'en-US':'fr-FR';
@@ -1272,6 +1317,20 @@ function startListen(){
     const t=e.results[0][0].transcript;
     addTx('pilot',S.pilot,t);stopListen();
     $('call-stat').textContent=S.dispatcher.name+' répond...';
+  if(!SR){$('mic-tip').textContent='Reconnaissance vocale indisponible — utilisez ACARS';return;}
+  const recognition=new SR();
+  S.recognition=recognition;
+  recognition.lang=navigator.language?.startsWith('en')?'en-US':'fr-FR';
+  recognition.continuous=false;
+  recognition.interimResults=false;
+  recognition.onstart=()=>{S.micActive=true;$('mic-tip').textContent='🎤 Je vous écoute...';};
+  recognition.onresult=async event=>{
+    const text=event.results?.[0]?.[0]?.transcript?.trim();
+    if(!text)return;
+    S.processingSpeech=true;
+    S.micActive=false;
+    addTx('pilot',S.pilot,text);
+    $('mic-tip').textContent='OPS prépare sa réponse...';
     const lang=navigator.language?.startsWith('en')?'en':'fr';
     const sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
     const r=await callAI(sys,t);
@@ -1279,10 +1338,24 @@ function startListen(){
       if(S.callType==='briefing'&&!S.currentFlight)handleBriefingResponse(r);
     }
     $('call-stat').textContent='🔴 En communication';
+    const reply=await callAI(sys,text);
+    if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
+    S.processingSpeech=false;
+    if(S.callActive)setTimeout(startAutoListen,300);
   };
   S.recognition.onerror=()=>stopListen();
   S.recognition.onend=()=>{if(S.micActive)stopListen();};
   S.recognition.start();
+  recognition.onerror=event=>{
+    S.micActive=false;
+    if(event.error==='not-allowed')S.micGranted=false;
+    if(S.callActive&&!S.processingSpeech)setTimeout(startAutoListen,800);
+  };
+  recognition.onend=()=>{
+    S.micActive=false;
+    if(S.callActive&&!S.processingSpeech)setTimeout(startAutoListen,500);
+  };
+  try{recognition.start();}catch(e){S.micActive=false;}
 }
 
 function stopListen(){
@@ -1295,6 +1368,9 @@ function stopListen(){
 function endCall(){
   S.callActive=false;S.micActive=false;
   if(S.recognition)S.recognition.stop();
+  S.callActive=false;
+  S.processingSpeech=false;S.micActive=false;
+  if(S.recognition){try{S.recognition.abort();}catch{}S.recognition=null;}
   if(S.callController){S.callController.abort();S.callController=null;}
   if(window.speechSynthesis)window.speechSynthesis.cancel();
   if(currentAudio){currentAudio.pause();currentAudio=null;}
