@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#123A4A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WABA EFB">
+<link rel="manifest" href="manifest.webmanifest">
 <title>WABA EFB</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -94,6 +99,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .btn-sec:hover{border-color:var(--gold);color:var(--gold)}
 .btn-red{background:rgba(184,90,74,.12);border:1px solid rgba(184,90,74,.25);color:var(--red)}
 .btn-blue{background:rgba(74,155,184,.12);border:1px solid rgba(74,155,184,.25);color:var(--blue)}
+.alert-panel{display:flex;align-items:center;gap:11px}.alert-icon{width:40px;height:40px;border-radius:9px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:18px}.alert-copy{flex:1}.alert-state{font-size:9px;color:var(--text2);line-height:1.5}.alert-actions{display:flex;gap:7px;margin-top:9px}.alert-actions .btn{min-height:38px;padding:8px;font-size:8px}
 .btn:disabled{opacity:.35;cursor:not-allowed}
 .btn-sm{padding:8px 14px;font-size:10px;width:auto}
 
@@ -576,6 +582,21 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
       <div style="font-size:10px;color:var(--text2);line-height:1.6">
         Présentez-vous puis annoncez naturellement le motif de votre appel : briefing, retard, demande client, problème technique ou urgence.
       </div>
+    </div>
+
+    <div class="card">
+      <div class="alert-panel">
+        <div class="alert-icon">🔔</div>
+        <div class="alert-copy">
+          <div class="ctitle" style="margin-bottom:3px">Alertes opérationnelles</div>
+          <div class="alert-state" id="alert-state">Non activées sur cet appareil</div>
+        </div>
+      </div>
+      <div class="alert-actions">
+        <button class="btn btn-blue" id="alert-enable-btn" onclick="enableOperationalAlerts()">ACTIVER</button>
+        <button class="btn btn-sec" onclick="testOperationalAlert()">TESTER</button>
+      </div>
+      <div style="font-size:8px;color:var(--text3);margin-top:8px;line-height:1.5">Sonnerie WABA, notification système et vibration lorsque l’appareil la prend en charge.</div>
     </div>
 
     <div class="card" id="inflight-notice" style="display:none">
@@ -2464,7 +2485,8 @@ function addAcars(from,code,text,urgent=false){
     S.acarsUnread++;
     const b=$('acars-bdg');b.textContent=S.acarsUnread;b.style.display='flex';
   }
-  if(urgent)beep(true);
+  if(from==='ops')dispatchOperationalAlert(code,text,urgent);
+  saveSession();
 }
 
 async function sendAcars(){
@@ -2563,15 +2585,99 @@ function qMsg(code){
 // ═══════════════════════════════════════════════════════
 // SOUND
 // ═══════════════════════════════════════════════════════
+const ALERT_STORAGE_KEY='waba_operational_alerts_v1';
+let operationalAlertsEnabled=false;
+let operationalAlertRegistration=null;
+
+function isStandaloneApp(){
+  return window.matchMedia?.('(display-mode: standalone)').matches||window.navigator.standalone===true;
+}
+
+function alertLevel(code,urgent=false){
+  if(urgent||code==='ALERT')return'urgent';
+  if(['ATC','WX','OPS','DLA','UPD'].includes(String(code||'').toUpperCase()))return'operational';
+  return'info';
+}
+
+function alertTitle(level){
+  return level==='urgent'?'WABA OPS — ALERTE':level==='operational'?'WABA OPS — NOUVEAU MESSAGE':'WABA OPS — INFORMATION';
+}
+
+function updateAlertUI(){
+  const state=$('alert-state'),btn=$('alert-enable-btn');if(!state||!btn)return;
+  if(operationalAlertsEnabled){
+    state.textContent=`Actives · son${'vibrate' in navigator?' · vibration':''}${'Notification' in window&&Notification.permission==='granted'?' · notifications système':''}`;
+    state.style.color='var(--green)';btn.textContent='DÉSACTIVER';
+  }else{
+    state.textContent='Non activées sur cet appareil';state.style.color='var(--text2)';btn.textContent='ACTIVER';
+  }
+}
+
+async function initOperationalAlerts(){
+  operationalAlertsEnabled=localStorage.getItem(ALERT_STORAGE_KEY)==='enabled';
+  if('serviceWorker' in navigator&&location.protocol.startsWith('http')){
+    try{operationalAlertRegistration=await navigator.serviceWorker.register('./sw.js');}catch(e){console.warn('[WABA] Service worker indisponible',e);}
+  }
+  updateAlertUI();
+}
+
+async function enableOperationalAlerts(){
+  if(operationalAlertsEnabled){
+    operationalAlertsEnabled=false;localStorage.removeItem(ALERT_STORAGE_KEY);updateAlertUI();
+    if(navigator.clearAppBadge)try{await navigator.clearAppBadge();}catch{}
+    showToast('Alertes WABA désactivées');return;
+  }
+  if(usesAppleTouchAudio()&&!isStandaloneApp()){
+    alert('Sur iPad, ajoutez d abord WABA à l écran d accueil : bouton Partager, puis Ajouter à l écran d accueil. Ouvrez ensuite WABA depuis sa nouvelle icône et touchez ACTIVER.');
+    return;
+  }
+  ensureCallAudio();
+  let permission='unsupported';
+  if('Notification' in window){
+    try{permission=await Notification.requestPermission();}catch{}
+  }
+  operationalAlertsEnabled=true;localStorage.setItem(ALERT_STORAGE_KEY,'enabled');updateAlertUI();
+  beep(false);if(navigator.vibrate)navigator.vibrate(120);
+  showToast(permission==='denied'?'Sons activés · notifications système refusées':'Alertes WABA activées',5000);
+}
+
+async function showSystemOperationalNotification(title,body,level){
+  if(!('Notification' in window)||Notification.permission!=='granted')return;
+  const options={body:String(body||'').slice(0,220),tag:`waba-${level}`,renotify:true,icon:'./waba-icon.svg',badge:'./waba-icon.svg',data:{url:'./?open=acars'}};
+  try{
+    const reg=operationalAlertRegistration||await navigator.serviceWorker?.ready;
+    if(reg?.showNotification)await reg.showNotification(title,options);
+    else new Notification(title,options);
+  }catch(e){console.warn('[WABA] Notification indisponible',e);}
+}
+
+function dispatchOperationalAlert(code,text,urgent=false,forceSystem=false){
+  if(!operationalAlertsEnabled)return;
+  const level=alertLevel(code,urgent);
+  beep(level==='urgent');
+  if(navigator.vibrate){
+    const pattern=level==='urgent'?[250,120,250,120,500]:level==='operational'?[160,80,160]:[100];
+    try{navigator.vibrate(pattern);}catch{}
+  }
+  if(navigator.setAppBadge)navigator.setAppBadge(Math.max(1,S.acarsUnread||1)).catch(()=>{});
+  if(document.hidden||level==='urgent'||forceSystem)showSystemOperationalNotification(alertTitle(level),text,level);
+}
+
+function testOperationalAlert(){
+  if(!operationalAlertsEnabled){showToast('Activez d abord les alertes WABA',3500);return;}
+  dispatchOperationalAlert('OPS','Test alertes WABA — liaison opérationnelle disponible',false,true);
+  showToast('Test envoyé : son, notification et vibration si compatible',5000);
+}
+
 function beep(urgent=false){
   try{
-    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const ctx=ensureCallAudio();
     const o=ctx.createOscillator(),g=ctx.createGain();
-    o.connect(g);g.connect(ctx.destination);
+    o.connect(g);g.connect(ctx.destination);o.type=urgent?'square':'sine';
     o.frequency.value=urgent?880:660;
-    g.gain.setValueAtTime(0.3,ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(urgent?0.5:0.2));
-    o.start();o.stop(ctx.currentTime+(urgent?0.5:0.2));
+    g.gain.setValueAtTime(urgent?.18:.11,ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+(urgent?.45:.18));
+    o.start();o.stop(ctx.currentTime+(urgent?.45:.18));
     if(urgent)setTimeout(()=>beep(false),600);
   }catch{}
 }
@@ -2584,7 +2690,10 @@ function switchTab(t){
     $('tab-'+id).classList.toggle('on',id===t);
     $('page-'+id).classList.toggle('on',id===t);
   });
-  if(t==='acars'){S.acarsUnread=0;$('acars-bdg').style.display='none';}
+  if(t==='acars'){
+    S.acarsUnread=0;$('acars-bdg').style.display='none';
+    if(navigator.clearAppBadge)Promise.resolve(navigator.clearAppBadge()).catch(()=>{});
+  }
 }
 
 function showTeam(){
@@ -2593,6 +2702,8 @@ function showTeam(){
 
 // Init voices
 window.speechSynthesis?.getVoices();
+initOperationalAlerts();
+if(new URLSearchParams(location.search).get('open')==='acars')setTimeout(()=>switchTab('acars'),400);
 
 function toggleVoice() {
   if(kokoroReady) {
