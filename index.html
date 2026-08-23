@@ -209,6 +209,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .rot-leg:last-child{border-bottom:none}.rot-num{width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--bg4);font:700 9px var(--font-m);color:var(--text2)}
 .rot-route{font:700 11px var(--font-m)}.rot-meta{font-size:8px;color:var(--text2);margin-top:3px}.rot-status{font:700 8px var(--font-m);padding:3px 6px;border-radius:3px}
 .rot-status.done{color:var(--green);background:rgba(90,158,111,.12)}.rot-status.current{color:var(--gold);background:rgba(184,151,62,.12)}.rot-status.planned{color:var(--blue);background:rgba(74,155,184,.12)}
+.rot-leg{cursor:pointer;border-radius:8px;padding-left:6px;padding-right:6px}.rot-leg.selected{background:rgba(23,107,135,.08);outline:1px solid var(--border)}
+.dos-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dos-kpi{padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}.dos-kpi span{display:block;font-size:7px;color:var(--text3);letter-spacing:.8px;margin-bottom:3px}.dos-kpi strong{font-size:10px;color:var(--text)}
+.rev-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:9px;line-height:1.55}.rev-item:last-child{border-bottom:0}.rev-head{display:flex;justify-content:space-between;gap:8px;font:700 8px var(--font-m);color:var(--blue)}.rev-ack{color:var(--green)}
 
 /* SETUP */
 .setup-ov{position:fixed;inset:0;background:var(--bg);z-index:200;
@@ -646,11 +649,25 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
       </div>
     </div>
     <div id="dos-content" style="display:none;flex-direction:column;gap:11px">
+      <div class="card">
+        <div class="ctitle">Synthèse opérationnelle</div>
+        <div class="dos-summary">
+          <div class="dos-kpi"><span>DUTY UTC</span><strong id="dos-duty">—</strong></div>
+          <div class="dos-kpi"><span>ÉQUIPAGE</span><strong id="dos-crew">—</strong></div>
+          <div class="dos-kpi"><span>APPAREIL</span><strong id="dos-aircraft">—</strong></div>
+          <div class="dos-kpi"><span>ÉTAT DOSSIER</span><strong id="dos-revision">—</strong></div>
+        </div>
+        <div style="margin-top:9px;font:8px var(--font-m);color:var(--orange);line-height:1.5">SIMULATION UNIQUEMENT — DONNÉES NON CERTIFIÉES POUR LA CONDUITE D’UN VOL RÉEL</div>
+      </div>
       <!-- Rotation complète -->
       <div class="card">
         <div class="ctitle" id="rotation-title">Rotation WABA</div>
         <div id="rotation-legs"></div>
-        <div id="rotation-history" style="margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font:8px var(--font-m);color:var(--text3);line-height:1.7"></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">Journal des révisions OPS</div>
+        <div id="rotation-history"></div>
+        <button class="btn btn-sec" id="revision-ack-btn" onclick="acknowledgeLatestRevision()" style="display:none;margin-top:10px;font-size:9px">ACCUSER RÉCEPTION DE LA RÉVISION</button>
       </div>
       <!-- Route -->
       <div class="route-box">
@@ -664,16 +681,20 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
       </div>
       <!-- Infos vol -->
       <div class="card">
-        <div class="ctitle">Informations vol</div>
+        <div class="ctitle" id="d-sector-title">Informations secteur</div>
         <div class="crow"><span class="clbl">N° de vol</span><span class="cval" id="d-fltno">—</span></div>
+        <div class="crow"><span class="clbl">Nature de mission</span><span class="cval" id="d-mission">—</span></div>
         <div class="crow"><span class="clbl">Appareil</span><span class="cval" id="d-acft">—</span></div>
         <div class="crow"><span class="clbl">Départ prévu</span><span class="cval" id="d-dep-t">—</span></div>
         <div class="crow"><span class="clbl">Arrivée prévue</span><span class="cval" id="d-arr-t">—</span></div>
         <div class="crow"><span class="clbl">Niveau de vol</span><span class="cval" id="d-fl">—</span></div>
         <div class="crow"><span class="clbl">Distance</span><span class="cval" id="d-dist">—</span></div>
+        <div class="crow"><span class="clbl">Temps de vol estimé</span><span class="cval" id="d-block">—</span></div>
         <div class="crow"><span class="clbl">Alternate</span><span class="cval" id="d-alt">—</span></div>
+        <div class="crow"><span class="clbl">Handling départ</span><span class="cval" id="d-dep-handling">—</span></div>
         <div class="crow"><span class="clbl">Handling arrivée</span><span class="cval" id="d-handling">—</span></div>
         <div class="crow"><span class="clbl">Parking</span><span class="cval" id="d-parking">—</span></div>
+        <div class="crow"><span class="clbl">Formalités / douanes</span><span class="cval" id="d-customs">—</span></div>
       </div>
       <!-- Météo -->
       <div class="card">
@@ -1450,11 +1471,31 @@ async function fetchWX(icao,lat,lon){
   }catch{return{icon:'❓',wind:'---',vis:'---',temp:'---',clouds:'---',ok:false};}
 }
 
-function recordRotationRevision(reason){
+function recordRotationRevision(reason,meta={}){
   S.rotationRevision=(Number(S.rotationRevision)||0)+1;
   S.rotationHistory=Array.isArray(S.rotationHistory)?S.rotationHistory:[];
-  S.rotationHistory.push({revision:S.rotationRevision,at:utcNow(),reason:String(reason||'MISE À JOUR OPS')});
+  S.rotationHistory.push({
+    id:`REV-${Date.now()}`,revision:S.rotationRevision,at:utcNow(),
+    reason:String(reason||'MISE À JOUR OPS'),source:meta.source||'WABA OPS',
+    affectedSector:meta.affectedSector??null,details:meta.details||'',
+    acknowledged:false,acknowledgedAt:null
+  });
   saveSession();
+}
+
+function acknowledgeLatestRevision(){
+  const item=[...(S.rotationHistory||[])].reverse().find(entry=>Number(entry.revision)>0&&!entry.acknowledged);
+  if(!item){showToast('Aucune révision en attente');return;}
+  item.acknowledged=true;item.acknowledgedAt=utcNow();
+  addAcars('pilot','ACK',`DOSSIER REV ${item.revision} REÇU ET PRIS EN COMPTE`);
+  saveSession();renderRotationPlan();
+  showToast(`Révision ${item.revision} acquittée`,3500);
+}
+
+function selectDossierLeg(index){
+  const leg=S.rotationPlan?.[index];if(!leg)return;
+  S.dossierLegIndex=index;
+  populateDossier(leg,{preservePhase:true,selectedIndex:index});
 }
 
 function resequenceFollowingLegs(startIndex){
@@ -1483,8 +1524,18 @@ function renderRotationPlan(){
   if(!host)return;
   host.replaceChildren();
   $('rotation-title').textContent=`Rotation WABA — ${S.rotationType||'MISSION'} · REV ${S.rotationRevision||0}`;
+  if($('dos-duty'))$('dos-duty').textContent=`${formatDateFr(S.dutyDate)} · ${S.dutyStart}–${S.dutyEnd}Z`;
+  if($('dos-crew'))$('dos-crew').textContent=`${S.rank} ${S.pilot}`;
+  if($('dos-aircraft'))$('dos-aircraft').textContent=`${AIRCRAFT_DATA[S.aircraft]?.reg||S.aircraft} · ${S.aircraft}`;
+  const pending=(S.rotationHistory||[]).filter(item=>Number(item.revision)>0&&!item.acknowledged).length;
+  if($('dos-revision')){
+    $('dos-revision').textContent=`REV ${S.rotationRevision||0} · ${pending?pending+' À ACQUITTER':'À JOUR'}`;
+    $('dos-revision').style.color=pending?'var(--orange)':'var(--green)';
+  }
   S.rotationPlan.forEach((leg,index)=>{
     const row=document.createElement('div');row.className='rot-leg';
+    if(index===(S.dossierLegIndex??S.rotationIndex))row.classList.add('selected');
+    row.onclick=()=>selectDossierLeg(index);
     const num=document.createElement('div');num.className='rot-num';num.textContent=index+1;
     const info=document.createElement('div');
     const route=document.createElement('div');route.className='rot-route';route.textContent=`${leg.dep} → ${leg.arr}`;
@@ -1511,12 +1562,26 @@ function renderRotationPlan(){
   });
   const history=$('rotation-history');
   if(history){
-    history.textContent=(S.rotationHistory||[]).slice(-4).map(item=>`REV ${item.revision} · ${item.at} · ${item.reason}`).join('\n');
-    history.style.whiteSpace='pre-line';
+    history.replaceChildren();
+    [...(S.rotationHistory||[])].reverse().forEach(item=>{
+      const line=document.createElement('div');line.className='rev-item';
+      const head=document.createElement('div');head.className='rev-head';
+      const label=document.createElement('span');label.textContent=`REV ${item.revision} · ${item.at} · ${item.source||'WABA OPS'}`;
+      const ack=document.createElement('span');ack.className=item.acknowledged||Number(item.revision)===0?'rev-ack':'';
+      ack.textContent=Number(item.revision)===0?'ÉMIS':item.acknowledged?`REÇU ${item.acknowledgedAt||''}`:'EN ATTENTE';
+      const reason=document.createElement('div');reason.textContent=item.reason;
+      head.append(label,ack);line.append(head,reason);
+      if(item.details){const details=document.createElement('div');details.style.color='var(--text2)';details.textContent=item.details;line.append(details);}
+      history.appendChild(line);
+    });
+    const ackBtn=$('revision-ack-btn');if(ackBtn)ackBtn.style.display=pending?'block':'none';
   }
 }
 
-function populateDossier(f){
+function populateDossier(f,options={}){
+  if(!f)return;
+  const selectedIndex=options.selectedIndex??S.rotationPlan.findIndex(leg=>leg.flightNo===f.flightNo);
+  if(selectedIndex>=0)S.dossierLegIndex=selectedIndex;
   $('dos-empty').style.display='none';
   const dc=$('dos-content');dc.style.display='flex';dc.style.flexDirection='column';
   renderRotationPlan();
@@ -1526,14 +1591,19 @@ function populateDossier(f){
   $('d-arr-city').textContent=f.arrAp.city+', '+f.arrAp.country;
   $('d-dur').textContent=fmtDur(f.durMin);
   $('d-fltno').textContent=f.flightNo;
+  $('d-sector-title').textContent=`Secteur ${selectedIndex>=0?selectedIndex+1:'—'} · ${selectedIndex===S.rotationIndex?'ACTIF':'CONSULTATION'}`;
+  $('d-mission').textContent=f.missionRole||'MISSION AFFAIRES';
   $('d-acft').textContent=AIRCRAFT_DATA[S.aircraft].name+' · '+AIRCRAFT_DATA[S.aircraft].reg;
   $('d-dep-t').textContent=`${formatDateFr(f.depDate||S.dutyDate)} · ${f.depT}`;
   $('d-arr-t').textContent=`${formatDateFr(f.arrDate||S.dutyDate)} · ${f.arrT}`;
   $('d-fl').textContent=f.fl;
   $('d-dist').textContent=f.dist+' NM';
+  $('d-block').textContent=fmtDur(f.durMin);
   $('d-alt').textContent=f.alt;
+  $('d-dep-handling').textContent=f.depAp.handling||'À confirmer';
   $('d-handling').textContent=f.arrAp.handling||'—';
   $('d-parking').textContent=f.arrAp.parking||'—';
+  $('d-customs').textContent=f.depAp.country!==f.arrAp.country?'Coordination internationale requise':'Selon manifeste et statut du vol';
   // WX
   $('wx-dep-lbl').textContent='DEP '+f.dep;
   $('wx-arr-lbl').textContent='ARR '+f.arr;
@@ -1578,10 +1648,12 @@ function populateDossier(f){
     $('d-notes-card').style.display='none';
   }
   // Phase bar
-  $('b-flt').textContent=f.flightNo;
-  $('acars-fltno').textContent=f.flightNo;
-  $('acars-phase').textContent='PRE-DÉPART · '+f.dep;
-  setPhase(0);
+  if(!options.preservePhase){
+    $('b-flt').textContent=f.flightNo;
+    $('acars-fltno').textContent=f.flightNo;
+    $('acars-phase').textContent='PRE-DÉPART · '+f.dep;
+    setPhase(0);
+  }
 }
 
 function openSimBrief(){
@@ -1735,7 +1807,9 @@ function applyOperationalChange(action,f){
       S.rotationPlan[idx]=revised;
       resequenceFollowingLegs(idx+1);
       S.rotationType=(S.rotationType||'ROTATION')+' — RÉVISÉE';
-      recordRotationRevision(`CHANGEMENT CLIENT SECTEUR ${idx+1}: ${revised.arr}`);
+      recordRotationRevision(`CHANGEMENT CLIENT SECTEUR ${idx+1}: ${next.dep}→${next.arr} remplacé par ${revised.dep}→${revised.arr}`,{
+        affectedSector:idx+1,source:'DISPATCH CLIENT',details:`Nouvel horaire ${revised.depT}–${revised.arrT} · ${revised.pax.length} PAX · alternate ${revised.alt}`
+      });
       renderRotationPlan();
       addAcars('ops','INFO',`ROTATION MISE À JOUR // SECTEUR ${idx+1}: ${revised.dep}→${revised.arr} // ${revised.depT}`);
     }
@@ -1747,8 +1821,10 @@ function applyOperationalChange(action,f){
       S.rotationPlan[S.rotationIndex]=diversion;
       resequenceFollowingLegs(S.rotationIndex+1);
       S.rotationType=(S.rotationType||'ROTATION')+' — DÉROUTÉE';
-      recordRotationRevision(`DÉROUTEMENT ${f.arr} VERS ${diversion.arr}`);
-      populateDossier(diversion);
+      recordRotationRevision(`DÉROUTEMENT ${f.arr} VERS ${diversion.arr}`,{
+        affectedSector:S.rotationIndex+1,source:'OPS / ÉQUIPAGE',details:`Route révisée ${diversion.dep}→${diversion.arr} · alternate ${diversion.alt}`
+      });
+      populateDossier(diversion,{preservePhase:true,selectedIndex:S.rotationIndex});
     }
   }
 }
