@@ -548,7 +548,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
     <div class="dot" id="status-dot"></div>
     <div class="clock" id="utc-clock">--:--Z</div>
     <button onclick="toggleTheme()" id="theme-toggle" class="theme-toggle" title="Activer le mode nuit" aria-label="Activer le mode nuit"></button>
-    <button onclick="toggleVoice()" id="kokoro-btn" title="Voix OPS ElevenLabs" class="voice-pill">VOICE</button>
+    <button onclick="testDispatcherVoice()" id="kokoro-btn" title="Tester la voix du dispatcher" class="voice-pill">TEST VOIX</button>
     <button onclick="requestResetSession()" title="R&#xE9;initialiser la session" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text2);border-radius:5px;padding:4px 6px;font:700 8px var(--font-m);cursor:pointer">R&#xC9;INIT.</button>
   </div>
 </div>
@@ -2367,12 +2367,14 @@ async function initElevenLabs() {
     if(!state.elevenlabs_configured||!state.voice_configured||state.voice_count!==4)throw new Error(`Configuration ElevenLabs incompl\u00E8te (${state.voice_count||0}/4 voix)`);
     kokoroReady=true;
     $('kokoro-btn').style.opacity='1';
+    $('kokoro-btn').textContent='VOIX OK';
     $('kokoro-btn').title='Voix humaine ElevenLabs pr\u00EAte';
     return true;
   }catch(e){
     kokoroReady=false;
     kokoroErrorMessage=String(e?.message||e||'Erreur inconnue');
     $('kokoro-btn').style.opacity='.25';
+    $('kokoro-btn').textContent='TEST VOIX';
     $('kokoro-btn').title=`ElevenLabs indisponible: ${kokoroErrorMessage}`;
     return false;
   }
@@ -2942,16 +2944,19 @@ window.speechSynthesis?.getVoices();
 initOperationalAlerts();
 if(new URLSearchParams(location.search).get('open')==='acars')setTimeout(()=>switchTab('acars'),400);
 
-function toggleVoice() {
-  if(kokoroReady) {
-    kokoroReady = false;
-    $('kokoro-btn').style.opacity = '.4';
-    showToast('Voix ElevenLabs d\u00E9sactiv\u00E9e \u2014 voix syst\u00E8me utilis\u00E9e');
-  } else {
-    $('kokoro-btn').style.opacity = '1';
-    initElevenLabs().then(()=>{
-      if(kokoroReady) $('kokoro-btn').style.opacity = '1';
-    });
+async function testDispatcherVoice(){
+  const button=$('kokoro-btn');
+  button.disabled=true;button.textContent='TEST...';button.style.opacity='.7';
+  try{
+    const ctx=ensureCallAudio();
+    if(ctx.state==='suspended')await ctx.resume();
+    const ready=await initElevenLabs();
+    if(!ready){showToast(`Serveur vocal indisponible : ${kokoroErrorMessage}`,7000);return;}
+    showToast('G\u00E9n\u00E9ration du test vocal...',3000);
+    await speak('Bonjour, test audio du centre des op\u00E9rations. La voix du dispatcher est active.');
+  }finally{
+    button.disabled=false;button.textContent=kokoroReady?'VOIX OK':'TEST VOIX';
+    button.style.opacity=kokoroReady?'1':'.35';
   }
 }
 
