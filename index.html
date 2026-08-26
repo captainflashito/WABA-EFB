@@ -459,17 +459,9 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
   <div class="setup-origin" id="setup-origin">OP&#xC9;RATEUR &#xB7; EXPLOITATION &#xB7; FLOTTE</div>
   <div class="setup-tagline" id="setup-tagline">Configurez votre environnement op&#xE9;rationnel.</div>
   <div class="setup-form-title"><span>01</span><div><strong>Prise de service</strong><small>Identification &#xE9;quipage et fen&#xEA;tre de duty</small></div></div>
+  <input type="hidden" id="s-operator" value="custom"/>
   <div class="frow" style="width:100%;margin-bottom:13px">
-    <div class="fg" style="margin-bottom:0">
-      <label class="fl">Op&#xE9;rateur</label>
-      <select class="fi" id="s-operator" onchange="refreshOperationSetup()">
-        <option value="custom" selected>Mon op&#xE9;rateur &#x2014; &#xE0; configurer</option>
-        <option value="general">OPS Demo &#x2014; Op&#xE9;rateur fictif neutre</option>
-        <option value="meridian">Meridian &#x2014; Airline fictive</option>
-        <option value="aerocargo">AeroCargo &#x2014; Cargo fictif</option>
-      </select>
-    </div>
-    <div class="fg" style="margin-bottom:0">
+    <div class="fg" style="margin-bottom:0;width:100%">
       <label class="fl">Exploitation</label>
       <select class="fi" id="s-operation" onchange="refreshAircraftOptions()">
         <option value="scheduled">Transport r&#xE9;gulier</option>
