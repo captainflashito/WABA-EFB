@@ -2139,6 +2139,7 @@ function usesAppleTouchAudio(){
 async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol \u2014 utilisez ACARS');return;}
+  unlockVoicePlayback();
   S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
   // Safari iPad/iPhone g\u00E8re mal la lecture TTS lorsqu un flux getUserMedia
   // reste ouvert. Sur ces appareils, la reconnaissance active donc le micro
@@ -2273,8 +2274,20 @@ let kokoroErrorMessage = '';
 let audioMuted = false;
 let ambienceEnabled = true;
 let currentAudio = null;
+let voicePlayer = null;
 let callAudioCtx=null,callMaster=null,callAmbienceGain=null,ringTimer=null,ambienceTimer=null;
 let callAmbienceNodes=[];
+
+function unlockVoicePlayback(){
+  if(usesAppleTouchAudio())return;
+  if(!voicePlayer){
+    voicePlayer=document.createElement('audio');
+    voicePlayer.preload='auto';voicePlayer.playsInline=true;
+  }
+  voicePlayer.src='data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=';
+  const attempt=voicePlayer.play();
+  if(attempt?.catch)attempt.catch(()=>{});
+}
 
 function ensureCallAudio(){
   if(!callAudioCtx){
@@ -2427,8 +2440,19 @@ function cleanForSpeech(text) {
 }
 
 async function playVoiceBlob(blob){
-  // Le contexte Web Audio est d\u00E9verrouill\u00E9 d\u00E8s le clic sur APPELER.
-  // Il \u00E9vite le blocage tardif de HTMLAudioElement dans Safari Mac et iPad.
+  if(!usesAppleTouchAudio()){
+    if(!voicePlayer)unlockVoicePlayback();
+    const url=URL.createObjectURL(blob),player=voicePlayer;
+    player.src=url;currentAudio=player;
+    await new Promise(async(resolve,reject)=>{
+      player.onended=()=>{URL.revokeObjectURL(url);if(currentAudio===player)currentAudio=null;resolve();};
+      player.onerror=()=>{URL.revokeObjectURL(url);if(currentAudio===player)currentAudio=null;reject(new Error('Lecture audio Safari impossible'));};
+      try{await player.play();}catch(e){URL.revokeObjectURL(url);reject(e);}
+    });
+    return;
+  }
+
+  // Sur iPad, Web Audio \u00E9vite le conflit avec la reconnaissance vocale.
   const ctx=ensureCallAudio();
   if(ctx.state==='suspended')await ctx.resume();
   const buffer=await ctx.decodeAudioData(await blob.arrayBuffer());
@@ -2946,6 +2970,7 @@ if(new URLSearchParams(location.search).get('open')==='acars')setTimeout(()=>swi
 
 async function testDispatcherVoice(){
   const button=$('kokoro-btn');
+  unlockVoicePlayback();
   button.disabled=true;button.textContent='TEST...';button.style.opacity='.7';
   try{
     const ctx=ensureCallAudio();
