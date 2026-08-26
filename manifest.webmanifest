@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "OPS CENTER — Flight Operations Simulator",
+  "short_name": "OPS CENTER",
+  "description": "Compagnon d’opérations aériennes pour simulateur de vol",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F4F7F8",
+  "theme_color": "#123A4A",
+  "icons": [
+    {
+      "src": "./waba-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
