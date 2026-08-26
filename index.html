@@ -2425,19 +2425,8 @@ function cleanForSpeech(text) {
 }
 
 async function playVoiceBlob(blob){
-  if(!usesAppleTouchAudio()){
-    const url=URL.createObjectURL(blob),a=new Audio(url);
-    currentAudio=a;
-    await new Promise(async(resolve,reject)=>{
-      a.onended=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;resolve();};
-      a.onerror=()=>{URL.revokeObjectURL(url);if(currentAudio===a)currentAudio=null;reject(new Error('Lecture audio impossible'));};
-      try{await a.play();}catch(e){URL.revokeObjectURL(url);reject(e);}
-    });
-    return;
-  }
-
-  // Sur iPad, ne pas utiliser HTMLAudioElement: WebKit peut alors bloquer
-  // SpeechRecognition pour tous les tours suivants. Web Audio \u00E9vite ce conflit.
+  // Le contexte Web Audio est d\u00E9verrouill\u00E9 d\u00E8s le clic sur APPELER.
+  // Il \u00E9vite le blocage tardif de HTMLAudioElement dans Safari Mac et iPad.
   const ctx=ensureCallAudio();
   if(ctx.state==='suspended')await ctx.resume();
   const buffer=await ctx.decodeAudioData(await blob.arrayBuffer());
