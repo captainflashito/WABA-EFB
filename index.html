@@ -234,6 +234,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .fi:focus{border-color:var(--gold)}
 select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237A7880'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:32px}
 .frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.aircraft-specs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:8px}
+.aircraft-spec{padding:9px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);min-width:0}
+.aircraft-spec span{display:block;font:600 7px var(--font-m);letter-spacing:.55px;color:var(--text3);margin-bottom:4px;text-transform:uppercase}
+.aircraft-spec strong{display:block;font:600 10px var(--font-m);color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .start-btn{width:100%;padding:13px;margin-top:6px;background:var(--gold);color:#000;
   border:none;border-radius:var(--r);font-size:12px;font-weight:700;
   font-family:var(--font-m);letter-spacing:1px;cursor:pointer;transition:all .2s}
@@ -498,8 +502,9 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
     </select>
   </div>
   <div class="fg">
-    <label class="fl">Qualification avion</label>
-    <select class="fi" id="s-ac"></select>
+    <label class="fl">Avion</label>
+    <select class="fi" id="s-ac" onchange="renderAircraftSpecs()"></select>
+    <div class="aircraft-specs" id="aircraft-specs" aria-live="polite"></div>
   </div>
   <div class="frow" style="width:100%;flex-wrap:wrap">
     <div class="fg" style="margin-bottom:4px;flex-basis:100%">
@@ -523,7 +528,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 
 <!-- PR&#xC9;PARATION SESSION -->
 <div class="boot-ov" id="boot-ov">
-  <div class="setup-emblem boot-emblem"><span>W</span></div>
+  <div class="setup-emblem boot-emblem"><span>OPS</span></div>
   <div class="boot-title" id="boot-title">OPS CENTER</div>
   <div class="boot-state" id="boot-state">INITIALISATION DE LA SESSION...</div>
   <div class="boot-track"><div class="boot-fill" id="boot-fill"></div></div>
@@ -533,7 +538,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 <!-- HEADER -->
 <div class="hdr">
   <div class="hdr-logo">
-    <div class="hdr-mark"><span>W</span></div>
+    <div class="hdr-mark"><span>OPS</span></div>
     <div>
       <div class="hdr-title" id="app-brand">OPS CENTER</div>
       <div class="hdr-sub" id="app-brand-sub">FLIGHT OPERATIONS SIMULATOR</div>
@@ -826,15 +831,33 @@ const OPERATORS={
 const OPERATION_LABELS={business:'OP\u00C9RATIONS \u00C0 LA DEMANDE',scheduled:'TRANSPORT A\u00C9RIEN R\u00C9GULIER',cargo:'OP\u00C9RATIONS CARGO'};
 
 const AIRCRAFT_DATA = {
+  C208:{name:'Cessna 208B Grand Caravan',reg:'SIM-C208',categories:['scheduled','cargo'],pax_max:9,range_nm:910,cruise_kt:186,cruise_fl:'FL180',fuel_burn_kgh:170,fuel_taxi:25,fuel_reserve:90,mtow:3969,fuel_cap:1010,cargo_max:1400},
+  PC12:{name:'Pilatus PC-12 NGX',reg:'SIM-PC12',categories:['business','cargo'],pax_max:8,range_nm:1800,cruise_kt:290,cruise_fl:'FL300',fuel_burn_kgh:250,fuel_taxi:35,fuel_reserve:130,mtow:4740,fuel_cap:1226,cargo_max:1000},
+  PC24:{name:'Pilatus PC-24',reg:'SIM-PC24',categories:['business'],pax_max:10,range_nm:2000,cruise_kt:440,cruise_fl:'FL450',fuel_burn_kgh:720,fuel_taxi:90,fuel_reserve:320,mtow:8300,fuel_cap:2700},
+  C25C:{name:'Citation CJ4',reg:'SIM-CJ4',categories:['business'],pax_max:8,range_nm:2165,cruise_kt:451,cruise_fl:'FL450',fuel_burn_kgh:650,fuel_taxi:80,fuel_reserve:300,mtow:7761,fuel_cap:2630},
+  C56X:{name:'Citation XLS+',reg:'SIM-XLS',categories:['business'],pax_max:9,range_nm:2100,cruise_kt:441,cruise_fl:'FL450',fuel_burn_kgh:780,fuel_taxi:100,fuel_reserve:340,mtow:9163,fuel_cap:3050},
   C750:{ name:'Citation X', reg:'F-EVOK',categories:['business'],pax_max:8, range_nm:3460, cruise_kt:470, cruise_fl:'FL430', fuel_burn_kgh:1100, fuel_taxi:150, fuel_reserve:480, mtow:16375, fuel_cap:6000 },
   C700:{ name:'Citation Longitude', reg:'F-EXZA',categories:['business'],pax_max:8, range_nm:3500, cruise_kt:440, cruise_fl:'FL450', fuel_burn_kgh:950, fuel_taxi:130, fuel_reserve:420, mtow:16920, fuel_cap:5800 },
+  E55P:{name:'Embraer Phenom 300E',reg:'SIM-E55P',categories:['business'],pax_max:9,range_nm:2010,cruise_kt:464,cruise_fl:'FL450',fuel_burn_kgh:700,fuel_taxi:85,fuel_reserve:310,mtow:8150,fuel_cap:2428},
+  CL35:{name:'Bombardier Challenger 350',reg:'SIM-CL35',categories:['business'],pax_max:10,range_nm:3400,cruise_kt:459,cruise_fl:'FL450',fuel_burn_kgh:1050,fuel_taxi:145,fuel_reserve:470,mtow:18416,fuel_cap:6460},
+  GL7T:{name:'Gulfstream G700',reg:'SIM-G700',categories:['business'],pax_max:19,range_nm:7750,cruise_kt:488,cruise_fl:'FL510',fuel_burn_kgh:1900,fuel_taxi:240,fuel_reserve:850,mtow:48807,fuel_cap:22600},
   B738:{ name:'Boeing BBJ2', reg:'F-LIMB',categories:['business'],pax_max:28, range_nm:6600, cruise_kt:450, cruise_fl:'FL410', fuel_burn_kgh:3000, fuel_taxi:400, fuel_reserve:1200, mtow:79015, fuel_cap:39000 },
+  AT45:{name:'ATR 42-600',reg:'SIM-AT45',categories:['scheduled','cargo'],pax_max:50,range_nm:716,cruise_kt:300,cruise_fl:'FL250',fuel_burn_kgh:550,fuel_taxi:75,fuel_reserve:260,mtow:18600,fuel_cap:4500,cargo_max:5200},
+  DH8D:{name:'De Havilland Dash 8 Q400',reg:'SIM-DH8D',categories:['scheduled'],pax_max:78,range_nm:1100,cruise_kt:360,cruise_fl:'FL270',fuel_burn_kgh:900,fuel_taxi:110,fuel_reserve:380,mtow:29257,fuel_cap:6526},
+  CRJ9:{name:'Bombardier CRJ-900',reg:'SIM-CRJ9',categories:['scheduled'],pax_max:90,range_nm:1550,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1550,fuel_taxi:190,fuel_reserve:650,mtow:38330,fuel_cap:8820},
   A20N:{name:'Airbus A320neo',reg:'F-DMOA',categories:['scheduled'],pax_max:180,range_nm:3400,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2450,fuel_taxi:300,fuel_reserve:1050,mtow:79000,fuel_cap:24200},
+  A319:{name:'Airbus A319',reg:'SIM-A319',categories:['scheduled'],pax_max:144,range_nm:3700,cruise_kt:447,cruise_fl:'FL390',fuel_burn_kgh:2350,fuel_taxi:290,fuel_reserve:1000,mtow:75500,fuel_cap:24210},
+  A21N:{name:'Airbus A321neo',reg:'SIM-A21N',categories:['scheduled'],pax_max:220,range_nm:4000,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2800,fuel_taxi:340,fuel_reserve:1200,mtow:97000,fuel_cap:32940},
+  B737:{name:'Boeing 737-800',reg:'SIM-B738',categories:['scheduled'],pax_max:189,range_nm:2935,cruise_kt:453,cruise_fl:'FL410',fuel_burn_kgh:2600,fuel_taxi:330,fuel_reserve:1120,mtow:79015,fuel_cap:26020},
   B38M:{name:'Boeing 737 MAX 8',reg:'F-DMOB',categories:['scheduled'],pax_max:189,range_nm:3550,cruise_kt:453,cruise_fl:'FL410',fuel_burn_kgh:2500,fuel_taxi:320,fuel_reserve:1100,mtow:82190,fuel_cap:25800},
   E190:{name:'Embraer E190-E2',reg:'F-DMEC',categories:['scheduled'],pax_max:110,range_nm:2850,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1800,fuel_taxi:220,fuel_reserve:780,mtow:56400,fuel_cap:13300},
   AT76:{name:'ATR 72-600',reg:'F-DMAT',categories:['scheduled','cargo'],pax_max:72,range_nm:825,cruise_kt:275,cruise_fl:'FL250',fuel_burn_kgh:650,fuel_taxi:90,fuel_reserve:300,mtow:23000,fuel_cap:5000,cargo_max:7500},
+  B789:{name:'Boeing 787-9',reg:'SIM-B789',categories:['scheduled'],pax_max:296,range_nm:7635,cruise_kt:488,cruise_fl:'FL430',fuel_burn_kgh:5600,fuel_taxi:700,fuel_reserve:2400,mtow:254000,fuel_cap:101456},
+  A339:{name:'Airbus A330-900neo',reg:'SIM-A339',categories:['scheduled'],pax_max:287,range_nm:7200,cruise_kt:480,cruise_fl:'FL410',fuel_burn_kgh:5700,fuel_taxi:720,fuel_reserve:2450,mtow:251000,fuel_cap:111272},
+  B763F:{name:'Boeing 767-300F',reg:'SIM-B763',categories:['cargo'],pax_max:0,range_nm:3255,cruise_kt:470,cruise_fl:'FL410',fuel_burn_kgh:5000,fuel_taxi:650,fuel_reserve:2100,mtow:186880,fuel_cap:91380,cargo_max:52000},
   B738F:{name:'Boeing 737-800BCF',reg:'F-CGAB',categories:['cargo'],pax_max:0,range_nm:2000,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2800,fuel_taxi:350,fuel_reserve:1200,mtow:79000,fuel_cap:26000,cargo_max:23000},
-  B77F:{name:'Boeing 777F',reg:'F-CGAF',categories:['cargo'],pax_max:0,range_nm:4970,cruise_kt:490,cruise_fl:'FL390',fuel_burn_kgh:7200,fuel_taxi:900,fuel_reserve:3000,mtow:347800,fuel_cap:145000,cargo_max:102000}
+  B77F:{name:'Boeing 777F',reg:'F-CGAF',categories:['cargo'],pax_max:0,range_nm:4970,cruise_kt:490,cruise_fl:'FL390',fuel_burn_kgh:7200,fuel_taxi:900,fuel_reserve:3000,mtow:347800,fuel_cap:145000,cargo_max:102000},
+  B744F:{name:'Boeing 747-400F',reg:'SIM-B744',categories:['cargo'],pax_max:0,range_nm:4450,cruise_kt:493,cruise_fl:'FL410',fuel_burn_kgh:10500,fuel_taxi:1200,fuel_reserve:4200,mtow:396890,fuel_cap:173000,cargo_max:112000}
 };
 
 const AIRPORTS = [
@@ -941,26 +964,18 @@ const AIRPORTS = [
   {icao:'KMIA',city:'Miami',country:'USA',lat:25.796,lon:-80.287,handling:'Signature MIA',parking:'GA',notes:'Non-Schengen. APIS requis.'},
 ];
 
-const ROUTES = {
-  C750:AIRPORTS.map(a=>a.icao),
-  C700:AIRPORTS.map(a=>a.icao),
-  B738:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGMK','LGST','LIRQ'].includes(icao)),
-  A20N:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGST','LIRQ'].includes(icao)),
-  B38M:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGST','LIRQ'].includes(icao)),
-  E190:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZS','LGST'].includes(icao)),
-  AT76:AIRPORTS.map(a=>a.icao),
-  B738F:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGMK','LGST','LIRQ'].includes(icao)),
-  B77F:AIRPORTS.map(a=>a.icao).filter(icao=>!['LSZA','LSZS','LGMK','LGST','LIRQ','EBAW','LFMQ'].includes(icao))
-};
+const RESTRICTED_LARGE_AIRCRAFT=new Set(['LSZA','LSZS','LGMK','LGST','LIRQ','EBAW','LFMQ']);
+const ROUTES=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
+  code,AIRPORTS.map(a=>a.icao).filter(icao=>ac.mtow<30000||!RESTRICTED_LARGE_AIRCRAFT.has(icao))
+]));
 
-const AIRCRAFT_ROUTE_POLICY={
-  C750:{usableLegNm:1900,longMissionChance:.14,maxTechStops:3},
-  C700:{usableLegNm:2050,longMissionChance:.16,maxTechStops:3},
-  B738:{usableLegNm:5000,longMissionChance:.22,maxTechStops:1},
-  A20N:{usableLegNm:2800,longMissionChance:0,maxTechStops:0},B38M:{usableLegNm:2900,longMissionChance:0,maxTechStops:0},
-  E190:{usableLegNm:2200,longMissionChance:0,maxTechStops:0},AT76:{usableLegNm:650,longMissionChance:0,maxTechStops:0},
-  B738F:{usableLegNm:1800,longMissionChance:0,maxTechStops:0},B77F:{usableLegNm:4500,longMissionChance:0,maxTechStops:0}
-};
+const AIRCRAFT_ROUTE_POLICY=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
+  code,{
+    usableLegNm:Math.max(250,Math.round(ac.range_nm*.72)),
+    longMissionChance:ac.categories.includes('business')&&ac.range_nm>3000?0.16:0,
+    maxTechStops:ac.categories.includes('business')?3:0
+  }
+]));
 const TECH_STOP_AIRPORTS=[
   'EINN','BIKF','LPAZ','CYQX','CYYR','KBGR',
   'GCTS','GCLP','GMMN','GVAC','GOBD','DGAA',
@@ -1179,10 +1194,28 @@ function refreshAircraftOptions(){
     const option=document.createElement('option');option.value=code;option.textContent=`${ac.name} \u2014 ${code} (${ac.reg})`;select.appendChild(option);
   });
   if([...select.options].some(option=>option.value===previous))select.value=previous;
+  renderAircraftSpecs();
   const op=$('s-operator').value==='custom'?customOperatorFromForm():(OPERATORS[$('s-operator').value]||OPERATORS.general);
   $('setup-origin').textContent=`${op.opsCity.toUpperCase()} \u00B7 ${OPERATION_LABELS[operation]}`;
   const taglines={business:'Des op\u00E9rations flexibles adapt\u00E9es \u00E0 chaque mission.',scheduled:'Un programme r\u00E9gulier, du briefing au turnaround.',cargo:'Le fret, les horaires et la ponctualit\u00E9 au c\u0153ur des op\u00E9rations.'};
   $('setup-tagline').textContent=taglines[operation];
+}
+
+function renderAircraftSpecs(){
+  const box=$('aircraft-specs'),code=$('s-ac').value,ac=AIRCRAFT_DATA[code];
+  if(!box||!ac){if(box)box.innerHTML='';return;}
+  const capacity=ac.cargo_max
+    ?`${Math.round(ac.cargo_max/100)/10} t fret max`
+    :`${ac.pax_max} passagers max`;
+  const specs=[
+    ['Code / immatriculation',`${code} \u00B7 ${ac.reg}`],
+    ['Capacit\u00E9',capacity],
+    ['Rayon d\u2019action',`${ac.range_nm.toLocaleString('fr-FR')} NM`],
+    ['Croisi\u00E8re',`${ac.cruise_kt} kt \u00B7 ${ac.cruise_fl}`],
+    ['Consommation',`${ac.fuel_burn_kgh.toLocaleString('fr-FR')} kg/h`],
+    ['Carburant maximal',`${ac.fuel_cap.toLocaleString('fr-FR')} kg`]
+  ];
+  box.innerHTML=specs.map(([label,value])=>`<div class="aircraft-spec"><span>${label}</span><strong title="${value}">${value}</strong></div>`).join('');
 }
 
 function updateBrandIdentity(){
