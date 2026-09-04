@@ -448,7 +448,35 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 }
 
 /* SOUND */
+
+/* OPS CENTER — coque produit responsive */
+.account-pill{height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:7px;padding:0 10px;font:600 8px var(--font-b);cursor:pointer;display:flex;align-items:center;gap:7px}
+.account-pill::before{content:'TL';width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-size:7px}
+.account-modal{position:fixed;inset:0;z-index:400;background:rgba(7,18,23,.58);display:none;align-items:center;justify-content:center;padding:20px}
+.account-modal.on{display:flex}.account-sheet{width:min(440px,100%);background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden}
+.account-head{display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid var(--border)}
+.account-head strong{font-size:16px}.account-close{border:0;background:transparent;color:var(--text2);font-size:22px;cursor:pointer}
+.account-body{padding:18px}.account-identity{display:flex;gap:12px;align-items:center;margin-bottom:18px}.account-avatar{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700}
+.account-email{font-size:11px;color:var(--text2);margin-top:3px}.subscription-box{border:1px solid var(--border);border-radius:9px;padding:14px;background:var(--bg3)}
+.subscription-top{display:flex;justify-content:space-between;align-items:center}.subscription-plan{font-size:16px;font-weight:700}.subscription-state{font-size:9px;color:var(--green);font-weight:700}.subscription-copy{font-size:10px;line-height:1.55;color:var(--text2);margin:8px 0 12px}
+.subscription-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.account-note{margin-top:12px;font-size:9px;line-height:1.5;color:var(--text3)}
+.subscription-box .usage{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden;margin:0 0 13px}.subscription-box .usage i{display:block;height:100%;background:var(--blue)}
+
+@media(min-width:861px){
+  body{max-width:1180px;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
+  .hdr{grid-column:1/3;grid-row:1;padding:0 20px}.dbar{grid-column:2;grid-row:2;padding:9px 20px}
+  .tabs{grid-column:1;grid-row:2/4;display:flex;flex-direction:column;padding:18px 12px;background:#10242c;border:0;box-shadow:none;gap:4px;order:initial}
+  html[data-theme="dark"] .tabs{background:#0b171c}.tab{flex:0 0 auto;min-height:43px;display:grid;grid-template-columns:25px 1fr;align-items:center;text-align:left;padding:8px 10px;color:#b7c7cd;border-radius:6px}
+  .tab.on{background:#214653;color:#fff}.tab-ic{width:17px;height:17px}.tab-lb{font-size:11px;text-align:left}.tbadge{position:static;grid-column:3;grid-row:1}
+  .page{grid-column:2;grid-row:3;min-height:0;order:initial}.pi{max-width:920px;padding:24px}
+  #page-ops .pi{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.75fr);align-content:start}
+  #page-ops .disp-card,#page-ops #main-call-btn{grid-column:1}#page-ops .card{grid-column:2}#page-ops #inflight-notice{grid-column:1}
+  #page-acars{grid-column:2;grid-row:3}.acars-msgs{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}.acars-in{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}
+  .setup-ov,.boot-ov,.call-ov{max-width:none}.setup-ov>*{max-width:720px}.setup-ov{padding-top:30px}.setup-logo{font-size:25px}.setup-sub{margin-bottom:12px}.setup-tagline{margin-bottom:14px}.aircraft-specs{grid-template-columns:repeat(6,minmax(0,1fr))}
+}
+@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}}
 </style>
+<script src="data/aircraft-catalog.js"></script>
 </head>
 <body>
 
@@ -506,6 +534,10 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
     <select class="fi" id="s-ac" onchange="renderAircraftSpecs()"></select>
     <div class="aircraft-specs" id="aircraft-specs" aria-live="polite"></div>
   </div>
+  <div class="fg">
+    <label class="fl">Immatriculation (facultative)</label>
+    <input class="fi" id="s-registration" maxlength="12" placeholder="Ex. F-HOPS" autocapitalize="characters"/>
+  </div>
   <div class="frow" style="width:100%;flex-wrap:wrap">
     <div class="fg" style="margin-bottom:4px;flex-basis:100%">
       <label class="fl">Date duty (UTC)</label>
@@ -549,6 +581,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
     <div class="clock" id="utc-clock">--:--Z</div>
     <button onclick="toggleTheme()" id="theme-toggle" class="theme-toggle" title="Activer le mode nuit" aria-label="Activer le mode nuit"></button>
     <button onclick="testDispatcherVoice()" id="kokoro-btn" title="Tester la voix du dispatcher" class="voice-pill">TEST VOIX</button>
+    <button onclick="openAccountPanel()" class="account-pill" id="account-pill">COMPTE</button>
     <button onclick="requestResetSession()" title="R&#xE9;initialiser la session" style="border:1px solid var(--border2);background:var(--bg3);color:var(--text2);border-radius:5px;padding:4px 6px;font:700 8px var(--font-m);cursor:pointer">R&#xC9;INIT.</button>
   </div>
 </div>
@@ -819,6 +852,21 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 </div>
 
 <!-- TOAST -->
+<div class="account-modal" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" onclick="if(event.target===this)closeAccountPanel()">
+  <div class="account-sheet">
+    <div class="account-head"><strong id="account-title">Mon compte</strong><button class="account-close" onclick="closeAccountPanel()" aria-label="Fermer">&times;</button></div>
+    <div class="account-body">
+      <div class="account-identity"><div class="account-avatar" id="account-avatar">TL</div><div><strong id="account-name">Compte de démonstration</strong><div class="account-email">Connexion sécurisée à venir</div></div></div>
+      <div class="subscription-box">
+        <div class="subscription-top"><span class="subscription-plan">Offre Pilot</span><span class="subscription-state">MODE APERÇU</span></div>
+        <div class="subscription-copy">Rotations complètes, ACARS, météo et voix OPS. Cette interface est prête à recevoir ultérieurement l’authentification et la facturation.</div>
+        <div class="usage"><i style="width:18%"></i></div>
+        <div class="subscription-actions"><button class="btn btn-sec" onclick="showToast('Gestion du profil disponible lors de la connexion des comptes')">GÉRER LE PROFIL</button><button class="btn btn-blue" onclick="showToast('Portail de paiement disponible lors de la connexion Stripe')">GÉRER L’ABONNEMENT</button></div>
+      </div>
+      <div class="account-note">Aucun paiement réel n’est activé dans cette version. Les clés et les droits d’accès resteront gérés côté serveur.</div>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -838,29 +886,31 @@ const AIRCRAFT_DATA = {
   PC24:{name:'Pilatus PC-24',reg:'SIM-PC24',categories:['business'],pax_max:10,range_nm:2000,cruise_kt:440,cruise_fl:'FL450',fuel_burn_kgh:720,fuel_taxi:90,fuel_reserve:320,mtow:8300,fuel_cap:2700},
   C25C:{name:'Citation CJ4',reg:'SIM-CJ4',categories:['business'],pax_max:8,range_nm:2165,cruise_kt:451,cruise_fl:'FL450',fuel_burn_kgh:650,fuel_taxi:80,fuel_reserve:300,mtow:7761,fuel_cap:2630},
   C56X:{name:'Citation XLS+',reg:'SIM-XLS',categories:['business'],pax_max:9,range_nm:2100,cruise_kt:441,cruise_fl:'FL450',fuel_burn_kgh:780,fuel_taxi:100,fuel_reserve:340,mtow:9163,fuel_cap:3050},
-  C750:{ name:'Citation X', reg:'F-EVOK',categories:['business'],pax_max:8, range_nm:3460, cruise_kt:470, cruise_fl:'FL430', fuel_burn_kgh:1100, fuel_taxi:150, fuel_reserve:480, mtow:16375, fuel_cap:6000 },
-  C700:{ name:'Citation Longitude', reg:'F-EXZA',categories:['business'],pax_max:8, range_nm:3500, cruise_kt:440, cruise_fl:'FL450', fuel_burn_kgh:950, fuel_taxi:130, fuel_reserve:420, mtow:16920, fuel_cap:5800 },
+  C750:{name:'Citation X',categories:['business'],pax_max:8,range_nm:3460,cruise_kt:470,cruise_fl:'FL430',fuel_burn_kgh:1100,fuel_taxi:150,fuel_reserve:480,mtow:16375,fuel_cap:6000},
+  C700:{name:'Citation Longitude',categories:['business'],pax_max:8,range_nm:3500,cruise_kt:440,cruise_fl:'FL450',fuel_burn_kgh:950,fuel_taxi:130,fuel_reserve:420,mtow:16920,fuel_cap:5800},
   E55P:{name:'Embraer Phenom 300E',reg:'SIM-E55P',categories:['business'],pax_max:9,range_nm:2010,cruise_kt:464,cruise_fl:'FL450',fuel_burn_kgh:700,fuel_taxi:85,fuel_reserve:310,mtow:8150,fuel_cap:2428},
   CL35:{name:'Bombardier Challenger 350',reg:'SIM-CL35',categories:['business'],pax_max:10,range_nm:3400,cruise_kt:459,cruise_fl:'FL450',fuel_burn_kgh:1050,fuel_taxi:145,fuel_reserve:470,mtow:18416,fuel_cap:6460},
   GL7T:{name:'Gulfstream G700',reg:'SIM-G700',categories:['business'],pax_max:19,range_nm:7750,cruise_kt:488,cruise_fl:'FL510',fuel_burn_kgh:1900,fuel_taxi:240,fuel_reserve:850,mtow:48807,fuel_cap:22600},
-  B738:{ name:'Boeing BBJ2', reg:'F-LIMB',categories:['business'],pax_max:28, range_nm:6600, cruise_kt:450, cruise_fl:'FL410', fuel_burn_kgh:3000, fuel_taxi:400, fuel_reserve:1200, mtow:79015, fuel_cap:39000 },
+  B738:{name:'Boeing BBJ2',categories:['business'],pax_max:28,range_nm:6600,cruise_kt:450,cruise_fl:'FL410',fuel_burn_kgh:3000,fuel_taxi:400,fuel_reserve:1200,mtow:79015,fuel_cap:39000},
   AT45:{name:'ATR 42-600',reg:'SIM-AT45',categories:['scheduled','cargo'],pax_max:50,range_nm:716,cruise_kt:300,cruise_fl:'FL250',fuel_burn_kgh:550,fuel_taxi:75,fuel_reserve:260,mtow:18600,fuel_cap:4500,cargo_max:5200},
   DH8D:{name:'De Havilland Dash 8 Q400',reg:'SIM-DH8D',categories:['scheduled'],pax_max:78,range_nm:1100,cruise_kt:360,cruise_fl:'FL270',fuel_burn_kgh:900,fuel_taxi:110,fuel_reserve:380,mtow:29257,fuel_cap:6526},
   CRJ9:{name:'Bombardier CRJ-900',reg:'SIM-CRJ9',categories:['scheduled'],pax_max:90,range_nm:1550,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1550,fuel_taxi:190,fuel_reserve:650,mtow:38330,fuel_cap:8820},
-  A20N:{name:'Airbus A320neo',reg:'F-DMOA',categories:['scheduled'],pax_max:180,range_nm:3400,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2450,fuel_taxi:300,fuel_reserve:1050,mtow:79000,fuel_cap:24200},
+  A20N:{name:'Airbus A320neo',categories:['scheduled'],pax_max:180,range_nm:3400,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2450,fuel_taxi:300,fuel_reserve:1050,mtow:79000,fuel_cap:24200},
   A319:{name:'Airbus A319',reg:'SIM-A319',categories:['scheduled'],pax_max:144,range_nm:3700,cruise_kt:447,cruise_fl:'FL390',fuel_burn_kgh:2350,fuel_taxi:290,fuel_reserve:1000,mtow:75500,fuel_cap:24210},
   A21N:{name:'Airbus A321neo',reg:'SIM-A21N',categories:['scheduled'],pax_max:220,range_nm:4000,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2800,fuel_taxi:340,fuel_reserve:1200,mtow:97000,fuel_cap:32940},
   B737:{name:'Boeing 737-800',reg:'SIM-B738',categories:['scheduled'],pax_max:189,range_nm:2935,cruise_kt:453,cruise_fl:'FL410',fuel_burn_kgh:2600,fuel_taxi:330,fuel_reserve:1120,mtow:79015,fuel_cap:26020},
-  B38M:{name:'Boeing 737 MAX 8',reg:'F-DMOB',categories:['scheduled'],pax_max:189,range_nm:3550,cruise_kt:453,cruise_fl:'FL410',fuel_burn_kgh:2500,fuel_taxi:320,fuel_reserve:1100,mtow:82190,fuel_cap:25800},
-  E190:{name:'Embraer E190-E2',reg:'F-DMEC',categories:['scheduled'],pax_max:110,range_nm:2850,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1800,fuel_taxi:220,fuel_reserve:780,mtow:56400,fuel_cap:13300},
-  AT76:{name:'ATR 72-600',reg:'F-DMAT',categories:['scheduled','cargo'],pax_max:72,range_nm:825,cruise_kt:275,cruise_fl:'FL250',fuel_burn_kgh:650,fuel_taxi:90,fuel_reserve:300,mtow:23000,fuel_cap:5000,cargo_max:7500},
+  B38M:{name:'Boeing 737 MAX 8',categories:['scheduled'],pax_max:189,range_nm:3550,cruise_kt:453,cruise_fl:'FL410',fuel_burn_kgh:2500,fuel_taxi:320,fuel_reserve:1100,mtow:82190,fuel_cap:25800},
+  E190:{name:'Embraer E190-E2',categories:['scheduled'],pax_max:110,range_nm:2850,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1800,fuel_taxi:220,fuel_reserve:780,mtow:56400,fuel_cap:13300},
+  AT76:{name:'ATR 72-600',categories:['scheduled','cargo'],pax_max:72,range_nm:825,cruise_kt:275,cruise_fl:'FL250',fuel_burn_kgh:650,fuel_taxi:90,fuel_reserve:300,mtow:23000,fuel_cap:5000,cargo_max:7500},
   B789:{name:'Boeing 787-9',reg:'SIM-B789',categories:['scheduled'],pax_max:296,range_nm:7635,cruise_kt:488,cruise_fl:'FL430',fuel_burn_kgh:5600,fuel_taxi:700,fuel_reserve:2400,mtow:254000,fuel_cap:101456},
   A339:{name:'Airbus A330-900neo',reg:'SIM-A339',categories:['scheduled'],pax_max:287,range_nm:7200,cruise_kt:480,cruise_fl:'FL410',fuel_burn_kgh:5700,fuel_taxi:720,fuel_reserve:2450,mtow:251000,fuel_cap:111272},
   B763F:{name:'Boeing 767-300F',reg:'SIM-B763',categories:['cargo'],pax_max:0,range_nm:3255,cruise_kt:470,cruise_fl:'FL410',fuel_burn_kgh:5000,fuel_taxi:650,fuel_reserve:2100,mtow:186880,fuel_cap:91380,cargo_max:52000},
-  B738F:{name:'Boeing 737-800BCF',reg:'F-CGAB',categories:['cargo'],pax_max:0,range_nm:2000,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2800,fuel_taxi:350,fuel_reserve:1200,mtow:79000,fuel_cap:26000,cargo_max:23000},
-  B77F:{name:'Boeing 777F',reg:'F-CGAF',categories:['cargo'],pax_max:0,range_nm:4970,cruise_kt:490,cruise_fl:'FL390',fuel_burn_kgh:7200,fuel_taxi:900,fuel_reserve:3000,mtow:347800,fuel_cap:145000,cargo_max:102000},
+  B738F:{name:'Boeing 737-800BCF',categories:['cargo'],pax_max:0,range_nm:2000,cruise_kt:450,cruise_fl:'FL390',fuel_burn_kgh:2800,fuel_taxi:350,fuel_reserve:1200,mtow:79000,fuel_cap:26000,cargo_max:23000},
+  B77F:{name:'Boeing 777F',categories:['cargo'],pax_max:0,range_nm:4970,cruise_kt:490,cruise_fl:'FL390',fuel_burn_kgh:7200,fuel_taxi:900,fuel_reserve:3000,mtow:347800,fuel_cap:145000,cargo_max:102000},
   B744F:{name:'Boeing 747-400F',reg:'SIM-B744',categories:['cargo'],pax_max:0,range_nm:4450,cruise_kt:493,cruise_fl:'FL410',fuel_burn_kgh:10500,fuel_taxi:1200,fuel_reserve:4200,mtow:396890,fuel_cap:173000,cargo_max:112000}
 };
+Object.assign(AIRCRAFT_DATA,window.OPS_EXTRA_AIRCRAFT||{});
+Object.values(AIRCRAFT_DATA).forEach(ac=>{delete ac.reg;});
 
 let AIRPORTS = [
   {icao:'LFRS',city:'Nantes',country:'France',lat:47.153,lon:-1.608,handling:'Nantes Handling',parking:'M-07'},
@@ -969,14 +1019,20 @@ let AIRPORTS = [
 const RESTRICTED_LARGE_AIRCRAFT=new Set(['LSZA','LSZS','LGMK','LGST','LIRQ','EBAW','LFMQ']);
 let ROUTES={};
 function rebuildAircraftRoutes(){
-  ROUTES=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
-    code,AIRPORTS.filter(ap=>{
-      if(ac.mtow<30000)return true;
-      if(RESTRICTED_LARGE_AIRCRAFT.has(ap.icao))return false;
-      if(ap.runwayFt)return ap.runwayFt>=(ac.mtow>150000?8000:5500);
-      return ap.type==='L'||ap.type==='M'||!ap.type;
-    }).map(a=>a.icao)
-  ]));
+  // Invalide le cache lorsque la base aéroports change. La compatibilité n'est
+  // calculée que pour l'avion sélectionné afin de préserver la mémoire sur iPad.
+  ROUTES={};
+}
+function routesForAircraft(code){
+  if(ROUTES[code])return ROUTES[code];
+  const ac=AIRCRAFT_DATA[code];if(!ac)return [];
+  ROUTES[code]=AIRPORTS.filter(ap=>{
+    if(ac.mtow<30000)return true;
+    if(RESTRICTED_LARGE_AIRCRAFT.has(ap.icao))return false;
+    if(ap.runwayFt)return ap.runwayFt>=(ac.mtow>150000?8000:5500);
+    return ap.type==='L'||ap.type==='M'||!ap.type;
+  }).map(a=>a.icao);
+  return ROUTES[code];
 }
 rebuildAircraftRoutes();
 
@@ -1037,7 +1093,7 @@ Le commandant de bord conserve l'autorit\u00E9 finale. En cas d'urgence r\u00E9e
 // STATE
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 const S = {
-  pilot:null, rank:null, aircraft:null, dutyDate:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
+  pilot:null, rank:null, aircraft:null, registration:'', dutyDate:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
   operatorId:'general',customOperator:null,operationType:'scheduled',
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
@@ -1053,7 +1109,7 @@ let sessionResetting=false;
 function sessionSnapshot(){
   return{
     version:1,savedAt:new Date().toISOString(),
-    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
+    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
     rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
@@ -1093,7 +1149,7 @@ function restoreSession(){
   Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,micGranted:false,processingSpeech:false,recognition:null,callController:null,callMicStream:null,convHistory:[],acarsHistory:Array.isArray(saved.acarsHistory)?saved.acarsHistory:[]});
   $('setup').style.display='none';$('boot-ov').style.display='none';$('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+S.pilot.split(' ').slice(-1)[0];
-  $('b-acft').textContent=S.aircraft;$('b-duty').textContent=formatDateFr(S.dutyDate)+' \u00B7 '+S.dutyStart+'\u2192'+S.dutyEnd;
+  $('b-acft').textContent=aircraftIdentity();$('b-duty').textContent=formatDateFr(S.dutyDate)+' \u00B7 '+S.dutyStart+'\u2192'+S.dutyEnd;
   updateBrandIdentity();updateDispUI();renderRotationPlan();
   if(S.currentFlight){
     const restoredPhase=S.phase;
@@ -1126,6 +1182,7 @@ const $=id=>document.getElementById(id);
 function fmt2(n){return String(n).padStart(2,'0')}
 function utcNow(){const n=new Date();return fmt2(n.getUTCHours())+':'+fmt2(n.getUTCMinutes())+'Z'}
 function fmtDur(min){return `${Math.floor(min/60)}h${fmt2(min%60)}`}
+function aircraftIdentity(){return [S.registration,AIRCRAFT_DATA[S.aircraft]?.name||S.aircraft].filter(Boolean).join(' · ');}
 function timeToMinutes(value){const [h,m]=String(value).split(':').map(Number);return h*60+m;}
 function dateAtDutyMinute(absMinute){
   const base=new Date((S.dutyDate||new Date().toISOString().slice(0,10))+'T00:00:00Z');
@@ -1249,8 +1306,23 @@ function refreshOperationSetup(){
 function refreshAircraftOptions(){
   const operation=$('s-operation').value,select=$('s-ac'),previous=select.value;
   select.replaceChildren();
-  Object.entries(AIRCRAFT_DATA).filter(([,ac])=>ac.categories.includes(operation)).forEach(([code,ac])=>{
-    const option=document.createElement('option');option.value=code;option.textContent=`${ac.name} \u2014 ${code} (${ac.reg})`;select.appendChild(option);
+  const groups={
+    general:'Aviation générale',turboprop:'Turbopropulseurs et régionaux',
+    business:'Jets d’affaires',narrow:'Avions de ligne monocouloirs',
+    wide:'Avions de ligne gros-porteurs',cargo:'Avions cargo'
+  };
+  const entries=Object.entries(AIRCRAFT_DATA).filter(([,ac])=>ac.categories.includes(operation)).sort((a,b)=>a[1].name.localeCompare(b[1].name,'fr'));
+  const groupFor=ac=>{
+    if(operation==='cargo'&&ac.pax_max===0)return 'cargo';
+    if(operation==='business')return ac.mtow<3000?'general':'business';
+    if(ac.mtow<35000)return 'turboprop';
+    return ac.mtow<120000?'narrow':'wide';
+  };
+  Object.entries(groups).forEach(([group,label])=>{
+    const matching=entries.filter(([,ac])=>groupFor(ac)===group);if(!matching.length)return;
+    const optgroup=document.createElement('optgroup');optgroup.label=label;
+    matching.forEach(([code,ac])=>{const option=document.createElement('option');option.value=code;option.textContent=`${ac.name} \u2014 ${code}`;optgroup.appendChild(option);});
+    select.appendChild(optgroup);
   });
   if([...select.options].some(option=>option.value===previous))select.value=previous;
   renderAircraftSpecs();
@@ -1267,7 +1339,7 @@ function renderAircraftSpecs(){
     ?`${Math.round(ac.cargo_max/100)/10} t fret max`
     :`${ac.pax_max} passagers max`;
   const specs=[
-    ['Code / immatriculation',`${code} \u00B7 ${ac.reg}`],
+    ['Code OACI type',code],
     ['Capacit\u00E9',capacity],
     ['Rayon d\u2019action',`${ac.range_nm.toLocaleString('fr-FR')} NM`],
     ['Croisi\u00E8re',`${ac.cruise_kt} kt \u00B7 ${ac.cruise_fl}`],
@@ -1285,6 +1357,15 @@ function updateBrandIdentity(){
   document.title=`${op.name} EFB`;
   document.documentElement.style.setProperty('--blue',op.accent);
 }
+
+function openAccountPanel(){
+  const names=(S.pilot||'Compte de démonstration').trim().split(/\s+/);
+  const initials=S.pilot?names.slice(0,2).map(name=>name[0]).join('').toUpperCase():'DE';
+  $('account-avatar').textContent=initials;
+  $('account-name').textContent=S.pilot||'Compte de démonstration';
+  $('account-modal').classList.add('on');
+}
+function closeAccountPanel(){$('account-modal').classList.remove('on');}
 
 async function startDuty(){
   const fn=$('s-fn').value.trim(), ln=$('s-ln').value.trim();
@@ -1307,6 +1388,7 @@ async function startDuty(){
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
   S.aircraft=$('s-ac').value;
+  S.registration=$('s-registration').value.trim().toUpperCase();
   S.operatorId=$('s-operator').value;
   S.operationType=$('s-operation').value;
   S.position=currentOperator().base;
@@ -1324,7 +1406,7 @@ async function startDuty(){
   setBootProgress(6,'INITIALISATION DE LA SESSION...');
   $('status-dot').className='dot on';
   $('b-pilot').textContent=S.rank+' '+ln;
-  $('b-acft').textContent=S.aircraft;
+  $('b-acft').textContent=aircraftIdentity();
   $('b-duty').textContent=formatDateFr(S.dutyDate)+' \u00B7 '+S.dutyStart+'\u2192'+S.dutyEnd;
   updateBrandIdentity();updateDispUI();
   // V\u00E9rifie uniquement la voix distante d\u00E8s la prise de service.
@@ -1455,7 +1537,7 @@ function generateRotation(destination=null){
   const dep=S.position||'LFRS';
   if(destination)return buildFlight(dep,destination);
   const recent=new Set(S.sessionFlights.slice(-6).map(f=>f.arr));
-  const allowed=new Set(ROUTES[S.aircraft]||[]);
+  const allowed=new Set(routesForAircraft(S.aircraft));
   let pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==dep&&!recent.has(a.icao)).filter(a=>{
     const d=distNM(getAP(dep).lat,getAP(dep).lon,a.lat,a.lon);
     return d>=70&&d<=ac.range_nm*0.9;
@@ -1483,6 +1565,7 @@ const LEISURE_SEASONAL_AIRPORTS=new Set(['LEIB','LEPA','LIEO','LGMK','LGST','LDS
 
 function businessDestinationWeight(origin,airport){
   const originAp=getAP(origin);if(!originAp)return 0;
+  const heavyBusiness=(AIRCRAFT_DATA[S.aircraft]?.mtow||0)>=50000;
   const distance=distNM(originAp.lat,originAp.lon,airport.lat,airport.lon);
   let weight=1;
   if(BUSINESS_FOCUSED_AIRPORTS.has(airport.icao))weight*=2.7;
@@ -1491,17 +1574,17 @@ function businessDestinationWeight(origin,airport){
   // Les grandes plateformes de ligne restent possibles mais moins naturelles en jet priv\u00E9.
   if(['LFPO','LIRF','EHAM','EDDF','EDDB','ESSA','EKCH'].includes(airport.icao))weight*=.38;
   // Un jet rapide est rarement engag\u00E9 sur un tr\u00E8s court trajet domestique.
-  if(S.aircraft!=='B738'&&distance<180)weight*=.035;
-  else if(S.aircraft!=='B738'&&distance<260)weight*=.22;
-  if(S.aircraft==='B738'&&distance<350)weight*=.08;
+  if(!heavyBusiness&&distance<180)weight*=.035;
+  else if(!heavyBusiness&&distance<260)weight*=.22;
+  if(heavyBusiness&&distance<350)weight*=.08;
   if(originAp.country==='France'&&airport.country==='France'&&distance<300)weight*=.35;
   // Les tr\u00E8s courts trajets restent possibles, mais exceptionnels.
   if((origin==='LFRS'&&airport.icao==='LFPO')||(origin==='LFPO'&&airport.icao==='LFRS'))weight*=.025;
   const month=Number((S.dutyDate||new Date().toISOString().slice(0,10)).slice(5,7));
   if(LEISURE_SEASONAL_AIRPORTS.has(airport.icao))weight*=month>=5&&month<=9?1.8:.55;
   // C\u0153ur d utilisation efficace des Citation : environ 350 \u00E0 1 500 NM.
-  if(S.aircraft!=='B738'&&distance>=350&&distance<=1500)weight*=1.45;
-  if(S.aircraft==='B738'&&distance>=900)weight*=1.5;
+  if(!heavyBusiness&&distance>=350&&distance<=1500)weight*=1.45;
+  if(heavyBusiness&&distance>=900)weight*=1.5;
   return Math.max(.0001,weight);
 }
 
@@ -1512,7 +1595,7 @@ function weightedBusinessCandidates(origin,candidates){
 
 function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
-  const allowed=new Set(ROUTES[S.aircraft]||[]);
+  const allowed=new Set(routesForAircraft(S.aircraft));
   const pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==origin&&!excluded.includes(a.icao))
     .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;});
   const candidates=weightedBusinessCandidates(origin,pool);
@@ -1527,7 +1610,7 @@ function planTechnicalRoute(origin,destination){
   const policy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750;
   const destinationAp=getAP(destination);if(!destinationAp||!SIM_CUSTOMS_AIRPORTS.has(destination))return null;
   const availableStops=TECH_STOP_AIRPORTS
-    .filter(icao=>(ROUTES[S.aircraft]||[]).includes(icao)&&SIM_CUSTOMS_AIRPORTS.has(icao)&&icao!==destination);
+    .filter(icao=>routesForAircraft(S.aircraft).includes(icao)&&SIM_CUSTOMS_AIRPORTS.has(icao)&&icao!==destination);
   const routes=[];
   const explore=(path,totalDistance)=>{
     const last=path[path.length-1],lastAp=getAP(last);if(!lastAp)return;
@@ -1710,7 +1793,7 @@ function chooseNetworkDestination(origin,pool,excluded=[]){
   const candidates=pool.filter(code=>code!==origin&&!excluded.includes(code)&&getAP(code)).sort(()=>Math.random()-.5);
   return candidates.find(code=>{
     const ap=getAP(code),distance=distNM(originAp.lat,originAp.lon,ap.lat,ap.lon);
-    if(S.aircraft==='AT76')return distance>=90&&distance<=620;
+    if(ac.cruise_kt<330)return distance>=70&&distance<=Math.min(ac.range_nm*.72,750);
     return distance>=180&&distance<=Math.min(ac.range_nm*.72,2600);
   })||null;
 }
@@ -1723,7 +1806,8 @@ function generateScheduledRotation(){
     const last=i===targetLegs-1,preferred=last?base:chooseNetworkDestination(origin,SCHEDULED_AIRPORTS,plan.map(leg=>leg.arr));
     const destination=preferred&&preferred!==origin?preferred:chooseNetworkDestination(origin,SCHEDULED_AIRPORTS);
     if(!destination)break;
-    const leg=buildFlight(origin,destination,{depMinuteOfDay:departure,missionRole:`VOL R\u00C9GULIER \u2014 SECTEUR ${i+1}`,turnaroundMin:S.aircraft==='AT76'?32:48});
+    const turnaround=(AIRCRAFT_DATA[S.aircraft]?.mtow||0)<35000?32:(AIRCRAFT_DATA[S.aircraft]?.mtow||0)>120000?75:48;
+    const leg=buildFlight(origin,destination,{depMinuteOfDay:departure,missionRole:`VOL R\u00C9GULIER \u2014 SECTEUR ${i+1}`,turnaroundMin:turnaround});
     if(!leg||leg.fuel.overCapacity||leg.arrMinuteOfDay+30>dutyLimit)break;
     plan.push(leg);origin=leg.arr;departure=leg.arrMinuteOfDay+leg.turnaroundMin;
   }
@@ -1826,7 +1910,7 @@ function renderRotationPlan(){
   $('rotation-title').textContent=`Rotation ${currentOperator().name} \u2014 ${S.rotationType||'MISSION'} \u00B7 REV ${S.rotationRevision||0}`;
   if($('dos-duty'))$('dos-duty').textContent=`${formatDateFr(S.dutyDate)} \u00B7 ${S.dutyStart}\u2013${S.dutyEnd}Z`;
   if($('dos-crew'))$('dos-crew').textContent=`${S.rank} ${S.pilot}`;
-  if($('dos-aircraft'))$('dos-aircraft').textContent=`${AIRCRAFT_DATA[S.aircraft]?.reg||S.aircraft} \u00B7 ${S.aircraft}`;
+  if($('dos-aircraft'))$('dos-aircraft').textContent=aircraftIdentity();
   const pending=(S.rotationHistory||[]).filter(item=>Number(item.revision)>0&&!item.acknowledged).length;
   if($('dos-revision')){
     $('dos-revision').textContent=`REV ${S.rotationRevision||0} \u00B7 ${pending?pending+' \u00C0 ACQUITTER':'\u00C0 JOUR'}`;
@@ -1893,7 +1977,7 @@ function populateDossier(f,options={}){
   $('d-fltno').textContent=f.flightNo;
   $('d-sector-title').textContent=`Secteur ${selectedIndex>=0?selectedIndex+1:'\u2014'} \u00B7 ${selectedIndex===S.rotationIndex?'ACTIF':'CONSULTATION'}`;
   $('d-mission').textContent=f.missionRole||'MISSION AFFAIRES';
-  $('d-acft').textContent=AIRCRAFT_DATA[S.aircraft].name+' \u00B7 '+AIRCRAFT_DATA[S.aircraft].reg;
+  $('d-acft').textContent=aircraftIdentity();
   $('d-dep-t').textContent=`${formatDateFr(f.depDate||S.dutyDate)} \u00B7 ${f.depT}`;
   $('d-arr-t').textContent=`${formatDateFr(f.arrDate||S.dutyDate)} \u00B7 ${f.arrT}`;
   $('d-fl').textContent=f.fl;
