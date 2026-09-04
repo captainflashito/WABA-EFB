@@ -1064,7 +1064,7 @@ rebuildAircraftRoutes();
 const AIRCRAFT_ROUTE_POLICY=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
   code,{
     usableLegNm:Math.max(250,Math.round(ac.range_nm*.72)),
-    longMissionChance:ac.categories.includes('business')&&ac.range_nm>3000?0.16:0,
+    longMissionChance:ac.categories.includes('business')&&ac.range_nm>3000?0.05:0,
     maxTechStops:ac.categories.includes('business')?3:0
   }
 ]));
@@ -1698,7 +1698,7 @@ function generateLongRangeMission(base,firstDeparture,dutyLimit){
     }
     if(!valid||!plan.length)continue;
     S.rotationPlan=plan;S.rotationIndex=0;
-    S.rotationType=plan.length===1?'MISSION LONG-COURRIER DIRECTE':`MISSION LONG-COURRIER \u00B7 ${plan.length-1} ESCALE(S) TECHNIQUE(S)`;
+    S.rotationType=plan.length===1?'MISSION LONG-COURRIER DIRECTE \u00B7 NUIT\u00C9E HORS BASE PLANIFI\u00C9E':`MISSION LONG-COURRIER \u00B7 ${plan.length-1} ESCALE(S) TECHNIQUE(S) \u00B7 NUIT\u00C9E HORS BASE PLANIFI\u00C9E`;
     S.rotationRevision=0;
     S.rotationHistory=[{revision:0,at:utcNow(),reason:'\u00C9MISSION INITIALE \u2014 PLAN DE ROUTE LONG-COURRIER'}];
     saveSession();return plan[0];
@@ -1707,46 +1707,39 @@ function generateLongRangeMission(base,firstDeparture,dutyLimit){
 }
 
 function generatePositioningPickupMission(base,firstDeparture,dutyLimit){
-  const pickup=chooseBusinessDestination(base,S.sessionFlights.slice(-5).map(f=>f.arr),180);
-  if(!pickup)return null;
-  const positioningWait=45+Math.floor(Math.random()*46);
-  const positioning=buildFlight(base,pickup,{
-    depMinuteOfDay:firstDeparture,pax:[],missionRole:'POSITIONING \u00C0 VIDE',
-    turnaroundMin:positioningWait,groundReason:'PRISE EN CHARGE CLIENT ET PR\u00C9PARATION CABINE'
-  });
-  if(!positioning||positioning.fuel.overCapacity)return null;
-  const clientDeparture=positioning.arrMinuteOfDay+positioning.turnaroundMin;
-  const clientDestination=chooseBusinessDestination(pickup,[base,pickup],Math.max(60,dutyLimit-clientDeparture-90));
-  if(!clientDestination)return null;
-  const appointmentWait=120+Math.floor(Math.random()*181);
-  const clientOut=buildFlight(pickup,clientDestination,{
-    depMinuteOfDay:clientDeparture,missionRole:'CLIENT \u2014 ALLER',
-    turnaroundMin:appointmentWait,groundReason:'ATTENTE CLIENT \u2014 RENDEZ-VOUS / PROGRAMME PRIV\u00C9'
-  });
-  if(!clientOut||clientOut.fuel.overCapacity||clientOut.arrMinuteOfDay+30>dutyLimit)return null;
-  const plan=[positioning,clientOut];
-  // Lorsque le duty le permet, le m\u00EAme \u00E9quipage attend le client puis le ram\u00E8ne.
-  const clientReturn=buildFlight(clientDestination,pickup,{
-    depMinuteOfDay:clientOut.arrMinuteOfDay+clientOut.turnaroundMin,
-    pax:clientOut.pax,missionRole:'CLIENT \u2014 RETOUR',turnaroundMin:45,
-    groundReason:'D\u00C9POSE CLIENT ET REMISE EN \u00C9TAT CABINE'
-  });
-  if(clientReturn&&!clientReturn.fuel.overCapacity&&clientReturn.arrMinuteOfDay+30<=dutyLimit){
-    plan.push(clientReturn);
-    const home=buildFlight(pickup,base,{
-      depMinuteOfDay:clientReturn.arrMinuteOfDay+clientReturn.turnaroundMin,
-      pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30
-    });
-    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit)plan.push(home);
+  const triedPickups=[];
+  let plan=null;
+  for(let attempt=0;attempt<5&&!plan;attempt++){
+    const pickup=chooseBusinessDestination(base,[...S.sessionFlights.slice(-5).map(f=>f.arr),...triedPickups],180);
+    if(!pickup)break;
+    triedPickups.push(pickup);
+    const positioningWait=45+Math.floor(Math.random()*46);
+    const positioning=buildFlight(base,pickup,{depMinuteOfDay:firstDeparture,pax:[],missionRole:'POSITIONING \u00C0 VIDE',turnaroundMin:positioningWait,groundReason:'PRISE EN CHARGE CLIENT ET PR\u00C9PARATION CABINE'});
+    if(!positioning||positioning.fuel.overCapacity)continue;
+    const clientDeparture=positioning.arrMinuteOfDay+positioning.turnaroundMin;
+    const rejected=[];
+    for(let clientAttempt=0;clientAttempt<6&&!plan;clientAttempt++){
+      const destination=chooseBusinessDestination(pickup,[base,pickup,...rejected],Math.max(60,(dutyLimit-clientDeparture-210)/2));
+      if(!destination)break;
+      rejected.push(destination);
+      const wait=90+Math.floor(Math.random()*121);
+      const outbound=buildFlight(pickup,destination,{depMinuteOfDay:clientDeparture,missionRole:'CLIENT \u2014 ALLER',turnaroundMin:wait,groundReason:'ATTENTE CLIENT \u2014 RENDEZ-VOUS / PROGRAMME PRIV\u00C9'});
+      if(!outbound||outbound.fuel.overCapacity)continue;
+      const inbound=buildFlight(destination,pickup,{depMinuteOfDay:outbound.arrMinuteOfDay+wait,pax:outbound.pax,missionRole:'CLIENT \u2014 RETOUR',turnaroundMin:45,groundReason:'D\u00C9POSE CLIENT ET REMISE EN \u00C9TAT CABINE'});
+      if(!inbound||inbound.fuel.overCapacity)continue;
+      const home=buildFlight(pickup,base,{depMinuteOfDay:inbound.arrMinuteOfDay+45,pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30});
+      if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit)plan=[positioning,outbound,inbound,home];
+    }
   }
+  if(!plan)return null;
   S.rotationPlan=plan;S.rotationIndex=0;
-  S.rotationType=plan.length>=3?'MISE EN PLACE + MISSION CLIENT AVEC ATTENTE':'MISE EN PLACE + PRISE EN CHARGE CLIENT';
+  S.rotationType='MISE EN PLACE + MISSION CLIENT + RETOUR BASE';
   S.rotationRevision=0;
   S.rotationHistory=[{revision:0,at:utcNow(),reason:'\u00C9MISSION INITIALE \u2014 MISE EN PLACE \u00C0 VIDE'}];
   saveSession();return plan[0];
 }
 
-function generateBusinessRotation(){
+function generateBusinessRotationLegacy(){
   const base=S.position||'LFRS';
   const dutyStartAbs=timeToMinutes(S.dutyStart);
   const dutyLimit=dutyStartAbs+S.dutyMinutes;
@@ -1803,6 +1796,51 @@ function generateBusinessRotation(){
   S.rotationHistory=[{revision:0,at:utcNow(),reason:'\u00C9MISSION INITIALE'}];
   saveSession();
   return plan[0];
+}
+
+function generateBusinessRotationV2(){
+  const base=currentOperator().base,origin=S.position||base;
+  const dutyStartAbs=timeToMinutes(S.dutyStart),dutyLimit=dutyStartAbs+S.dutyMinutes,firstDeparture=dutyStartAbs+45;
+  const routePolicy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750;
+  // Une mission long-courrier avec nuitée reste possible, mais volontairement rare.
+  if(origin===base&&S.dutyMinutes>=8*60&&Math.random()<routePolicy.longMissionChance){
+    const longMission=generateLongRangeMission(origin,firstDeparture,dutyLimit);if(longMission)return longMission;
+  }
+  // Le cas fréquent en charter: mise en place, transport client, puis retour avion à la base.
+  if(origin===base&&S.dutyMinutes>=7*60&&Math.random()<.45){
+    const positioningMission=generatePositioningPickupMission(base,firstDeparture,dutyLimit);if(positioningMission)return positioningMission;
+  }
+  let plan=null,type='',rejected=[];
+  for(let attempt=0;attempt<8&&!plan;attempt++){
+    const maxOutbound=Math.max(55,(dutyLimit-firstDeparture-180)/2);
+    const destination=chooseBusinessDestination(origin,[...S.sessionFlights.slice(-5).map(f=>f.arr),...rejected],maxOutbound);
+    if(!destination)break;rejected.push(destination);
+    const wait=75+Math.floor(Math.random()*106);
+    const outbound=buildFlight(origin,destination,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT \u2014 ALLER',turnaroundMin:wait,groundReason:'ATTENTE CLIENT / ESCALE COMMERCIALE'});
+    if(!outbound||outbound.fuel.overCapacity)continue;
+    // Une partie des rotations dessert deux villes, sans sacrifier le retour base.
+    if(Math.random()<.28){
+      const secondDeparture=outbound.arrMinuteOfDay+wait;
+      const secondDestination=chooseBusinessDestination(destination,[origin,base,destination],Math.max(45,(dutyLimit-secondDeparture-100)/2));
+      const second=secondDestination&&buildFlight(destination,secondDestination,{depMinuteOfDay:secondDeparture,pax:outbound.pax,missionRole:'CLIENT \u2014 SECTEUR 2',turnaroundMin:45,groundReason:'D\u00C9POSE CLIENT ET PR\u00C9PARATION DU RETOUR BASE'});
+      const home=second&&buildFlight(second.arr,base,{depMinuteOfDay:second.arrMinuteOfDay+45,pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30});
+      if(second&&home&&!second.fuel.overCapacity&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit){plan=[outbound,second,home];type='MISSION MULTI-SECTEURS + RETOUR BASE';continue;}
+    }
+    const carriesPassengers=Math.random()<.72;
+    const home=buildFlight(destination,base,{depMinuteOfDay:outbound.arrMinuteOfDay+wait,pax:carriesPassengers?outbound.pax:[],missionRole:carriesPassengers?'CLIENT \u2014 RETOUR':'POSITIONING RETOUR BASE',turnaroundMin:30});
+    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit){
+      plan=[outbound,home];type=carriesPassengers?'ALLER-RETOUR CLIENT + RETOUR BASE':'MISSION CLIENT + POSITIONING RETOUR BASE';
+    }
+  }
+  // Si une rotation précédente a laissé l avion ailleurs, on privilégie son rapatriement.
+  if(!plan&&origin!==base){
+    const home=buildFlight(origin,base,{depMinuteOfDay:firstDeparture,pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30});
+    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit){plan=[home];type='RAPATRIEMENT AVION VERS LA BASE';}
+  }
+  if(!plan){const fallback=generateRotation();plan=fallback?[fallback]:[];type='MISSION ALLER SIMPLE \u00B7 NUIT\u00C9E HORS BASE PLANIFI\u00C9E';}
+  S.rotationPlan=plan;S.rotationIndex=0;S.rotationType=type;S.rotationRevision=0;
+  S.rotationHistory=[{revision:0,at:utcNow(),reason:'\u00C9MISSION INITIALE \u2014 PLANIFICATION CHARTER'}];
+  saveSession();return plan[0]||null;
 }
 
 let SCHEDULED_AIRPORTS=['LFRS','LFPO','LFMN','LFML','LFLL','LFBO','LFBD','LEMD','LEBL','LEMG','LIRF','LIMC','EBBR','EHAM','EDDF','EDDM','EDDB','LPPT','LOWW','LKPR','EIDW','EGPH','EKCH','ESSA','LGAV'];
@@ -1863,7 +1901,7 @@ function generateCargoRotation(){
 function generateOperationalRotation(){
   if(S.operationType==='scheduled')return generateScheduledRotation();
   if(S.operationType==='cargo')return generateCargoRotation();
-  return generateBusinessRotation();
+  return generateBusinessRotationV2();
 }
 
 async function fetchWX(icao,lat,lon){
@@ -1938,7 +1976,7 @@ function renderRotationMap(){
     .filter(item=>item.dep&&item.arr&&Number.isFinite(Number(item.dep.lat))&&Number.isFinite(Number(item.dep.lon))&&Number.isFinite(Number(item.arr.lat))&&Number.isFinite(Number(item.arr.lon)));
   if(!legs.length){card.style.display='none';return;}
   card.style.display='block';
-  const NS='http://www.w3.org/2000/svg',W=800,H=300,padX=64,padY=42;
+  const NS='http://www.w3.org/2000/svg',W=800,H=300,padX=22,padY=18;
   const make=(tag,attrs={},content='')=>{const node=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([key,value])=>node.setAttribute(key,value));if(content)node.textContent=content;return node;};
   const pointMap=new Map(),ordered=[];
   const addPoint=ap=>{if(!pointMap.has(ap.icao)){const point={ap,lat:Number(ap.lat),lon:Number(ap.lon),plotLon:Number(ap.lon)};pointMap.set(ap.icao,point);ordered.push(point);}};
@@ -1946,14 +1984,26 @@ function renderRotationMap(){
   let previous=ordered[0].lon;
   ordered.forEach((point,index)=>{let lon=point.lon;if(index){while(lon-previous>180)lon-=360;while(lon-previous< -180)lon+=360;}point.plotLon=lon;previous=lon;});
   const byCode=new Map(ordered.map(point=>[point.ap.icao,point]));
-  const lons=ordered.map(point=>point.plotLon),lats=ordered.map(point=>point.lat);
-  const minLon=Math.min(...lons),maxLon=Math.max(...lons),minLat=Math.min(...lats),maxLat=Math.max(...lats);
-  const lonSpan=Math.max(4,maxLon-minLon),latSpan=Math.max(3,maxLat-minLat);
-  const project=point=>({x:padX+((point.plotLon-minLon+(lonSpan-(maxLon-minLon))/2)/lonSpan)*(W-padX*2),y:padY+((maxLat-point.lat+(latSpan-(maxLat-minLat))/2)/latSpan)*(H-padY*2)});
+  const project=point=>{const lon=Number.isFinite(point.lon)?point.lon:point.plotLon;return{x:padX+((lon+180)/360)*(W-padX*2),y:padY+((82-Math.max(-58,Math.min(82,point.lat)))/140)*(H-padY*2)}};
+  const geo=(lon,lat)=>project({plotLon:lon,lat});
   const bg=make('g',{'aria-hidden':'true'});
   for(let i=1;i<6;i++)bg.appendChild(make('line',{x1:0,y1:(H/6)*i,x2:W,y2:(H/6)*i,stroke:'var(--border)','stroke-width':1,'stroke-dasharray':'3 8'}));
   for(let i=1;i<8;i++)bg.appendChild(make('line',{x1:(W/8)*i,y1:0,x2:(W/8)*i,y2:H,stroke:'var(--border)','stroke-width':1,'stroke-dasharray':'3 8'}));
   svg.appendChild(bg);
+  // Fond mondial volontairement simplifié et embarqué: aucune connexion ni clé cartographique.
+  const worldLand=[
+    [[-168,71],[-150,60],[-135,57],[-127,50],[-124,40],[-117,32],[-103,23],[-90,20],[-82,25],[-80,32],[-70,45],[-60,52],[-53,60],[-62,70],[-95,78],[-130,73]],
+    [[-82,12],[-75,5],[-80,-5],[-72,-18],[-68,-32],[-62,-52],[-48,-55],[-38,-38],[-35,-10],[-50,2],[-62,10]],
+    [[-73,60],[-52,60],[-20,70],[-26,82],[-55,82]],
+    [[-10,36],[-17,28],[-15,10],[-5,2],[10,-5],[18,-34],[32,-35],[42,-15],[51,12],[43,30],[32,37],[15,37]],
+    [[-10,36],[2,44],[20,55],[40,70],[75,78],[115,72],[145,58],[165,55],[180,50],[165,40],[145,45],[130,34],[120,22],[105,8],[95,20],[78,8],[65,24],[50,28],[40,40],[25,42],[12,38]],
+    [[112,-11],[129,-13],[145,-19],[154,-29],[146,-42],[129,-35],[114,-25]],
+    [[47,-13],[51,-17],[49,-26],[44,-24]],[[130,32],[142,45],[146,40],[139,31]],
+    [[-8,50],[2,58],[-4,59]],[[12,58],[25,71],[30,60]],[[166,-35],[178,-38],[174,-47]]
+  ];
+  const land=make('g',{fill:'var(--bg4)',stroke:'var(--border2)','stroke-width':1.2,'stroke-linejoin':'round'});
+  worldLand.forEach(poly=>{const d=poly.map(([lon,lat],index)=>{const p=geo(lon,lat);return `${index?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;}).join(' ')+' Z';land.appendChild(make('path',{d}));});
+  svg.appendChild(land);
   legs.forEach(({leg,index})=>{
     const start=project(byCode.get(leg.dep)),end=project(byCode.get(leg.arr));
     const selected=S.dossierLegIndex??S.rotationIndex;
