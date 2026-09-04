@@ -1,4 +1,4 @@
-const CACHE_NAME='ops-center-v2-general-clean-10';
+const CACHE_NAME='ops-center-v2-airports-11';
 const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg'];
 
 self.addEventListener('install',event=>{
