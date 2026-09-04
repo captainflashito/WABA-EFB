@@ -1,5 +1,5 @@
-const CACHE_NAME='ops-center-v2-airports-11';
-const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg'];
+const CACHE_NAME='ops-center-v2-airports-13';
+const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).catch(()=>{}));

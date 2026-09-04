@@ -523,7 +523,7 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
   <div style="width:100%;font-size:8px;color:var(--text3);font-family:var(--font-m);margin-top:8px;line-height:1.5">
     MODE SIMULATION &#x2014; NE PAS UTILISER POUR LA PR&#xC9;PARATION OU LA CONDUITE D'UN VOL R&#xC9;EL
   </div>
-  <button class="start-btn" onclick="startDuty()">PRENDRE SON SERVICE &#x2192;</button>
+  <button class="start-btn" id="start-duty-btn" onclick="startDuty()">PRENDRE SON SERVICE &#x2192;</button>
 </div>
 
 <!-- PR&#xC9;PARATION SESSION -->
@@ -737,7 +737,9 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
         <div class="crow"><span class="clbl">Handling d&#xE9;part</span><span class="cval" id="d-dep-handling">&#x2014;</span></div>
         <div class="crow"><span class="clbl">Handling arriv&#xE9;e</span><span class="cval" id="d-handling">&#x2014;</span></div>
         <div class="crow"><span class="clbl">Parking</span><span class="cval" id="d-parking">&#x2014;</span></div>
+        <div class="crow"><span class="clbl">Piste principale</span><span class="cval" id="d-runway">&#x2014;</span></div>
         <div class="crow"><span class="clbl">Formalit&#xE9;s / douanes</span><span class="cval" id="d-customs">&#x2014;</span></div>
+        <div class="crow"><span class="clbl">Couvre-feu</span><span class="cval" id="d-curfew">&#x2014;</span></div>
       </div>
       <!-- M&#xE9;t&#xE9;o -->
       <div class="card">
@@ -860,7 +862,7 @@ const AIRCRAFT_DATA = {
   B744F:{name:'Boeing 747-400F',reg:'SIM-B744',categories:['cargo'],pax_max:0,range_nm:4450,cruise_kt:493,cruise_fl:'FL410',fuel_burn_kgh:10500,fuel_taxi:1200,fuel_reserve:4200,mtow:396890,fuel_cap:173000,cargo_max:112000}
 };
 
-const AIRPORTS = [
+let AIRPORTS = [
   {icao:'LFRS',city:'Nantes',country:'France',lat:47.153,lon:-1.608,handling:'Nantes Handling',parking:'M-07'},
   {icao:'LFPB',city:'Paris',country:'France',lat:48.969,lon:2.441,handling:'Signature Aviation',parking:'G-12',notes:'PPR requis. Slot obligatoire. Curfew 23h.'},
   {icao:'LFPO',city:'Paris',country:'France',lat:48.723,lon:2.379,handling:'Alyzia',parking:'T2-Apron',notes:'Curfew 23h30-06h.'},
@@ -965,9 +967,18 @@ const AIRPORTS = [
 ];
 
 const RESTRICTED_LARGE_AIRCRAFT=new Set(['LSZA','LSZS','LGMK','LGST','LIRQ','EBAW','LFMQ']);
-const ROUTES=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
-  code,AIRPORTS.map(a=>a.icao).filter(icao=>ac.mtow<30000||!RESTRICTED_LARGE_AIRCRAFT.has(icao))
-]));
+let ROUTES={};
+function rebuildAircraftRoutes(){
+  ROUTES=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
+    code,AIRPORTS.filter(ap=>{
+      if(ac.mtow<30000)return true;
+      if(RESTRICTED_LARGE_AIRCRAFT.has(ap.icao))return false;
+      if(ap.runwayFt)return ap.runwayFt>=(ac.mtow>150000?8000:5500);
+      return ap.type==='L'||ap.type==='M'||!ap.type;
+    }).map(a=>a.icao)
+  ]));
+}
+rebuildAircraftRoutes();
 
 const AIRCRAFT_ROUTE_POLICY=Object.fromEntries(Object.entries(AIRCRAFT_DATA).map(([code,ac])=>[
   code,{
@@ -1145,7 +1156,40 @@ function distNM(lat1,lon1,lat2,lon2){
   return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
 }
 
-function getAP(icao){return AIRPORTS.find(a=>a.icao===icao)}
+let AIRPORT_BY_CODE=new Map(AIRPORTS.map(ap=>[ap.icao,ap]));
+function getAP(icao){return AIRPORT_BY_CODE.get(String(icao||'').toUpperCase())}
+function rebuildAirportIndexes(){
+  AIRPORT_BY_CODE=new Map(AIRPORTS.map(ap=>[ap.icao,ap]));
+  rebuildAircraftRoutes();
+  SCHEDULED_AIRPORTS=AIRPORTS.filter(ap=>ap.scheduled||ap.type==='L').map(ap=>ap.icao);
+  CARGO_HUBS=AIRPORTS.filter(ap=>(ap.type==='L'||ap.type==='M')&&(!ap.runwayFt||ap.runwayFt>=6000)).map(ap=>ap.icao);
+}
+
+async function loadAirportDatabase(){
+  const button=$('start-duty-btn');
+  if(button){button.disabled=true;button.textContent='CHARGEMENT DES A\u00C9ROPORTS...';}
+  try{
+    const response=await fetch('./data/airports.min.json?v=20260904',{cache:'no-store'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    if(!Array.isArray(data.airports)||data.airports.length<1000)throw new Error('Base incompl\u00E8te');
+    const curated=new Map(AIRPORTS.map(ap=>[ap.icao,ap]));
+    AIRPORTS=data.airports.map(row=>{
+      const [icao,name,city,country,countryCode,continent,lat,lon,elevationFt,type,scheduled,iata,runwayFt,surface,codeType]=row;
+      const imported={icao,name,city,country,countryCode,continent,lat,lon,elevationFt,type,scheduled:scheduled===1,iata,runwayFt,surface,codeType,
+        handling:'\u00C0 confirmer',parking:'\u00C0 confirmer',customs:{status:'unknown'},curfew:{status:'unknown'},dataSource:data.source,verifiedAt:data.version};
+      return curated.has(icao)?{...imported,...curated.get(icao),name:name||curated.get(icao).name}:imported;
+    });
+    rebuildAirportIndexes();
+    showToast(`${AIRPORTS.length.toLocaleString('fr-FR')} a\u00E9roports charg\u00E9s`,4000);
+  }catch(error){
+    console.warn('[OPS CENTER] Base mondiale indisponible, base embarqu\u00E9e utilis\u00E9e',error);
+    rebuildAirportIndexes();
+    showToast(`Base embarqu\u00E9e utilis\u00E9e (${AIRPORTS.length} a\u00E9roports)`,5000);
+  }finally{
+    if(button){button.disabled=false;button.textContent='PRENDRE SON SERVICE \u2192';}
+  }
+}
 function airportLabel(icao){
   const ap=getAP(String(icao||'').toUpperCase());
   return ap?`${ap.city} (${ap.icao})`:String(icao||'');
@@ -1462,14 +1506,8 @@ function businessDestinationWeight(origin,airport){
 }
 
 function weightedBusinessCandidates(origin,candidates){
-  const remaining=[...candidates],ordered=[];
-  while(remaining.length){
-    const weights=remaining.map(ap=>businessDestinationWeight(origin,ap));
-    let draw=Math.random()*weights.reduce((sum,w)=>sum+w,0),index=0;
-    for(;index<remaining.length-1;index++){draw-=weights[index];if(draw<=0)break;}
-    ordered.push(remaining.splice(index,1)[0]);
-  }
-  return ordered;
+  return candidates.map(ap=>({ap,key:-Math.log(Math.max(Number.EPSILON,Math.random()))/businessDestinationWeight(origin,ap)}))
+    .sort((a,b)=>a.key-b.key).slice(0,250).map(item=>item.ap);
 }
 
 function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
@@ -1657,8 +1695,8 @@ function generateBusinessRotation(){
   return plan[0];
 }
 
-const SCHEDULED_AIRPORTS=['LFRS','LFPO','LFMN','LFML','LFLL','LFBO','LFBD','LEMD','LEBL','LEMG','LIRF','LIMC','EBBR','EHAM','EDDF','EDDM','EDDB','LPPT','LOWW','LKPR','EIDW','EGPH','EKCH','ESSA','LGAV'];
-const CARGO_HUBS=['EDDK','EDDF','EDDH','EHAM','EBBR','LFPO','LIMC','LEMD','LPPT','EINN','EGSS','OMDB','GOBD'];
+let SCHEDULED_AIRPORTS=['LFRS','LFPO','LFMN','LFML','LFLL','LFBO','LFBD','LEMD','LEBL','LEMG','LIRF','LIMC','EBBR','EHAM','EDDF','EDDM','EDDB','LPPT','LOWW','LKPR','EIDW','EGPH','EKCH','ESSA','LGAV'];
+let CARGO_HUBS=['EDDK','EDDF','EDDH','EHAM','EBBR','LFPO','LIMC','LEMD','LPPT','EINN','EGSS','OMDB','GOBD'];
 
 function finishGeneratedRotation(plan,type,reason){
   if(!plan.length)return null;
@@ -1800,7 +1838,7 @@ function renderRotationPlan(){
     row.onclick=()=>selectDossierLeg(index);
     const num=document.createElement('div');num.className='rot-num';num.textContent=index+1;
     const info=document.createElement('div');
-    const route=document.createElement('div');route.className='rot-route';route.textContent=`${leg.dep} \u2192 ${leg.arr}`;
+    const route=document.createElement('div');route.className='rot-route';route.textContent=`${airportLabel(leg.dep)} \u2192 ${airportLabel(leg.arr)}`;
     const meta=document.createElement('div');meta.className='rot-meta';
     const dateTag=leg.depDate&&leg.depDate!==S.dutyDate?formatDateFr(leg.depDate)+' \u00B7 ':'';
     meta.textContent=`${dateTag}${leg.depT}\u2013${leg.arrT} \u00B7 ${leg.missionRole} \u00B7 ${leg.cargo?leg.cargo.weightKg.toLocaleString('fr-FR')+' KG FRET':leg.pax.length+' PAX'}`;
@@ -1865,7 +1903,9 @@ function populateDossier(f,options={}){
   $('d-dep-handling').textContent=f.depAp.handling||'\u00C0 confirmer';
   $('d-handling').textContent=f.arrAp.handling||'\u2014';
   $('d-parking').textContent=f.arrAp.parking||'\u2014';
-  $('d-customs').textContent=f.depAp.country!==f.arrAp.country?'Coordination internationale requise':'Selon manifeste et statut du vol';
+  $('d-runway').textContent=f.arrAp.runwayFt?`${f.arrAp.runwayFt.toLocaleString('fr-FR')} ft \u00B7 ${f.arrAp.surface||'surface non renseign\u00E9e'}`:'\u00C0 v\u00E9rifier';
+  $('d-customs').textContent=f.arrAp.customs?.status==='available'?'Disponibles':f.arrAp.customs?.status==='unavailable'?'Non disponibles':f.depAp.country!==f.arrAp.country?'\u00C0 v\u00E9rifier \u2014 arriv\u00E9e internationale':'Selon manifeste et statut du vol';
+  $('d-curfew').textContent=f.arrAp.curfew?.status==='restricted'?`${f.arrAp.curfew.startLocal||'horaire \u00E0 v\u00E9rifier'}\u2013${f.arrAp.curfew.endLocal||'horaire \u00E0 v\u00E9rifier'} local`:f.arrAp.curfew?.status==='none'?'Aucun couvre-feu publi\u00E9':'Non renseign\u00E9 \u2014 v\u00E9rifier AIP/NOTAM';
   // WX
   $('wx-dep-lbl').textContent='DEP '+f.dep;
   $('wx-arr-lbl').textContent='ARR '+f.arr;
@@ -3026,6 +3066,7 @@ applyTheme(savedTheme);
 $('s-date').value=new Date().toISOString().slice(0,10);
 refreshOperationSetup();
 restoreSession();
+loadAirportDatabase();
 </script>
 </body>
 </html>

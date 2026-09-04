@@ -10,7 +10,7 @@
   "theme_color": "#123A4A",
   "icons": [
     {
-      "src": "./waba-icon.svg",
+      "src": "./ops-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
