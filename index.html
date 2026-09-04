@@ -450,6 +450,9 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 /* SOUND */
 
 /* OPS CENTER — coque produit responsive */
+html,body{width:100%;max-width:none;margin:0}
+.setup-ov,.boot-ov,.call-ov{width:100%;max-width:none;margin:0}
+.page{width:100%;min-width:0}
 .account-pill{height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:7px;padding:0 10px;font:600 8px var(--font-b);cursor:pointer;display:flex;align-items:center;gap:7px}
 .account-pill::before{content:'TL';width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-size:7px}
 .account-modal{position:fixed;inset:0;z-index:400;background:rgba(7,18,23,.58);display:none;align-items:center;justify-content:center;padding:20px}
@@ -463,12 +466,12 @@ html[data-theme="dark"] .from-pilot .abub{background:#203A44;border-color:#2D515
 .subscription-box .usage{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden;margin:0 0 13px}.subscription-box .usage i{display:block;height:100%;background:var(--blue)}
 
 @media(min-width:861px){
-  body{max-width:1180px;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
+  body{width:100%;max-width:none;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
   .hdr{grid-column:1/3;grid-row:1;padding:0 20px}.dbar{grid-column:2;grid-row:2;padding:9px 20px}
   .tabs{grid-column:1;grid-row:2/4;display:flex;flex-direction:column;padding:18px 12px;background:#10242c;border:0;box-shadow:none;gap:4px;order:initial}
   html[data-theme="dark"] .tabs{background:#0b171c}.tab{flex:0 0 auto;min-height:43px;display:grid;grid-template-columns:25px 1fr;align-items:center;text-align:left;padding:8px 10px;color:#b7c7cd;border-radius:6px}
   .tab.on{background:#214653;color:#fff}.tab-ic{width:17px;height:17px}.tab-lb{font-size:11px;text-align:left}.tbadge{position:static;grid-column:3;grid-row:1}
-  .page{grid-column:2;grid-row:3;min-height:0;order:initial}.pi{max-width:920px;padding:24px}
+  .page{grid-column:2;grid-row:3;min-height:0;order:initial}.pi{width:100%;max-width:1180px;padding:24px}
   #page-ops .pi{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(260px,.75fr);align-content:start}
   #page-ops .disp-card,#page-ops #main-call-btn{grid-column:1}#page-ops .card{grid-column:2}#page-ops #inflight-notice{grid-column:1}
   #page-acars{grid-column:2;grid-row:3}.acars-msgs{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}.acars-in{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}
@@ -1086,7 +1089,7 @@ const DISPATCHERS = [
 
 const EASA = `CONTEXTE DE SIMULATION A\u00C9RONAUTIQUE:
 Cette application est un jeu de r\u00F4le op\u00E9rationnel et non un EFB certifi\u00E9. Ne pr\u00E9sente jamais une estimation comme une donn\u00E9e de vol r\u00E9elle.
-Ne donne aucune d\u00E9cision MEL, performance, carburant, m\u00E9t\u00E9o, FTL ou Go/No-Go comme certaine. Invite l'\u00E9quipage \u00E0 utiliser l'OM, l'AFM/FCOM/QRH, la MEL approuv\u00E9e et les sources a\u00E9ronautiques officielles.
+Ne donne aucune d\u00E9cision MEL, performance, carburant, FTL ou Go/No-Go comme certaine. Lorsqu'un bloc M\u00C9T\u00C9O LIVE est fourni, restitue fid\u00E8lement le METAR ou le TAF re\u00E7u et ne dis jamais qu'aucune information m\u00E9t\u00E9o n'est disponible. Termine au maximum par une seule r\u00E9serve br\u00E8ve indiquant que la donn\u00E9e doit \u00EAtre confirm\u00E9e pour un vol r\u00E9el. En l'absence de bloc M\u00C9T\u00C9O LIVE, n'invente aucune observation. Pour le reste, invite l'\u00E9quipage \u00E0 utiliser l'OM, l'AFM/FCOM/QRH, la MEL approuv\u00E9e et les sources a\u00E9ronautiques officielles.
 Le commandant de bord conserve l'autorit\u00E9 finale. En cas d'urgence r\u00E9elle, appliquer les proc\u00E9dures approuv\u00E9es et contacter les services appropri\u00E9s.`;
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -2745,7 +2748,7 @@ async function requestedLiveContext(text){
       const remoteFallback=c?`Aucune observation METAR/TAF. Donn\u00E9es g\u00E9n\u00E9rales indicatives: vent ${Math.round(c.wind_direction_10m||0)} degr\u00E9s pour ${Math.round(c.wind_speed_10m||0)} noeuds, visibilit\u00E9 ${Math.round((c.visibility||0)/1000)} kilom\u00E8tres, couverture nuageuse ${Math.round(c.cloud_cover||0)} pour cent, temp\u00E9rature ${Math.round(c.temperature_2m||0)} degr\u00E9s. Pr\u00E9cise que ce ne sont pas des donn\u00E9es a\u00E9ronautiques.`:'';
       context=`M\u00C9T\u00C9O ${icao}: ${remoteFallback||await indicativeWeatherContext(icao)||'aucune donn\u00E9e disponible. Dis-le sans inventer.'}`;
     }
-    else context=`M\u00C9T\u00C9O LIVE ${icao}, source AviationWeather.gov, r\u00E9cup\u00E9r\u00E9e ${data.fetched_at}. METAR: ${metar||'indisponible'}. TAF: ${(taf||'indisponible').slice(0,1200)}. R\u00E9ponds uniquement \u00E0 la demande, en deux phrases maximum, cite l heure du METAR et rappelle bri\u00E8vement que la v\u00E9rification op\u00E9rationnelle reste n\u00E9cessaire.`;
+    else context=`M\u00C9T\u00C9O LIVE DISPONIBLE POUR ${icao}. Source AviationWeather.gov, r\u00E9cup\u00E9r\u00E9e ${data.fetched_at}. METAR: ${metar||'non fourni'}. TAF: ${(taf||'non fourni').slice(0,1200)}. CONSIGNE PRIORITAIRE: donne directement la m\u00E9t\u00E9o demand\u00E9e en langage naturel et deux phrases maximum. Ne dis pas que tu n'as pas d'information, que tu n'as pas de connectivit\u00E9, ni que le pilote doit aller chercher lui-m\u00EAme la m\u00E9t\u00E9o. Une seule conclusion courte, \u00AB \u00E0 confirmer pour un vol r\u00E9el \u00BB, est autoris\u00E9e.`;
     liveWeatherCache.set(icao,{at:Date.now(),context});return context;
   }catch(e){
     const fallback=await indicativeWeatherContext(icao);
