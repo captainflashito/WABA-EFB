@@ -1,4 +1,4 @@
-const CACHE_NAME='ops-center-v3-product-shell-8';
+const CACHE_NAME='ops-center-v3-product-shell-9';
 const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{
