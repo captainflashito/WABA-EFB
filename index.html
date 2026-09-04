@@ -10,6 +10,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <title>OPS CENTER &#x2014; Flight Simulation</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -217,12 +219,13 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .rot-status.done{color:var(--green);background:rgba(90,158,111,.12)}.rot-status.current{color:var(--gold);background:rgba(184,151,62,.12)}.rot-status.planned{color:var(--blue);background:rgba(74,155,184,.12)}
 .rot-leg{cursor:pointer;border-radius:8px;padding-left:6px;padding-right:6px}.rot-leg.selected{background:rgba(23,107,135,.08);outline:1px solid var(--border)}
 .rotation-map-shell{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:linear-gradient(145deg,var(--bg2),var(--bg3));box-shadow:inset 0 1px rgba(255,255,255,.035)}
-.rotation-map-shell svg{display:block;width:100%;height:auto;min-height:190px;max-height:270px}
+.rotation-map-shell svg{display:block;position:absolute;inset:0;width:100%;height:100%}
+.rotation-map-live{display:block;visibility:hidden;width:100%;height:270px}.rotation-map-live .maplibregl-canvas{outline:none}.rotation-map-live .maplibregl-ctrl-attrib{font-size:9px;background:rgba(255,255,255,.82)}
 .rotation-map-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;font-size:8px;color:var(--text2)}
 .rotation-map-legend{display:flex;gap:12px;flex-wrap:wrap}.rotation-map-key{display:inline-flex;align-items:center;gap:5px}
 .rotation-map-dot{width:7px;height:7px;border-radius:50%;background:var(--text3)}.rotation-map-dot.done{background:var(--green)}.rotation-map-dot.current{background:var(--gold)}
 .rotation-map-note{font-family:var(--font-m);text-align:right}
-@media(max-width:560px){.rotation-map-shell svg{min-height:175px}.rotation-map-meta{align-items:flex-start;flex-direction:column}.rotation-map-note{text-align:left}}
+@media(max-width:560px){.rotation-map-shell svg{min-height:175px}.rotation-map-live{height:230px}.rotation-map-meta{align-items:flex-start;flex-direction:column}.rotation-map-note{text-align:left}}
 .dos-summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dos-kpi{padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:8px}.dos-kpi span{display:block;font-size:7px;color:var(--text3);letter-spacing:.8px;margin-bottom:3px}.dos-kpi strong{font-size:10px;color:var(--text)}
 .rev-item{padding:9px 0;border-bottom:1px solid var(--border);font-size:9px;line-height:1.55}.rev-item:last-child{border-bottom:0}.rev-head{display:flex;justify-content:space-between;gap:8px;font:700 8px var(--font-m);color:var(--blue)}.rev-ack{color:var(--green)}
 
@@ -753,6 +756,7 @@ html,body{width:100%;max-width:none;margin:0}
       <div class="card" id="rotation-map-card" style="display:none">
         <div class="ctitle">Carte de la rotation</div>
         <div class="rotation-map-shell">
+          <div id="rotation-map-live" class="rotation-map-live" aria-label="Carte interactive de la rotation en cours"></div>
           <svg id="rotation-map" viewBox="0 0 800 300" role="img" aria-label="Carte sch&#xE9;matique de la rotation en cours"></svg>
         </div>
         <div class="rotation-map-meta">
@@ -1979,6 +1983,51 @@ function resequenceFollowingLegs(startIndex){
   }
 }
 
+let rotationMapInstance=null,rotationMapLoaded=false,rotationMapPending=null;
+function renderInteractiveRotationMap(legs,ordered){
+  const container=$('rotation-map-live'),fallback=$('rotation-map');
+  if(!container||!fallback||!window.maplibregl)return false;
+  const selected=S.dossierLegIndex??S.rotationIndex;
+  const routeFeatures=legs.map(({leg,index})=>{
+    let startLon=Number(getAP(leg.dep).lon),endLon=Number(getAP(leg.arr).lon);
+    while(endLon-startLon>180)endLon-=360;while(endLon-startLon< -180)endLon+=360;
+    return{type:'Feature',properties:{state:index<S.rotationIndex?'done':index===S.rotationIndex?'current':'planned',selected:index===selected?1:0},geometry:{type:'LineString',coordinates:[[startLon,Number(getAP(leg.dep).lat)],[endLon,Number(getAP(leg.arr).lat)]]}};
+  });
+  const stopFeatures=ordered.map((point,index)=>{
+    const activeLeg=S.rotationPlan[selected],active=activeLeg&&(point.ap.icao===activeLeg.dep||point.ap.icao===activeLeg.arr);
+    const visited=S.rotationPlan.slice(0,S.rotationIndex).some(leg=>leg.arr===point.ap.icao);
+    return{type:'Feature',properties:{icao:point.ap.icao,city:String(point.ap.city||point.ap.name||''),number:String(index+1),state:active?'current':visited?'done':'planned'},geometry:{type:'Point',coordinates:[point.plotLon,point.lat]}};
+  });
+  rotationMapPending={routes:{type:'FeatureCollection',features:routeFeatures},stops:{type:'FeatureCollection',features:stopFeatures},ordered};
+  const applyData=()=>{
+    const pending=rotationMapPending;if(!pending||!rotationMapInstance?.isStyleLoaded())return;
+    const routeSource=rotationMapInstance.getSource('rotation-routes'),stopSource=rotationMapInstance.getSource('rotation-stops');
+    if(routeSource)routeSource.setData(pending.routes);
+    if(stopSource)stopSource.setData(pending.stops);
+    const bounds=new maplibregl.LngLatBounds();pending.ordered.forEach(point=>bounds.extend([point.plotLon,point.lat]));
+    if(!bounds.isEmpty())rotationMapInstance.fitBounds(bounds,{padding:{top:54,bottom:54,left:64,right:64},maxZoom:7.5,duration:650});
+    container.style.visibility='visible';fallback.style.display='none';setTimeout(()=>rotationMapInstance.resize(),0);
+  };
+  if(!rotationMapInstance){
+    try{
+      rotationMapInstance=new maplibregl.Map({container,style:'https://tiles.openfreemap.org/styles/positron',center:[ordered[0].plotLon,ordered[0].lat],zoom:3,attributionControl:true});
+      rotationMapInstance.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+      rotationMapInstance.on('load',()=>{
+        rotationMapLoaded=true;
+        rotationMapInstance.addSource('rotation-routes',{type:'geojson',data:rotationMapPending.routes});
+        rotationMapInstance.addSource('rotation-stops',{type:'geojson',data:rotationMapPending.stops});
+        rotationMapInstance.addLayer({id:'rotation-route-shadow',type:'line',source:'rotation-routes',paint:{'line-color':'rgba(10,25,31,.35)','line-width':['case',['==',['get','selected'],1],8,6]}});
+        rotationMapInstance.addLayer({id:'rotation-route',type:'line',source:'rotation-routes',paint:{'line-color':['match',['get','state'],'done','#5A9E6F','current','#C89B31','#70828A'],'line-width':['case',['==',['get','selected'],1],5,3],'line-opacity':['match',['get','state'],'planned',.7,1]}});
+        rotationMapInstance.addLayer({id:'rotation-stops',type:'circle',source:'rotation-stops',paint:{'circle-radius':['match',['get','state'],'current',8,6],'circle-color':'#ffffff','circle-stroke-width':['match',['get','state'],'current',4,3],'circle-stroke-color':['match',['get','state'],'done','#5A9E6F','current','#C89B31','#70828A']}});
+        rotationMapInstance.addLayer({id:'rotation-stop-labels',type:'symbol',source:'rotation-stops',layout:{'text-field':['concat',['get','number'],'  ',['get','icao'],'\n',['get','city']],'text-size':11,'text-font':['Noto Sans Regular'],'text-offset':[0,1.75],'text-anchor':'top','text-allow-overlap':false},paint:{'text-color':'#17313a','text-halo-color':'rgba(255,255,255,.95)','text-halo-width':2}});
+        applyData();
+      });
+      rotationMapInstance.on('error',()=>{if(!rotationMapLoaded){container.style.visibility='hidden';fallback.style.display='block';}});
+    }catch(error){console.warn('[OPS CENTER] Carte interactive indisponible',error);return false;}
+  }else if(rotationMapLoaded)applyData();
+  return true;
+}
+
 function renderRotationMap(){
   const card=$('rotation-map-card'),svg=$('rotation-map');
   if(!card||!svg)return;
@@ -2064,6 +2113,7 @@ function renderRotationMap(){
     group.appendChild(make('text',{x:labelX,y:pos.y+27,'text-anchor':anchor,fill:'var(--text2)','font-size':9,'font-family':'var(--font-b)'},String(point.ap.city||point.ap.name||'').slice(0,22)));
     svg.appendChild(group);
   });
+  renderInteractiveRotationMap(legs,ordered);
 }
 
 function renderRotationPlan(){
