@@ -1146,6 +1146,21 @@ function distNM(lat1,lon1,lat2,lon2){
 }
 
 function getAP(icao){return AIRPORTS.find(a=>a.icao===icao)}
+function airportLabel(icao){
+  const ap=getAP(String(icao||'').toUpperCase());
+  return ap?`${ap.city} (${ap.icao})`:String(icao||'');
+}
+function airportReferenceContext(text=''){
+  const codes=new Set(),add=code=>{if(getAP(code))codes.add(code);};
+  if(S.currentFlight){add(S.currentFlight.dep);add(S.currentFlight.arr);add(S.currentFlight.alt);}
+  (S.rotationPlan||[]).forEach(leg=>{add(leg.dep);add(leg.arr);add(leg.alt);});
+  const upper=normalizeSearchText(text);
+  (upper.match(/\b[A-Z]{4}\b/g)||[]).forEach(add);
+  AIRPORTS.forEach(ap=>{if(upper.includes(normalizeSearchText(ap.city)))add(ap.icao);});
+  if(!codes.size)return '';
+  const refs=[...codes].map(code=>{const ap=getAP(code);return `${code} = ${ap.city}, ${ap.country}`;}).join(' ; ');
+  return `R\u00C9F\u00C9RENTIEL A\u00C9ROPORTS IMP\u00C9RATIF: ${refs}. Associe toujours exactement chaque code OACI \u00E0 ce nom et n invente jamais une autre ville.`;
+}
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // CLOCK
@@ -1846,7 +1861,7 @@ function populateDossier(f,options={}){
   $('d-fl').textContent=f.fl;
   $('d-dist').textContent=f.dist+' NM';
   $('d-block').textContent=fmtDur(f.durMin);
-  $('d-alt').textContent=f.alt;
+  $('d-alt').textContent=airportLabel(f.alt);
   $('d-dep-handling').textContent=f.depAp.handling||'\u00C0 confirmer';
   $('d-handling').textContent=f.arrAp.handling||'\u2014';
   $('d-parking').textContent=f.arrAp.parking||'\u2014';
@@ -2173,7 +2188,7 @@ async function initiateCall(type){
   const greet=lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je vous \u00E9coute.`;
   addTx('ops',d.name,greet);await speak(greet);
   let sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
-  sysPrompt+=` IDENTIT\u00C9 ACTIVE PRIORITAIRE: op\u00E9rateur ${currentOperator().name}, ${currentOperator().fullName}, code ${currentOperator().icao}, indicatif ${currentOperator().telephony}, centre OPS ${currentOperator().opsCity}. Type d exploitation ${OPERATION_LABELS[S.operationType]}. Ignore toute identit\u00E9 historique contradictoire.`;
+  sysPrompt+=` IDENTIT\u00C9 ACTIVE PRIORITAIRE: op\u00E9rateur ${currentOperator().name}, ${currentOperator().fullName}, code ${currentOperator().icao}, indicatif ${currentOperator().telephony}, centre OPS ${currentOperator().opsCity}. Type d exploitation ${OPERATION_LABELS[S.operationType]}. Ignore toute identit\u00E9 historique contradictoire. ${airportReferenceContext()}`;
   let planned=null;
   if((type==='briefing'||type==='next')&&!S.currentFlight){
     planned=type==='next'&&S.rotationPlan[S.rotationIndex]
@@ -2198,8 +2213,8 @@ function makeSpokenBriefing(f,d,lang='fr'){
   const remaining=S.rotationPlan.slice(S.rotationIndex);
   const sequence=remaining.map((leg,i)=>{
     const next=remaining[i+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
-    const ground=wait?`, puis attente au sol de ${fmtDur(wait)} \u00E0 ${leg.arr}`:'';
-    return `secteur ${i+1}, ${leg.dep} vers ${leg.arr}, d\u00E9part ${leg.depT}, arriv\u00E9e ${leg.arrT}, ${leg.missionRole.toLowerCase()}${ground}`;
+    const ground=wait?`, puis attente au sol de ${fmtDur(wait)} \u00E0 ${airportLabel(leg.arr)}`:'';
+    return `secteur ${i+1}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, d\u00E9part ${leg.depT}, arriv\u00E9e ${leg.arrT}, ${leg.missionRole.toLowerCase()}${ground}`;
   }).join('. ');
   if(lang==='en')return `Good day ${S.rank} ${S.pilot}. This is revision ${S.rotationRevision||0} of your ${op.name} operations briefing for duty dated ${S.dutyDate}, ${S.dutyStart} to ${S.dutyEnd} UTC. You are assigned a ${S.rotationType.toLowerCase()} rotation with ${remaining.length} remaining sectors. Planned sequence: ${sequence}. Current sector is ${f.flightNo}, ${f.dep} to ${f.arr}, estimated arrival ${f.arrT}, planned level ${f.fl}, with ${load}. Arrival handling is ${f.arrAp.handling||'to be confirmed'}, parking ${f.arrAp.parking||'to be confirmed'}, and planning alternate ${f.alt}. Simulated fuel estimate is ${f.fuel.total} kilograms. Weather, performance, fuel and operational documents must be checked in the approved sources used for your simulator flight.`;
   const depCity=f.depAp?.city||f.dep;
@@ -2546,7 +2561,7 @@ function rotationContextForAI(){
   const legs=remaining.map((leg,index)=>{
     const next=remaining[index+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
     const ground=wait?` Attente au sol suivante: ${fmtDur(wait)} \u00E0 ${leg.arr}, motif ${leg.groundReason||'attente op\u00E9rationnelle ou client'}.`:'';
-    return `Secteur ${index+1}: ${leg.flightNo}, ${leg.dep} vers ${leg.arr}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${leg.alt}, carburant simulation ${leg.fuel.total} kg.${ground}`;
+    return `Secteur ${index+1}: ${leg.flightNo}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${airportLabel(leg.alt)}, carburant simulation ${leg.fuel.total} kg.${ground}`;
   }).join(' ');
   return `DOSSIER STRUCTUR\u00C9 ${currentOperator().name}, R\u00C9VISION ${S.rotationRevision||0}, EXPLOITATION ${OPERATION_LABELS[S.operationType]}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}. ${legs}`;
 }
@@ -2643,7 +2658,7 @@ async function startAutoListen(fromIpadButton=false){
     $('mic-tip').textContent='OPS pr\u00E9pare sa r\u00E9ponse...';
     const lang=navigator.language?.startsWith('en')?'en':'fr';
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
-    sys+=` IDENTIT\u00C9 ACTIVE: ${currentOperator().name}, code ${currentOperator().icao}, indicatif ${currentOperator().telephony}, exploitation ${OPERATION_LABELS[S.operationType]}. Ignore toute identit\u00E9 historique contradictoire.`;
+    sys+=` IDENTIT\u00C9 ACTIVE: ${currentOperator().name}, code ${currentOperator().icao}, indicatif ${currentOperator().telephony}, exploitation ${OPERATION_LABELS[S.operationType]}. Ignore toute identit\u00E9 historique contradictoire. ${airportReferenceContext(text)}`;
     if(S.currentFlight)sys+=` ${rotationContextForAI()} Ne modifie aucune donn\u00E9e de ce dossier et ne cite une autre destination que pour r\u00E9pondre \u00E0 une question explicite.`;
     if(S.callType==='briefing'||S.callType==='next'){
       if(S.briefingStage==='awaiting-introduction'){
@@ -2772,8 +2787,8 @@ async function sendAcars(){
     const timer=setTimeout(()=>controller.abort(),15000);
     const liveContext=await requestedLiveContext(txt);
     const acarsContext=S.currentFlight
-      ? `${rotationContextForAI()} Phase d\u00E9clar\u00E9e: ${PHASE_LABELS[S.phase]}. Heure actuelle ${utcNow()}.`
-      : `Aucun vol courant. Heure actuelle ${utcNow()}.`;
+      ? `${rotationContextForAI()} ${airportReferenceContext(txt)} Phase d\u00E9clar\u00E9e: ${PHASE_LABELS[S.phase]}. Heure actuelle ${utcNow()}.`
+      : `Aucun vol courant. ${airportReferenceContext(txt)} Heure actuelle ${utcNow()}.`;
     const res=await fetch(`${OPS_PROXY}/ai`,{
       method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
       body:JSON.stringify({
