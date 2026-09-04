@@ -216,7 +216,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .rot-route{font:700 11px var(--font-m)}.rot-meta{font-size:8px;color:var(--text2);margin-top:3px}.rot-status{font:700 8px var(--font-m);padding:3px 6px;border-radius:3px}
 .rot-status.done{color:var(--green);background:rgba(90,158,111,.12)}.rot-status.current{color:var(--gold);background:rgba(184,151,62,.12)}.rot-status.planned{color:var(--blue);background:rgba(74,155,184,.12)}
 .rot-leg{cursor:pointer;border-radius:8px;padding-left:6px;padding-right:6px}.rot-leg.selected{background:rgba(23,107,135,.08);outline:1px solid var(--border)}
-.rotation-map-shell{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:10px;background:var(--bg2)}
+.rotation-map-shell{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:linear-gradient(145deg,var(--bg2),var(--bg3));box-shadow:inset 0 1px rgba(255,255,255,.035)}
 .rotation-map-shell svg{display:block;width:100%;height:auto;min-height:190px;max-height:270px}
 .rotation-map-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:9px;font-size:8px;color:var(--text2)}
 .rotation-map-legend{display:flex;gap:12px;flex-wrap:wrap}.rotation-map-key{display:inline-flex;align-items:center;gap:5px}
@@ -761,7 +761,7 @@ html,body{width:100%;max-width:none;margin:0}
             <span class="rotation-map-key"><i class="rotation-map-dot current"></i>Actif</span>
             <span class="rotation-map-key"><i class="rotation-map-dot"></i>Planifi&#xE9;</span>
           </div>
-          <span class="rotation-map-note">APER&#xC7;U SCH&#xC9;MATIQUE · NON DESTIN&#xC9; &#xC0; LA NAVIGATION</span>
+          <span class="rotation-map-note">CADRAGE AUTOMATIQUE · NON DESTIN&#xC9; &#xC0; LA NAVIGATION</span>
         </div>
       </div>
       <div class="card">
@@ -1239,6 +1239,7 @@ function distNM(lat1,lon1,lat2,lon2){
 }
 
 let AIRPORT_BY_CODE=new Map(AIRPORTS.map(ap=>[ap.icao,ap]));
+let WORLD_LAND_GEOJSON=null;
 function getAP(icao){return AIRPORT_BY_CODE.get(String(icao||'').toUpperCase())}
 function isIcaoAirport(ap){return !!ap&&(ap.codeType?ap.codeType==='ICAO':/^[A-Z]{4}$/.test(ap.icao||''));}
 function rebuildAirportIndexes(){
@@ -1273,6 +1274,16 @@ async function loadAirportDatabase(){
   }finally{
     if(button){button.disabled=false;button.textContent='PRENDRE SON SERVICE \u2192';}
   }
+}
+async function loadWorldMap(){
+  try{
+    const response=await fetch('./data/world-land.geojson',{cache:'force-cache'});
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const data=await response.json();
+    if(data?.type!=='FeatureCollection'||!Array.isArray(data.features))throw new Error('Fond cartographique invalide');
+    WORLD_LAND_GEOJSON=data;
+    if(S.rotationPlan?.length)renderRotationMap();
+  }catch(error){console.warn('[OPS CENTER] Fond Natural Earth indisponible',error);}
 }
 function airportLabel(icao){
   const ap=getAP(String(icao||'').toUpperCase());
@@ -1984,26 +1995,50 @@ function renderRotationMap(){
   let previous=ordered[0].lon;
   ordered.forEach((point,index)=>{let lon=point.lon;if(index){while(lon-previous>180)lon-=360;while(lon-previous< -180)lon+=360;}point.plotLon=lon;previous=lon;});
   const byCode=new Map(ordered.map(point=>[point.ap.icao,point]));
-  const project=point=>{const lon=Number.isFinite(point.lon)?point.lon:point.plotLon;return{x:padX+((lon+180)/360)*(W-padX*2),y:padY+((82-Math.max(-58,Math.min(82,point.lat)))/140)*(H-padY*2)}};
+  const lons=ordered.map(point=>point.plotLon),lats=ordered.map(point=>point.lat);
+  const rawLon=Math.max(1,Math.max(...lons)-Math.min(...lons)),rawLat=Math.max(1,Math.max(...lats)-Math.min(...lats));
+  const centerLon=(Math.min(...lons)+Math.max(...lons))/2,centerLat=(Math.min(...lats)+Math.max(...lats))/2;
+  let lonSpan=Math.max(10,rawLon*1.55),latSpan=Math.max(7,rawLat*1.7);
+  // Conserve les proportions de la carte tout en cadrant la totalité de la rotation.
+  const targetRatio=2.45;
+  if(lonSpan/latSpan<targetRatio)lonSpan=latSpan*targetRatio;else latSpan=lonSpan/targetRatio;
+  lonSpan=Math.min(360,lonSpan);latSpan=Math.min(140,latSpan);
+  const minLon=centerLon-lonSpan/2,maxLon=centerLon+lonSpan/2,minLat=centerLat-latSpan/2,maxLat=centerLat+latSpan/2;
+  const project=point=>{let lon=Number.isFinite(point.plotLon)?point.plotLon:point.lon;while(lon-centerLon>180)lon-=360;while(lon-centerLon< -180)lon+=360;return{x:padX+((lon-minLon)/lonSpan)*(W-padX*2),y:padY+((maxLat-point.lat)/latSpan)*(H-padY*2)}};
   const geo=(lon,lat)=>project({plotLon:lon,lat});
   const bg=make('g',{'aria-hidden':'true'});
   for(let i=1;i<6;i++)bg.appendChild(make('line',{x1:0,y1:(H/6)*i,x2:W,y2:(H/6)*i,stroke:'var(--border)','stroke-width':1,'stroke-dasharray':'3 8'}));
   for(let i=1;i<8;i++)bg.appendChild(make('line',{x1:(W/8)*i,y1:0,x2:(W/8)*i,y2:H,stroke:'var(--border)','stroke-width':1,'stroke-dasharray':'3 8'}));
   svg.appendChild(bg);
-  // Fond mondial volontairement simplifié et embarqué: aucune connexion ni clé cartographique.
-  const worldLand=[
-    [[-168,71],[-150,60],[-135,57],[-127,50],[-124,40],[-117,32],[-103,23],[-90,20],[-82,25],[-80,32],[-70,45],[-60,52],[-53,60],[-62,70],[-95,78],[-130,73]],
-    [[-82,12],[-75,5],[-80,-5],[-72,-18],[-68,-32],[-62,-52],[-48,-55],[-38,-38],[-35,-10],[-50,2],[-62,10]],
-    [[-73,60],[-52,60],[-20,70],[-26,82],[-55,82]],
-    [[-10,36],[-17,28],[-15,10],[-5,2],[10,-5],[18,-34],[32,-35],[42,-15],[51,12],[43,30],[32,37],[15,37]],
-    [[-10,36],[2,44],[20,55],[40,70],[75,78],[115,72],[145,58],[165,55],[180,50],[165,40],[145,45],[130,34],[120,22],[105,8],[95,20],[78,8],[65,24],[50,28],[40,40],[25,42],[12,38]],
-    [[112,-11],[129,-13],[145,-19],[154,-29],[146,-42],[129,-35],[114,-25]],
-    [[47,-13],[51,-17],[49,-26],[44,-24]],[[130,32],[142,45],[146,40],[139,31]],
-    [[-8,50],[2,58],[-4,59]],[[12,58],[25,71],[30,60]],[[166,-35],[178,-38],[174,-47]]
-  ];
-  const land=make('g',{fill:'var(--bg4)',stroke:'var(--border2)','stroke-width':1.2,'stroke-linejoin':'round'});
-  worldLand.forEach(poly=>{const d=poly.map(([lon,lat],index)=>{const p=geo(lon,lat);return `${index?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`;}).join(' ')+' Z';land.appendChild(make('path',{d}));});
-  svg.appendChild(land);
+  // Vraies côtes Natural Earth, embarquées localement et recadrées sur la mission.
+  if(WORLD_LAND_GEOJSON){
+    const land=make('g',{fill:'var(--bg4)',stroke:'var(--border2)','stroke-width':1,'stroke-linejoin':'round','fill-rule':'evenodd'});
+    const appendGeometry=geometry=>{
+      const polygons=geometry.type==='Polygon'?[geometry.coordinates]:geometry.type==='MultiPolygon'?geometry.coordinates:[];
+      polygons.forEach(polygon=>{
+        let d='';
+        polygon.forEach(ring=>{
+          let previousLon=null;
+          ring.forEach(([sourceLon,lat],index)=>{
+            let lon=Number(sourceLon);
+            while(lon-centerLon>180)lon-=360;while(lon-centerLon< -180)lon+=360;
+            if(previousLon!==null){while(lon-previousLon>180)lon-=360;while(lon-previousLon< -180)lon+=360;}
+            previousLon=lon;
+            const p=geo(lon,Number(lat));d+=`${index?'L':'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)} `;
+          });
+          d+='Z ';
+        });
+        if(d)land.appendChild(make('path',{d}));
+      });
+    };
+    WORLD_LAND_GEOJSON.features.forEach(feature=>{if(feature.geometry)appendGeometry(feature.geometry);});
+    svg.appendChild(land);
+  }
+  // Les terrains voisins donnent un repère géographique précis, sans alourdir la carte.
+  const nearby=AIRPORTS.filter((ap,index)=>index%3===0&&Number(ap.lat)>=minLat-2&&Number(ap.lat)<=maxLat+2).filter(ap=>{let lon=Number(ap.lon);while(lon-centerLon>180)lon-=360;while(lon-centerLon< -180)lon+=360;return lon>=minLon-2&&lon<=maxLon+2;}).slice(0,700);
+  const context=make('g',{fill:'var(--text3)',opacity:.28,'aria-hidden':'true'});
+  nearby.forEach(ap=>{const p=project({plotLon:Number(ap.lon),lat:Number(ap.lat)});context.appendChild(make('circle',{cx:p.x,cy:p.y,r:1.15}));});
+  svg.appendChild(context);
   legs.forEach(({leg,index})=>{
     const start=project(byCode.get(leg.dep)),end=project(byCode.get(leg.arr));
     const selected=S.dossierLegIndex??S.rotationIndex;
@@ -3280,6 +3315,7 @@ $('s-date').value=new Date().toISOString().slice(0,10);
 refreshOperationSetup();
 restoreSession();
 loadAirportDatabase();
+loadWorldMap();
 </script>
 </body>
 </html>

@@ -9,3 +9,10 @@
 Selection includes every open large, medium and small land airport in the source that has valid coordinates and an explicit ICAO code. GPS identifiers, national identifiers and internal OurAirports identifiers are excluded. The source currently contains 10,055 eligible ICAO-coded land airports.
 
 Customs, immigration and curfew fields default to `unknown`. They must be enriched from current national AIP, NOTAM and competent-authority sources before being presented as verified operational information.
+
+## World map
+
+- Source: Natural Earth, 1:110m Land
+- Source URL: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
+- License: Public Domain
+- Local file: `world-land.geojson`
