@@ -492,6 +492,7 @@ html,body{width:100%;max-width:none;margin:0}
 .ofp-card{border-left:3px solid var(--green)}.ofp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
 .ofp-value{padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);min-width:0}.ofp-value span{display:block;font-size:7px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}.ofp-value strong{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ofp-route{font:500 9px/1.65 var(--font-m);padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);overflow-wrap:anywhere}
+.ofp-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}.ofp-runway-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ofp-runway{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg3)}.ofp-runway h4{font:700 9px var(--font-m);color:var(--blue);margin:0 0 8px}.ofp-runway .crow{padding:4px 0}.ofp-runway .clbl,.ofp-runway .cval{font-size:8px}.ofp-details{margin-top:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);overflow:hidden}.ofp-details summary{cursor:pointer;padding:10px;font:700 9px var(--font-m);color:var(--text2);list-style:none}.ofp-details summary::-webkit-details-marker{display:none}.ofp-details summary::after{content:'+';float:right;color:var(--blue)}.ofp-details[open] summary::after{content:'−'}.ofp-raw{margin:0;padding:0 10px 11px;white-space:pre-wrap;overflow-wrap:anywhere;font:500 8px/1.55 var(--font-m);color:var(--text2);max-height:300px;overflow:auto}.ofp-caution{font-size:8px;line-height:1.55;color:var(--orange);margin-top:9px}
 
 @media(min-width:861px){
   body{width:100%;max-width:none;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
@@ -505,10 +506,10 @@ html,body{width:100%;max-width:none;margin:0}
   #page-acars{grid-column:2;grid-row:3}.acars-msgs{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}.acars-in{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}
   .setup-ov,.boot-ov,.call-ov{max-width:none}.setup-ov>*{max-width:720px}.setup-ov{padding-top:30px}.setup-logo{font-size:25px}.setup-sub{margin-bottom:12px}.setup-tagline{margin-bottom:14px}.aircraft-specs{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
-@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}.ofp-runway-grid{grid-template-columns:1fr}}
 </style>
-<script src="data/aircraft-catalog.js?v=15"></script>
-<script src="data/i18n.js?v=15"></script>
+<script src="data/aircraft-catalog.js?v=16"></script>
+<script src="data/i18n.js?v=16"></script>
 </head>
 <body>
 
@@ -885,7 +886,7 @@ html,body{width:100%;max-width:none;margin:0}
       <!-- SimBrief -->
       <div class="card simbrief-card" id="simbrief-card">
         <div class="ctitle" data-i18n="simbrief_preparation">Pr&#xE9;paration SimBrief</div>
-        <div class="simbrief-intro" data-i18n="simbrief_intro">Les donn&#xE9;es op&#xE9;rationnelles sont pr&#xE9;remplies. La route, les masses et le carburant restent calcul&#xE9;s par SimBrief.</div>
+        <div class="simbrief-intro" data-i18n="simbrief_intro">Les donn&#xE9;es op&#xE9;rationnelles sont pr&#xE9;remplies. La route, les masses et le carburant restent calcul&#xE9;s par SimBrief. L&#x2019;analyse piste et les NOTAM sont demand&#xE9;s automatiquement.</div>
         <div class="simbrief-grid">
           <div class="simbrief-field"><span data-i18n="atc_callsign">Indicatif ATC</span><strong id="sb-callsign">&#x2014;</strong></div>
           <div class="simbrief-field"><span data-i18n="aircraft_type">Type appareil</span><strong id="sb-type">&#x2014;</strong></div>
@@ -912,6 +913,18 @@ html,body{width:100%;max-width:none;margin:0}
         <div class="simbrief-intro" id="ofp-source" data-i18n="ofp_source">Données calculées par SimBrief</div>
         <div class="ofp-grid" id="ofp-grid"></div>
         <div class="simbrief-label" data-i18n="ofp_route">Route ATS</div><div class="ofp-route" id="ofp-route">—</div>
+        <div class="ofp-section" id="ofp-runway-section">
+          <div class="ctitle" data-i18n="ofp_runway_analysis">Runway analysis SimBrief</div>
+          <div class="ofp-runway-grid" id="ofp-runway-grid"></div>
+          <div class="ofp-caution" data-i18n="ofp_runway_caution">Analyse issue de l’OFP de simulation. Les performances doivent être recalculées si la masse, la météo, la piste ou l’état de surface évoluent.</div>
+        </div>
+        <div class="ofp-section">
+          <div class="ctitle" data-i18n="ofp_operational_information">Informations opérationnelles de l’OFP</div>
+          <details class="ofp-details" id="ofp-weather-details"><summary data-i18n="ofp_weather_snapshot">Météo au moment de la génération</summary><pre class="ofp-raw" id="ofp-weather-text">—</pre></details>
+          <details class="ofp-details" id="ofp-sigmet-details"><summary data-i18n="ofp_sigmet">SIGMET / météo en route</summary><pre class="ofp-raw" id="ofp-sigmet-text">—</pre></details>
+          <details class="ofp-details" id="ofp-notam-details"><summary data-i18n="ofp_notams">NOTAM SimBrief</summary><pre class="ofp-raw" id="ofp-notam-text">—</pre></details>
+          <div class="ofp-caution" data-i18n="ofp_snapshot_caution">La météo et les NOTAM correspondent à l’instant de génération de l’OFP. Confirmez leur actualité avant le vol.</div>
+        </div>
         <a class="btn btn-sec" id="ofp-pdf" data-i18n="open_ofp_pdf" href="#" target="_blank" rel="noopener noreferrer" style="display:none;text-decoration:none;align-items:center;justify-content:center;margin-top:10px">OUVRIR L’OFP PDF</a>
       </div>
     </div>
@@ -2610,11 +2623,48 @@ function simbriefPdfUrl(data){
   if(directory&&name){try{return new URL(String(name),String(directory).endsWith('/')?String(directory):String(directory)+'/').href;}catch{}}
   return '';
 }
+function ofpRunwayCandidates(node,depth=0){
+  if(!node||depth>5)return[];
+  if(Array.isArray(node))return node.flatMap(item=>ofpRunwayCandidates(item,depth+1));
+  if(typeof node!=='object')return[];
+  const looksLikeRunway=(node.identifier||node.runway||node.runway_id)&&
+    (node.length||node.length_tora||node.length_lda||node.max_weight||node.speeds_v1||node.true_course);
+  return[...(looksLikeRunway?[node]:[]),...Object.values(node).flatMap(item=>ofpRunwayCandidates(item,depth+1))];
+}
+function extractTLRSection(data,type){
+  const section=ofpPath(data,`tlr.${type}`);if(!section)return null;
+  const conditions=section.conditions||section.condition||{};
+  const planned=String(ofpFirst(conditions,['planned_runway','runway'],ofpFirst(section,['planned_runway']))).toUpperCase();
+  const candidates=ofpRunwayCandidates(section);
+  const runway=candidates.find(item=>String(item.identifier||item.runway||item.runway_id).toUpperCase()===planned)||candidates[0]||{};
+  const value=(paths,fallback='')=>ofpFirst(runway,paths,ofpFirst(conditions,paths,fallback));
+  return{
+    airport:String(ofpFirst(conditions,['airport_icao','icao_code'])).toUpperCase(),
+    plannedRunway:planned||String(value(['identifier','runway','runway_id'])).toUpperCase(),
+    plannedWeight:Number(ofpFirst(conditions,['planned_weight','weight'],0))||0,
+    windDirection:String(ofpFirst(conditions,['wind_direction','wind_dir'])),windSpeed:String(ofpFirst(conditions,['wind_speed','wind_spd'])),
+    temperature:String(ofpFirst(conditions,['temperature','temp'])),altimeter:String(ofpFirst(conditions,['altimeter','qnh'])),surface:String(ofpFirst(conditions,['surface_condition','surface'])),
+    tora:Number(value(['length_tora','tora','length'],0))||0,toda:Number(value(['length_toda','toda'],0))||0,
+    asda:Number(value(['length_asda','asda'],0))||0,lda:Number(value(['length_lda','lda','length'],0))||0,
+    gradient:String(value(['gradient','slope'])),heading:String(value(['magnetic_course','heading','true_course'])),
+    headwind:String(value(['headwind_component','headwind'])),crosswind:String(value(['crosswind_component','crosswind'])),
+    flap:String(value(['flap_setting','flaps'])),thrust:String(value(['thrust_setting','thrust'])),bleed:String(value(['bleed_setting','bleeds'])),antiIce:String(value(['anti_ice_setting','anti_ice'])),flexTemperature:String(value(['flex_temperature','flex_temp'])),
+    maxWeight:Number(value(['max_weight','limit_weight'],0))||0,limitCode:String(value(['limit_code','limit'])),limitObstacle:String(value(['limit_obstacle','obstacle'])),
+    v1:String(value(['speeds_v1','v1'])),vr:String(value(['speeds_vr','vr'])),v2:String(value(['speeds_v2','v2'])),vref:String(value(['speeds_vref','vref','vapp']))
+  };
+}
+function operationalNotamExcerpt(text,limit=4500){
+  const source=String(text||'').trim();if(!source)return'';
+  const lines=source.split('\n').map(line=>line.trim()).filter(Boolean),selected=new Set();
+  lines.forEach((line,index)=>{if(/\b(RWY|RUNWAY|TWY|TAXIWAY|ILS|LOC|VOR|NDB|DME|GNSS|SID|STAR|APCH|APPROACH|AD CLSD|AERODROME CLOSED|OBST|CRANE|FIRE|RFFS|LIGHT|PAPI|FUEL|PPR|CURFEW|AIRSPACE|TFR)\b/i.test(line)){for(let i=Math.max(0,index-1);i<=Math.min(lines.length-1,index+2);i++)selected.add(i);}});
+  return(selected.size?[...selected].sort((a,b)=>a-b).map(index=>lines[index]):lines).join('\n').slice(0,limit);
+}
 function extractSimBriefOFP(data){
   const origin=String(ofpFirst(data,['origin.icao_code','origin.icao','general.orig'])).toUpperCase();
   const destination=String(ofpFirst(data,['destination.icao_code','destination.icao','general.dest'])).toUpperCase();
   const alternate=String(ofpFirst(data,['alternate.icao_code','alternate.icao','general.altn'])).toUpperCase();
   const units=String(ofpFirst(data,['params.units','general.units'],'KGS')).toUpperCase();
+  const notams=compactOFPText(ofpFirst(data,['notams'],''),10000);
   return{
     importedAt:new Date().toISOString(),origin,destination,alternate,units,
     flightNumber:String(ofpFirst(data,['general.flight_number','general.fltnum'])),
@@ -2622,6 +2672,10 @@ function extractSimBriefOFP(data){
     release:String(ofpFirst(data,['general.release','general.release_number'],'1')),
     generated:String(ofpFirst(data,['params.time_generated','general.date','times.sched_out'])),
     route:String(ofpFirst(data,['general.route','general.route_ifps','navlog.route'],'DCT')),
+    airac:String(ofpFirst(data,['params.airac','general.airac'],'—')),
+    cruiseAltitude:String(ofpFirst(data,['general.initial_altitude','params.altitude','aircraft.cruise_altitude'],'—')),
+    routeDistance:Number(ofpFirst(data,['general.route_distance','general.distance'],0))||0,
+    airDistance:Number(ofpFirst(data,['general.air_distance'],0))||0,
     costIndex:String(ofpFirst(data,['aircraft.ci','aircraft.costindex','params.costindex'],'—')),
     blockFuel:Number(ofpFirst(data,['fuel.plan_ramp','fuel.block','fuel.ramp'],0))||0,
     tripFuel:Number(ofpFirst(data,['fuel.enroute_burn','fuel.trip','fuel.plan_burn'],0))||0,
@@ -2636,9 +2690,14 @@ function extractSimBriefOFP(data){
       destinationMetar:String(ofpFirst(data,['weather.dest_metar','weather.destination_metar'])).slice(0,800),
       destinationTaf:String(ofpFirst(data,['weather.dest_taf','weather.destination_taf'])).slice(0,1600),
       alternateMetar:String(ofpFirst(data,['weather.altn_metar','weather.alternate_metar'])).slice(0,800),
-      alternateTaf:String(ofpFirst(data,['weather.altn_taf','weather.alternate_taf'])).slice(0,1600)
+      alternateTaf:String(ofpFirst(data,['weather.altn_taf','weather.alternate_taf'])).slice(0,1600),
+      averageWind:String(ofpFirst(data,['weather.avg_wind_dir','weather.average_wind_direction']))+(ofpFirst(data,['weather.avg_wind_spd','weather.average_wind_speed'])?`/${ofpFirst(data,['weather.avg_wind_spd','weather.average_wind_speed'])}`:''),
+      isaDeviation:String(ofpFirst(data,['weather.avg_temp_dev','weather.isa_dev'])),tropopause:String(ofpFirst(data,['weather.tropopause']))
     },
-    notams:compactOFPText(ofpFirst(data,['notams'],''),5000),pdfUrl:simbriefPdfUrl(data)
+    sigmets:compactOFPText(ofpFirst(data,['weather.sigmets','weather.sigmet','sigmets'],''),5000),
+    etops:compactOFPText(ofpFirst(data,['etops'],''),3000),
+    runwayAnalysis:{takeoff:extractTLRSection(data,'takeoff'),landing:extractTLRSection(data,'landing')},
+    notams,notamImportant:operationalNotamExcerpt(notams),pdfUrl:simbriefPdfUrl(data)
   };
 }
 function formatOFPWeight(value,units){
@@ -2650,6 +2709,26 @@ function formatOFPDuration(seconds){
   const minutes=value>600?Math.round(value/60):Math.round(value);
   return fmtDur(minutes);
 }
+function ofpDisplay(value){return value===null||value===undefined||String(value).trim()===''?'—':String(value);}
+function renderOFPRunwayCard(type,analysis,units){
+  const card=document.createElement('div');card.className='ofp-runway';
+  const title=document.createElement('h4');title.textContent=type==='takeoff'?t('ofp_takeoff'):t('ofp_landing');card.appendChild(title);
+  if(!analysis){const empty=document.createElement('div');empty.className='simbrief-help';empty.textContent=t('ofp_runway_unavailable');card.appendChild(empty);return card;}
+  const lengthUnit=String(units||'KGS').startsWith('L')?'ft':'m';
+  const rows=type==='takeoff'?
+    [[t('ofp_planned_runway'),`${analysis.airport||''} RWY ${ofpDisplay(analysis.plannedRunway)}`],[t('ofp_planned_weight'),formatOFPWeight(analysis.plannedWeight,units)],[t('ofp_conditions'),`${analysis.windDirection||'---'}/${analysis.windSpeed||'--'} kt · ${analysis.temperature||'—'}°C · ${analysis.altimeter||'—'} · ${analysis.surface||'—'}`],[t('ofp_available_length'),`TORA ${analysis.tora||'—'} · TODA ${analysis.toda||'—'} · ASDA ${analysis.asda||'—'} ${lengthUnit}`],[t('ofp_slope'),`${ofpDisplay(analysis.gradient)}% · HDG ${ofpDisplay(analysis.heading)}`],[t('ofp_wind_components'),`HW ${ofpDisplay(analysis.headwind)} · XW ${ofpDisplay(analysis.crosswind)} kt`],[t('ofp_configuration'),`FLAPS ${ofpDisplay(analysis.flap)} · ${ofpDisplay(analysis.thrust)} · A/I ${ofpDisplay(analysis.antiIce)}${analysis.flexTemperature?` · FLEX ${analysis.flexTemperature}°C`:''}`],[t('ofp_limit'),`${formatOFPWeight(analysis.maxWeight,units)} · ${ofpDisplay(analysis.limitCode)}${analysis.limitObstacle?` · ${analysis.limitObstacle}`:''}`],[t('ofp_speeds'),`V1 ${ofpDisplay(analysis.v1)} · VR ${ofpDisplay(analysis.vr)} · V2 ${ofpDisplay(analysis.v2)}`]]:
+    [[t('ofp_planned_runway'),`${analysis.airport||''} RWY ${ofpDisplay(analysis.plannedRunway)}`],[t('ofp_planned_weight'),formatOFPWeight(analysis.plannedWeight,units)],[t('ofp_conditions'),`${analysis.windDirection||'---'}/${analysis.windSpeed||'--'} kt · ${analysis.temperature||'—'}°C · ${analysis.altimeter||'—'} · ${analysis.surface||'—'}`],[t('ofp_available_length'),`LDA ${analysis.lda||'—'} ${lengthUnit}`],[t('ofp_slope'),`${ofpDisplay(analysis.gradient)}% · HDG ${ofpDisplay(analysis.heading)}`],[t('ofp_wind_components'),`HW ${ofpDisplay(analysis.headwind)} · XW ${ofpDisplay(analysis.crosswind)} kt`],[t('ofp_configuration'),`FLAPS ${ofpDisplay(analysis.flap)} · A/I ${ofpDisplay(analysis.antiIce)}`],[t('ofp_limit'),`${formatOFPWeight(analysis.maxWeight,units)} · ${ofpDisplay(analysis.limitCode)}${analysis.limitObstacle?` · ${analysis.limitObstacle}`:''}`],[t('ofp_speeds'),`VREF ${ofpDisplay(analysis.vref||analysis.v2)}`]];
+  rows.forEach(([label,value])=>{const row=document.createElement('div');row.className='crow';const key=document.createElement('span');key.className='clbl';key.textContent=label;const val=document.createElement('span');val.className='cval';val.textContent=value;row.append(key,val);card.appendChild(row);});
+  return card;
+}
+function ofpWeatherReport(ofp){
+  const wx=ofp.weather||{},parts=[];
+  const add=(title,metar,taf)=>{if(metar||taf)parts.push(`${title}\nMETAR: ${metar||t('ofp_no_data')}\nTAF: ${taf||t('ofp_no_data')}`);};
+  add(`DEP ${ofp.origin}`,wx.originMetar,wx.originTaf);add(`ARR ${ofp.destination}`,wx.destinationMetar,wx.destinationTaf);add(`ALTN ${ofp.alternate||'—'}`,wx.alternateMetar,wx.alternateTaf);
+  const enroute=[wx.averageWind?`AVG WIND ${wx.averageWind}`:'',wx.isaDeviation?`ISA DEV ${wx.isaDeviation}`:'',wx.tropopause?`TROPOPAUSE ${wx.tropopause}`:''].filter(Boolean).join(' · ');
+  if(enroute)parts.push(`EN ROUTE\n${enroute}`);
+  return parts.join('\n\n')||t('ofp_no_data');
+}
 function renderImportedOFP(f){
   const ofp=f?.simbrief?.ofp,card=$('ofp-card'),fuelState=$('fuel-source-state');if(!card)return;
   if(!ofp){card.style.display='none';if(fuelState){fuelState.textContent=t('fuel_pending');fuelState.style.color='';fuelState.dataset.i18n='fuel_pending';}return;}
@@ -2658,10 +2737,15 @@ function renderImportedOFP(f){
   const values=[
     [t('ofp_release'),ofp.release||'—'],[t('ofp_block_fuel'),formatOFPWeight(ofp.blockFuel,ofp.units)],[t('ofp_trip_fuel'),formatOFPWeight(ofp.tripFuel,ofp.units)],
     [t('ofp_zfw'),formatOFPWeight(ofp.zfw,ofp.units)],[t('ofp_tow'),formatOFPWeight(ofp.tow,ofp.units)],[t('ofp_ldw'),formatOFPWeight(ofp.ldw,ofp.units)],
-    [t('ofp_time'),formatOFPDuration(ofp.flightTime)],[t('ofp_cost_index'),ofp.costIndex||'—'],[t('ofp_generated'),ofp.generated||new Date(ofp.importedAt).toLocaleString(uiLocale())]
+    [t('ofp_time'),formatOFPDuration(ofp.flightTime)],[t('ofp_cost_index'),ofp.costIndex||'—'],[t('ofp_generated'),ofp.generated||new Date(ofp.importedAt).toLocaleString(uiLocale())],
+    ['AIRAC',ofp.airac||'—'],[S.language==='en'?'Initial altitude':'Altitude initiale',ofp.cruiseAltitude||'—'],[t('distance'),ofp.routeDistance?`${ofp.routeDistance} NM`:'—']
   ];
   $('ofp-grid').replaceChildren(...values.map(([label,value])=>{const box=document.createElement('div');box.className='ofp-value';const span=document.createElement('span'),strong=document.createElement('strong');span.textContent=label;strong.textContent=value;box.append(span,strong);return box;}));
   $('ofp-route').textContent=ofp.route||'DCT';$('ofp-source').textContent=stale?t('ofp_outdated'):t('ofp_source');$('ofp-source').style.color=stale?'var(--orange)':'';
+  const runwayGrid=$('ofp-runway-grid');runwayGrid.replaceChildren(renderOFPRunwayCard('takeoff',ofp.runwayAnalysis?.takeoff,ofp.units),renderOFPRunwayCard('landing',ofp.runwayAnalysis?.landing,ofp.units));
+  $('ofp-weather-text').textContent=ofpWeatherReport(ofp);
+  $('ofp-sigmet-text').textContent=[ofp.sigmets,ofp.etops].filter(Boolean).join('\n\n')||t('ofp_no_data');
+  $('ofp-notam-text').textContent=ofp.notams||t('ofp_no_data');
   const pdf=$('ofp-pdf');if(ofp.pdfUrl&&/^https:\/\//i.test(ofp.pdfUrl)){pdf.href=ofp.pdfUrl;pdf.style.display='flex';pdf.textContent=t('open_ofp_pdf');}else{pdf.removeAttribute('href');pdf.style.display='none';}
 }
 
@@ -2727,7 +2811,7 @@ function openSimBrief(){
     set('addedfuel',amount);set('addedfuel_units',draft.extraFuel.unit==='min'?'min':'wgt');
     if(draft.extraFuel.reason)remarks+=`\nEXTRA FUEL REQUEST: ${draft.extraFuel.value} ${draft.extraFuel.unit==='min'?'MIN':'KG'} — ${draft.extraFuel.reason}`;
   }
-  set('manualrmk',remarks.slice(0,1400));set('units','KGS');set('navlog','1');set('notams','1');set('maps','detail');
+  set('manualrmk',remarks.slice(0,1400));set('units','KGS');set('navlog','1');set('notams','1');set('firnot','1');set('tlr','1');set('maps','detail');
   const staticId=`${op.icao}_${f.flightNo}_${f.depDate||S.dutyDate}_${S.rotationPlan.indexOf(f)+1}`.replace(/[^A-Z0-9_]/gi,'_').slice(0,60);
   set('static_id',staticId);
   draft.staticId=staticId;draft.preparedAt=new Date().toISOString();draft.status='prepared';
@@ -3491,7 +3575,8 @@ function rotationContextForAI(){
 function formalBriefingOFPContext(f=operationalFlight()){
   const ofp=f?.simbrief?.ofp;if(!ofp)return '';
   const weather=ofp.weather||{};
-  return `OFP SIMBRIEF FORMEL DU SECTEUR ${f.flightNo}, RELEASE ${ofp.release||'non fournie'}, GÉNÉRÉ ${ofp.generated||ofp.importedAt}. ROUTE ATS ${ofp.route||'non fournie'}. CARBURANT BLOCK ${ofp.blockFuel||'non fourni'} ${ofp.units||''}, TRIP ${ofp.tripFuel||'non fourni'} ${ofp.units||''}, ZFW ${ofp.zfw||'non fournie'} ${ofp.units||''}, TOW ${ofp.tow||'non fournie'} ${ofp.units||''}, COST INDEX ${ofp.costIndex||'non fourni'}. MÉTÉO DÉPART: METAR ${weather.originMetar||'non fourni'}, TAF ${weather.originTaf||'non fourni'}. MÉTÉO ARRIVÉE: METAR ${weather.destinationMetar||'non fourni'}, TAF ${weather.destinationTaf||'non fourni'}. MÉTÉO ALTERNATE: METAR ${weather.alternateMetar||'non fourni'}, TAF ${weather.alternateTaf||'non fourni'}. REMARQUES DISPATCHER: ${ofp.dispatcherRemarks||f.simbrief?.dispatcherRemark||'aucune'}. NOTAM SIMBRIEF: ${ofp.notams?ofp.notams.slice(0,1800):'non fournis dans l OFP importé'}.`;
+  const tlr=(label,a)=>a?`${label}: ${a.airport} piste ${a.plannedRunway}, masse analysée ${a.plannedWeight||'non fournie'} ${ofp.units||''}, vent ${a.windDirection||'---'}/${a.windSpeed||'--'} noeuds, température ${a.temperature||'non fournie'}, surface ${a.surface||'non fournie'}, TORA ${a.tora||'non fournie'}, LDA ${a.lda||'non fournie'}, pente ${a.gradient||'non fournie'}, composantes vent de face ${a.headwind||'non fournie'} et travers ${a.crosswind||'non fournie'}, configuration volets ${a.flap||'non fournie'}, poussée ${a.thrust||'non fournie'}, masse limite ${a.maxWeight||'non fournie'}, code limite ${a.limitCode||'non fourni'}, vitesses V1 ${a.v1||'non fournie'}, VR ${a.vr||'non fournie'}, V2 ou VREF ${a.v2||a.vref||'non fournie'}`:`${label}: non incluse dans l OFP`;
+  return `OFP SIMBRIEF FORMEL DU SECTEUR ${f.flightNo}, RELEASE ${ofp.release||'non fournie'}, GÉNÉRÉ ${ofp.generated||ofp.importedAt}, AIRAC ${ofp.airac||'non fourni'}. ROUTE ATS ${ofp.route||'non fournie'}, altitude initiale ${ofp.cruiseAltitude||'non fournie'}, distance route ${ofp.routeDistance||'non fournie'} milles nautiques. CARBURANT BLOCK ${ofp.blockFuel||'non fourni'} ${ofp.units||''}, TRIP ${ofp.tripFuel||'non fourni'} ${ofp.units||''}, ZFW ${ofp.zfw||'non fournie'} ${ofp.units||''}, TOW ${ofp.tow||'non fournie'} ${ofp.units||''}, COST INDEX ${ofp.costIndex||'non fourni'}. RUNWAY ANALYSIS SIMBRIEF: ${tlr('décollage',ofp.runwayAnalysis?.takeoff)}. ${tlr('atterrissage',ofp.runwayAnalysis?.landing)}. Cette analyse devient périmée si la masse, la météo, la piste ou la surface changent; ne la présente jamais comme une performance certifiée de l application. MÉTÉO DÉPART: METAR ${weather.originMetar||'non fourni'}, TAF ${weather.originTaf||'non fourni'}. MÉTÉO ARRIVÉE: METAR ${weather.destinationMetar||'non fourni'}, TAF ${weather.destinationTaf||'non fourni'}. MÉTÉO ALTERNATE: METAR ${weather.alternateMetar||'non fourni'}, TAF ${weather.alternateTaf||'non fourni'}. MÉTÉO EN ROUTE ET SIGMET: ${ofp.sigmets||'non fournis dans l OFP'}. REMARQUES DISPATCHER: ${ofp.dispatcherRemarks||f.simbrief?.dispatcherRemark||'aucune'}. EXTRAIT NOTAM OPÉRATIONNEL SIMBRIEF: ${ofp.notamImportant||'non fourni dans l OFP importé'}. Ne cite que les données présentes et distingue toujours le snapshot OFP d une donnée météo live plus récente.`;
 }
 
 function briefingTopicsFromMessage(text){
@@ -3561,7 +3646,7 @@ async function requestedLiveContext(text){
   const normalized=normalizeSearchText(text);
   if(/\bNOTAM/.test(normalized)){
     const ofp=S.currentFlight?.simbrief?.ofp;
-    if(ofp?.notams)return `DOSSIER NOTAM SIMBRIEF DISPONIBLE, import\u00E9 ${ofp.importedAt}. Extraits: ${ofp.notams.slice(0,3500)}. R\u00E9ponds uniquement sur le terrain ou le sujet demand\u00E9. Indique bri\u00E8vement que le pilote doit confirmer la validit\u00E9 actuelle dans sa source officielle; ne dis pas qu aucun NOTAM n est disponible.`;
+    if(ofp?.notams)return `DOSSIER NOTAM SIMBRIEF DISPONIBLE, import\u00E9 ${ofp.importedAt}. Extraits opérationnels: ${(ofp.notamImportant||ofp.notams).slice(0,3500)}. R\u00E9ponds uniquement sur le terrain ou le sujet demand\u00E9. Indique bri\u00E8vement que le pilote doit confirmer la validit\u00E9 actuelle dans sa source officielle; ne dis pas qu aucun NOTAM n est disponible.`;
     return `NOTAM: aucun flux NOTAM officiel authentifi\u00E9 n est connect\u00E9 \u00E0 ${currentOperator().name}. Dis-le clairement et invite le pilote \u00E0 consulter sa source NOTAM officielle. N invente et ne r\u00E9sume aucun NOTAM.`;
   }
   if(!/METEO|WEATHER|METAR|TAF|CONDITIONS|SIGMET/.test(normalized))return '';
