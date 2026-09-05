@@ -506,8 +506,8 @@ html,body{width:100%;max-width:none;margin:0}
 }
 @media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}}
 </style>
-<script src="data/aircraft-catalog.js?v=13"></script>
-<script src="data/i18n.js?v=13"></script>
+<script src="data/aircraft-catalog.js?v=14"></script>
+<script src="data/i18n.js?v=14"></script>
 </head>
 <body>
 
@@ -1089,6 +1089,39 @@ let AIRPORTS = [
 ];
 
 const RESTRICTED_LARGE_AIRCRAFT=new Set(['LSZA','LSZS','LGMK','LGST','LIRQ','EBAW','LFMQ']);
+const CURATED_AIRPORT_CODES=new Set(AIRPORTS.map(ap=>ap.icao));
+const UNPAVED_CAPABLE_AIRCRAFT=new Set(['C172','DA40','DA62','SR22','BE36','BE58','C208','PC12','DHC6']);
+function hardRunwaySurface(surface){
+  const value=String(surface||'').trim().toUpperCase();
+  return /^(ASP|ASPH|ASPHALT|CON|CONC|CONCRETE|BIT|BITUMEN|CEM|CEMENT|MAC|MACADAM|PAVED|HARD|COMPOSITE|PEM|PER|PSP|ASB|COP|LAT|C$)/.test(value);
+}
+function airportPolicyForAircraft(code){
+  const ac=AIRCRAFT_DATA[code];if(!ac)return{minRunwayFt:99999,hardSurface:true,quality:'major'};
+  if(UNPAVED_CAPABLE_AIRCRAFT.has(code)){
+    const minimum={C172:1800,DA40:2000,DA62:2400,SR22:2200,BE36:2200,BE58:2600,C208:2500,PC12:2800,DHC6:1600}[code]||2500;
+    return{minRunwayFt:minimum,hardSurface:false,quality:'icao'};
+  }
+  const isJet=ac.cruise_kt>=330||Number(String(ac.cruise_fl).replace(/\D/g,''))>=350;
+  if(isJet){
+    const minimum=ac.mtow<6000?3500:ac.mtow<10000?4000:ac.mtow<20000?5500:ac.mtow<50000?6000:ac.mtow<120000?7000:ac.mtow<250000?8000:9000;
+    return{minRunwayFt:minimum,hardSurface:true,quality:'major'};
+  }
+  const minimum=ac.mtow<10000?3000:ac.mtow<30000?4000:ac.mtow<80000?5500:7000;
+  return{minRunwayFt:minimum,hardSurface:true,quality:ac.mtow>=10000?'major':'icao'};
+}
+function airportCompatibility(ap,code){
+  const policy=airportPolicyForAircraft(code),runwayFt=Number(ap?.runwayFt)||0;
+  if(!isIcaoAirport(ap))return{ok:false,reason:'ICAO'};
+  if(!Number.isFinite(Number(ap.lat))||!Number.isFinite(Number(ap.lon)))return{ok:false,reason:'COORDINATES'};
+  if(!runwayFt||runwayFt<policy.minRunwayFt)return{ok:false,reason:'RUNWAY_LENGTH'};
+  if(!String(ap.surface||'').trim()||String(ap.surface).toUpperCase()==='UNK')return{ok:false,reason:'RUNWAY_SURFACE'};
+  if(policy.hardSurface&&!hardRunwaySurface(ap.surface))return{ok:false,reason:'UNPAVED'};
+  const major=ap.scheduled||ap.type==='L'||ap.type==='M'||CURATED_AIRPORT_CODES.has(ap.icao);
+  if(policy.quality==='major'&&!major)return{ok:false,reason:'SIMBRIEF_DATA_QUALITY'};
+  if(RESTRICTED_LARGE_AIRCRAFT.has(ap.icao)&&(AIRCRAFT_DATA[code]?.mtow||0)>=30000)return{ok:false,reason:'AIRCRAFT_RESTRICTION'};
+  return{ok:true,reason:'OK'};
+}
+function airportCompatibleWithAircraft(ap,code=S.aircraft){return airportCompatibility(ap,code).ok;}
 let ROUTES={};
 function rebuildAircraftRoutes(){
   // Invalide le cache lorsque la base aéroports change. La compatibilité n'est
@@ -1098,13 +1131,7 @@ function rebuildAircraftRoutes(){
 function routesForAircraft(code){
   if(ROUTES[code])return ROUTES[code];
   const ac=AIRCRAFT_DATA[code];if(!ac)return [];
-  ROUTES[code]=AIRPORTS.filter(ap=>{
-    if(!isIcaoAirport(ap))return false;
-    if(ac.mtow<30000)return true;
-    if(RESTRICTED_LARGE_AIRCRAFT.has(ap.icao))return false;
-    if(ap.runwayFt)return ap.runwayFt>=(ac.mtow>150000?8000:5500);
-    return ap.type==='L'||ap.type==='M'||!ap.type;
-  }).map(a=>a.icao);
+  ROUTES[code]=AIRPORTS.filter(ap=>airportCompatibleWithAircraft(ap,code)).map(a=>a.icao);
   return ROUTES[code];
 }
 rebuildAircraftRoutes();
@@ -1487,16 +1514,18 @@ function refreshAircraftOptions(){
 function renderAircraftSpecs(){
   const box=$('aircraft-specs'),code=$('s-ac').value,ac=AIRCRAFT_DATA[code];
   if(!box||!ac){if(box)box.innerHTML='';return;}
+  const airportPolicy=airportPolicyForAircraft(code);
   const capacity=ac.cargo_max
     ?`${Math.round(ac.cargo_max/100)/10} t ${S.language==='en'?'max cargo':'fret max'}`
     :`${ac.pax_max} ${S.language==='en'?'passengers max':'passagers max'}`;
   const labels=S.language==='en'
-    ?['ICAO type code','Capacity','Range','Cruise','Indicative burn','Maximum fuel']
-    :['Code OACI type','Capacit\u00E9','Rayon d\u2019action','Croisi\u00E8re','Consommation','Carburant maximal'];
+    ?['ICAO type code','Capacity','Range','Cruise','Indicative burn','Maximum fuel','Airport generation filter']
+    :['Code OACI type','Capacit\u00E9','Rayon d\u2019action','Croisi\u00E8re','Consommation','Carburant maximal','Filtre de g\u00E9n\u00E9ration des terrains'];
   const specs=[
     [labels[0],simbriefTypeForAircraft(code)],[labels[1],capacity],[labels[2],`${ac.range_nm.toLocaleString(uiLocale())} NM`],
     [labels[3],`${ac.cruise_kt} kt \u00B7 ${ac.cruise_fl}`],[labels[4],`${ac.fuel_burn_kgh.toLocaleString(uiLocale())} kg/h`],
-    [labels[5],`${ac.fuel_cap.toLocaleString(uiLocale())} kg`]
+    [labels[5],`${ac.fuel_cap.toLocaleString(uiLocale())} kg`],
+    [labels[6],`\u2265 ${airportPolicy.minRunwayFt.toLocaleString(uiLocale())} ft \u00B7 ${airportPolicy.hardSurface?(S.language==='en'?'paved':'rev\u00EAtue'):(S.language==='en'?'compatible surface':'surface compatible')}`]
   ];
   box.innerHTML=specs.map(([label,value])=>`<div class="aircraft-spec"><span>${label}</span><strong title="${value}">${value}</strong></div>`).join('');
 }
@@ -1537,9 +1566,17 @@ async function startDuty(){
     if(!/^[A-Z]{4}$/.test(custom.base)||!isIcaoAirport(getAP(custom.base))){showToast('Choisissez un véritable code OACI de base présent dans la base aéroports',6000);$('s-custom-base').focus();return;}
     S.customOperator=custom;
   }else S.customOperator=null;
+  const selectedAircraft=$('s-ac').value;
+  const selectedOperator=$('s-operator').value==='custom'?S.customOperator:(OPERATORS[$('s-operator').value]||OPERATORS.general);
+  const baseAirport=getAP(selectedOperator.base),baseCheck=airportCompatibility(baseAirport,selectedAircraft);
+  if(!baseCheck.ok){
+    const policy=airportPolicyForAircraft(selectedAircraft),surface=baseAirport?.surface||t('not_provided'),runway=baseAirport?.runwayFt?`${baseAirport.runwayFt} ft`:t('not_provided');
+    showToast(S.language==='en'?`Base ${selectedOperator.base} is not compatible with ${AIRCRAFT_DATA[selectedAircraft]?.name}: runway ${runway}, surface ${surface}. Required planning filter: ${policy.minRunwayFt} ft${policy.hardSurface?', paved':''}.`:`La base ${selectedOperator.base} n’est pas compatible avec ${AIRCRAFT_DATA[selectedAircraft]?.name} : piste ${runway}, revêtement ${surface}. Filtre de planification : ${policy.minRunwayFt} ft${policy.hardSurface?', piste revêtue':''}.`,8000);
+    $('s-custom-base')?.focus();return;
+  }
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
-  S.aircraft=$('s-ac').value;
+  S.aircraft=selectedAircraft;
   S.registration=$('s-registration').value.trim().toUpperCase();
   S.language=$('s-language').value==='en'?'en':'fr';
   S.operatorId=$('s-operator').value;
@@ -1627,10 +1664,10 @@ function updateDispUI(){
 function chooseAlternate(dep,arr){
   const arrAp=getAP(arr);
   return AIRPORTS
-    .filter(a=>isIcaoAirport(a)&&a.icao!==dep&&a.icao!==arr)
+    .filter(a=>airportCompatibleWithAircraft(a)&&a.icao!==dep&&a.icao!==arr)
     .map(a=>({icao:a.icao,dist:distNM(arrAp.lat,arrAp.lon,a.lat,a.lon)}))
-    .filter(a=>a.dist<=250)
-    .sort((a,b)=>a.dist-b.dist)[0]?.icao||dep;
+    .filter(a=>a.dist<=400)
+    .sort((a,b)=>a.dist-b.dist)[0]?.icao||null;
 }
 
 function buildFlight(dep,dest,existing={}){
@@ -1638,6 +1675,7 @@ function buildFlight(dep,dest,existing={}){
   const arrAp=getAP(dest);
   const depAp=getAP(dep);
   if(!arrAp||!depAp||dep===dest)return null;
+  if(!airportCompatibleWithAircraft(depAp)||!airportCompatibleWithAircraft(arrAp))return null;
   const dist=Math.round(distNM(depAp.lat,depAp.lon,arrAp.lat,arrAp.lon));
   const durH=dist/ac.cruise_kt;
   const durMin=Math.round(durH*60)+20;
@@ -1651,6 +1689,7 @@ function buildFlight(dep,dest,existing={}){
   const cont=Math.round(trip*0.05);
   const alt=chooseAlternate(dep,dest);
   const altAp=getAP(alt);
+  if(!altAp||!airportCompatibleWithAircraft(altAp))return null;
   const altDist=altAp?distNM(arrAp.lat,arrAp.lon,altAp.lat,altAp.lon):0;
   const altF=Math.round(ac.fuel_burn_kgh*(altDist/ac.cruise_kt+0.18));
   const res=Math.round(ac.fuel_burn_kgh*0.5);
@@ -1998,7 +2037,7 @@ function finishGeneratedRotation(plan,type,reason){
 
 function chooseNetworkDestination(origin,pool,excluded=[]){
   const originAp=getAP(origin),ac=AIRCRAFT_DATA[S.aircraft];if(!originAp)return null;
-  const candidates=pool.filter(code=>code!==origin&&!excluded.includes(code)&&getAP(code)).sort(()=>Math.random()-.5);
+  const candidates=pool.filter(code=>code!==origin&&!excluded.includes(code)&&airportCompatibleWithAircraft(getAP(code))).sort(()=>Math.random()-.5);
   return candidates.find(code=>{
     const ap=getAP(code),distance=distNM(originAp.lat,originAp.lon,ap.lat,ap.lon);
     if(ac.cruise_kt<330)return distance>=70&&distance<=Math.min(ac.range_nm*.72,750);
@@ -3343,7 +3382,7 @@ function applyDossierChangeSet(changeSet,source='OPS'){
     }else if(field==='handling'){
       leg.arrAp={...leg.arrAp,handling:String(value)};changedIndexes.add(target);details.push(`handling ${leg.arr}: ${value}`);
     }else if(field==='alternate'){
-      const code=String(value||'').toUpperCase();if(isIcaoAirport(getAP(code))&&code!==leg.arr){leg.alt=code;changedIndexes.add(target);details.push(`alternate ${code}`);}
+      const code=String(value||'').toUpperCase();if(airportCompatibleWithAircraft(getAP(code))&&code!==leg.arr){leg.alt=code;changedIndexes.add(target);details.push(`alternate ${code}`);}
     }else if(field==='flight_level'){
       const level=Math.max(50,Math.min(Number(String(value).replace(/\D/g,''))||0,Number(String(AIRCRAFT_DATA[S.aircraft]?.cruise_fl||'510').replace(/\D/g,''))));if(level){leg.fl=`FL${level}`;changedIndexes.add(target);details.push(`niveau FL${level}`);}
     }else if(field==='cargo_weight'&&leg.cargo){
