@@ -484,6 +484,7 @@ html,body{width:100%;max-width:none;margin:0}
 .simbrief-textarea,.simbrief-input,.simbrief-select{width:100%;border:1px solid var(--border2);border-radius:8px;background:var(--bg2);color:var(--text);font:500 11px/1.5 var(--font-b);padding:9px 10px}
 .simbrief-textarea{min-height:92px;resize:vertical}.simbrief-extra{display:grid;grid-template-columns:minmax(90px,.65fr) minmax(80px,.45fr) minmax(180px,1.8fr);gap:8px}
 .simbrief-help{font-size:8px;line-height:1.5;color:var(--text3);margin-top:5px}.simbrief-status{font-size:8px;font-weight:700;color:var(--green);margin:10px 0 0;min-height:12px}
+.workflow-card{border-left:3px solid var(--blue)}.workflow-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.workflow-step{border:1px solid var(--border);border-radius:8px;padding:9px 7px;background:var(--bg3);min-width:0}.workflow-step span{display:block;font:700 8px var(--font-m);color:var(--text3);margin-bottom:4px}.workflow-step strong{display:block;font-size:9px;line-height:1.35;color:var(--text2)}.workflow-step.done{border-color:rgba(90,158,111,.45)}.workflow-step.done span,.workflow-step.done strong{color:var(--green)}.workflow-step.current{border-color:rgba(74,155,184,.65);background:rgba(74,155,184,.08)}.workflow-step.current span,.workflow-step.current strong{color:var(--blue)}
 .fuel-waiting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px dashed var(--border2);border-radius:8px;background:var(--bg3);font-size:10px;color:var(--text2)}
 .fuel-waiting strong{color:var(--text);text-align:right}
 .simbrief-import{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(190px,1.2fr);gap:8px;align-items:end;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
@@ -506,8 +507,8 @@ html,body{width:100%;max-width:none;margin:0}
 }
 @media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}}
 </style>
-<script src="data/aircraft-catalog.js?v=14"></script>
-<script src="data/i18n.js?v=14"></script>
+<script src="data/aircraft-catalog.js?v=15"></script>
+<script src="data/i18n.js?v=15"></script>
 </head>
 <body>
 
@@ -674,7 +675,17 @@ html,body{width:100%;max-width:none;margin:0}
     <div class="card">
       <div class="ctitle" data-i18n="direct_line">Ligne directe OPS</div>
       <div data-i18n="direct_line_help" style="font-size:10px;color:var(--text2);line-height:1.6">
-        Pr&#xE9;sentez-vous puis annoncez naturellement le motif de votre appel : briefing, retard, demande client, probl&#xE8;me technique ou urgence.
+        Les OPS restent joignables pendant toutes les phases. Le briefing formel devient disponible apr&#xE8;s l&#x2019;import de l&#x2019;OFP SimBrief.
+      </div>
+    </div>
+
+    <div class="card workflow-card">
+      <div class="ctitle" data-i18n="operational_sequence">S&#xE9;quence de pr&#xE9;paration</div>
+      <div id="workflow-summary" style="font-size:10px;color:var(--text2);line-height:1.55" data-i18n="workflow_help">La rotation est attribu&#xE9;e au d&#xE9;but du duty. Pr&#xE9;parez puis importez l&#x2019;OFP avant de demander le briefing.</div>
+      <div class="workflow-steps">
+        <div class="workflow-step" id="workflow-rotation"><span>01</span><strong data-i18n="workflow_rotation">ROTATION</strong></div>
+        <div class="workflow-step" id="workflow-ofp"><span>02</span><strong data-i18n="workflow_ofp">OFP SIMBRIEF</strong></div>
+        <div class="workflow-step" id="workflow-briefing"><span>03</span><strong data-i18n="workflow_briefing">BRIEFING OPS</strong></div>
       </div>
     </div>
 
@@ -696,8 +707,8 @@ html,body{width:100%;max-width:none;margin:0}
     <div class="card" id="inflight-notice" style="display:none">
       <div style="text-align:center;padding:8px 0">
         <div style="font-size:11px;font-weight:700;margin-bottom:8px">EN VOL</div>
-        <div style="font-size:11px;font-family:var(--font-m);color:var(--blue);margin-bottom:4px">EN VOL &#x2014; COMMUNICATION VOCALE INDISPONIBLE</div>
-        <div style="font-size:10px;color:var(--text2)">Utilisez l'onglet ACARS pour contacter les OPS</div>
+        <div style="font-size:11px;font-family:var(--font-m);color:var(--blue);margin-bottom:4px">LIGNE OPS DISPONIBLE</div>
+        <div style="font-size:10px;color:var(--text2)">Les appels et l&#x2019;ACARS restent accessibles pendant le vol.</div>
       </div>
     </div>
 
@@ -1230,9 +1241,9 @@ function applyRestoredPhase(n){
   S.phase=n;S.inFlight=(n>=1&&n<=3);
   const pb=$('phase-badge');
   pb.textContent=phaseLabel(n);pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
-  const callsBlocked=n===2;
-  $('main-call-btn').disabled=callsBlocked;
-  $('inflight-notice').style.display=callsBlocked?'block':'none';
+  // La ligne OPS reste accessible pendant toutes les phases de la simulation.
+  $('main-call-btn').disabled=false;
+  $('inflight-notice').style.display='none';
   if(S.currentFlight)$('acars-phase').textContent=phaseDetail(n)+' \u00B7 '+(n<4?S.currentFlight.dep:S.currentFlight.arr);
   renderAcarsQuickActions();
 }
@@ -1267,8 +1278,11 @@ function restoreSession(){
     populateDossier(S.currentFlight);
     applyRestoredPhase(restoredPhase);
   }else if(S.rotationPlan[S.rotationIndex]){
-    $('main-call-btn').onclick=initiateContextualCall;
+    S.currentFlight=S.rotationPlan[S.rotationIndex];
+    populateDossier(S.currentFlight,{preservePhase:true,selectedIndex:S.rotationIndex});
+    applyRestoredPhase(S.phase||0);
   }
+  updateOperationalWorkflowUI();
   addAcars('ops','INFO',`SESSION RESTAUR\u00C9E // DUTY ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.rotationPlan.length} SECTEUR(S)`);
   showToast(`Session ${currentOperator().name} restaur\u00E9e`,5000);
   initElevenLabs();
@@ -1339,6 +1353,7 @@ function setLanguage(language,options={}){
     const selected=S.rotationPlan?.[S.dossierLegIndex??S.rotationIndex];
     if(selected)populateDossier(selected,{preservePhase:true,selectedIndex:S.dossierLegIndex??S.rotationIndex});
     if(typeof updateAlertUI==='function')updateAlertUI();
+    updateOperationalWorkflowUI();
   }
 }
 function toggleLanguage(){setLanguage(S.language==='fr'?'en':'fr');saveSession();}
@@ -1450,6 +1465,30 @@ $('utc-clock').textContent=utcNow();
 // DUTY SETUP
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function currentOperator(){return S.operatorId==='custom'&&S.customOperator?S.customOperator:(OPERATORS[S.operatorId]||OPERATORS.general);}
+function operationalFlight(){return S.currentFlight||S.rotationPlan?.[S.rotationIndex]||null;}
+function importedOFPReady(f=operationalFlight()){return !!(f?.simbrief?.ofp&&f.simbrief.status==='imported');}
+function currentBriefingReady(f=operationalFlight()){
+  return !!(f?.briefing?.completedAt&&Number(f.briefing.revision||0)===Number(S.rotationRevision||0));
+}
+function briefingRequestIntent(text){
+  const value=normalizeSearchText(text);
+  if(/\b(?:PAS|PLUS TARD|NOT NOW|LATER)\b.{0,24}\bBRIEF/.test(value))return false;
+  return /^(?:LE |UN |THE )?(?:BRIEF|BRIEFING|FLIGHT BRIEFING)$/i.test(value.trim())||
+    /\b(?:POUR|FAIRE|LANCER|COMMENCER|AVOIR|DEMANDER|APPELER|READY FOR|START|REQUEST|CALLING FOR)\b.{0,45}\b(?:BRIEF|BRIEFING|DOSSIER DE VOL|FLIGHT BRIEF)/.test(value)||
+    /\b(?:BRIEF|BRIEFING|FLIGHT BRIEF)\b.{0,30}\b(?:S IL VOUS PLAIT|SVP|PLEASE|MAINTENANT|NOW)/.test(value);
+}
+function updateOperationalWorkflowUI(){
+  const rotation=$('workflow-rotation'),ofpStep=$('workflow-ofp'),briefing=$('workflow-briefing'),summary=$('workflow-summary');
+  if(!rotation||!ofpStep||!briefing||!summary)return;
+  const f=operationalFlight(),hasRotation=!!f,hasOFP=importedOFPReady(f),briefed=currentBriefingReady(f);
+  rotation.className=`workflow-step ${hasRotation?'done':'current'}`;
+  ofpStep.className=`workflow-step ${hasOFP?'done':hasRotation?'current':''}`;
+  briefing.className=`workflow-step ${briefed?'done':hasOFP?'current':''}`;
+  if(!hasRotation)summary.textContent=S.language==='en'?'Waiting for a flight assignment.':'En attente d’une attribution de vol.';
+  else if(!hasOFP)summary.textContent=S.language==='en'?`${f.flightNo} assigned. Prepare and import its SimBrief OFP; operations remains reachable.`:`${f.flightNo} attribué. Préparez puis importez son OFP SimBrief ; les OPS restent joignables.`;
+  else if(!briefed)summary.textContent=S.language==='en'?`OFP imported for ${f.flightNo}. Call operations and request the briefing.`:`OFP importé pour ${f.flightNo}. Appelez les OPS et demandez le briefing.`;
+  else summary.textContent=S.language==='en'?`OFP and operations briefing current for ${f.flightNo}.`:`OFP et briefing OPS à jour pour ${f.flightNo}.`;
+}
 
 function customOperatorFromForm(){
   const name=$('s-custom-name').value.trim(),icao=$('s-custom-icao').value.trim().toUpperCase();
@@ -1599,6 +1638,9 @@ async function startDuty(){
   $('b-acft').textContent=aircraftIdentity();
   $('b-duty').textContent=formatDateFr(S.dutyDate)+' \u00B7 '+S.dutyStart+'\u2192'+S.dutyEnd;
   updateBrandIdentity();updateDispUI();
+  setBootProgress(9,S.language==='en'?'BUILDING YOUR ROTATION...':'CONSTRUCTION DE VOTRE ROTATION...');
+  const plannedRotation=generateOperationalRotation();
+  if(plannedRotation)handleBriefingResponse(plannedRotation,{announce:false});
   // V\u00E9rifie uniquement la voix distante d\u00E8s la prise de service.
   // Le microphone sera ouvert au d\u00E9but de chaque appel OPS.
   $('kokoro-btn').style.opacity='.7';
@@ -1615,10 +1657,14 @@ async function startDuty(){
   setBootProgress(100,kokoroReady?`${currentOperator().name} OPS PR\u00CAT \u2014 VOIX ELEVENLABS`:'SESSION PR\u00CATE \u2014 VOIX DISTANTE INDISPONIBLE');
   await sleep(700);
   $('boot-ov').style.display='none';
+  if(plannedRotation){switchTab('dossier');showToast(S.language==='en'?'Rotation assigned — prepare the SimBrief OFP':'Rotation attribuée — préparez maintenant l’OFP SimBrief',5500);}
+  else showToast(S.language==='en'?'Unable to assign a compatible rotation':'Impossible d’attribuer une rotation compatible',6500);
   // ACARS welcome
   setTimeout(()=>{
     addAcars('ops','INFO',`DUTY CONFIRMED ${S.dutyStart}Z-${S.dutyEnd}Z // ${operationLabel(S.operationType)} // ${S.dispatcher.name.toUpperCase()} ON DUTY`);
+    if(plannedRotation)addAcars('ops','INFO',`ROTATION ATTRIBUÉE // ${S.rotationPlan.length} SECTEUR(S) // ${plannedRotation.flightNo} ${plannedRotation.dep}\u2192${plannedRotation.arr} // PRÉPAREZ ET IMPORTEZ L OFP SIMBRIEF AVANT LE BRIEFING OPS`);
   },2000);
+  updateOperationalWorkflowUI();
   saveSession();
 }
 
@@ -2354,6 +2400,7 @@ function renderRotationPlan(){
     });
     const ackBtn=$('revision-ack-btn');if(ackBtn)ackBtn.style.display=pending?'block':'none';
   }
+  updateOperationalWorkflowUI();
 }
 
 function populateDossier(f,options={}){
@@ -2634,7 +2681,10 @@ async function importSimBriefOFP(){
     if(ofp.alternate)f.alt=ofp.alternate;
     if(ofp.dispatcherRemarks&&!draft.dispatcherRemark.includes(ofp.dispatcherRemarks))draft.dispatcherRemark=`${draft.dispatcherRemark}\nSIMBRIEF: ${ofp.dispatcherRemarks}`.slice(0,1200);
     saveSession();populateDossier(f,{preservePhase:true,selectedIndex:S.dossierLegIndex??S.rotationIndex});
-    $('sb-status').textContent=`${t('ofp_imported')} · ${utcNow()}`;showToast(t('ofp_imported'),4000);
+    updateOperationalWorkflowUI();
+    $('sb-status').textContent=`${t('ofp_imported')} · ${utcNow()}`;
+    const current=f===operationalFlight();
+    showToast(current?(S.language==='en'?'OFP imported — the operations briefing is now available':'OFP importé — le briefing OPS est maintenant disponible'):(S.language==='en'?'OFP imported for the selected future sector':'OFP importé pour le secteur futur sélectionné'),5500);
   }catch(error){
     const message=error.message==='IDENTITY_MISMATCH'?t('ofp_identity_mismatch'):t('ofp_import_error');
     console.warn('[OPS CENTER] SimBrief OFP import',error);showToast(message,6500);$('sb-status').textContent=message.toUpperCase();
@@ -2704,10 +2754,9 @@ function setPhase(n,options={}){
   const pb=$('phase-badge');
   pb.textContent=phaseLabel(n);
   pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
-  // OPS call button
-  const inFlight=(n===2);
-  $('main-call-btn').disabled=inFlight;
-  $('inflight-notice').style.display=inFlight?'block':'none';
+  // Les OPS restent joignables au sol comme en vol.
+  $('main-call-btn').disabled=false;
+  $('inflight-notice').style.display='none';
   // ACARS auto-messages
   if(!S.currentFlight)return;
   const f=S.currentFlight;
@@ -2736,15 +2785,18 @@ function setPhase(n,options={}){
         await sleep(3000);
         const nextLeg=S.rotationPlan[S.rotationIndex];
         if(nextLeg){
-          addAcars('ops','INFO',`ROTATION ${S.rotationType} // PROCHAIN SECTEUR PLANIFI\u00C9 ${nextLeg.dep}\u2192${nextLeg.arr} // ${nextLeg.missionRole} // APPELEZ POUR BRIEFING`);
+          S.currentFlight=nextLeg;
+          scheduleScenario(nextLeg);
+          populateDossier(nextLeg,{selectedIndex:S.rotationIndex});
+          addAcars('ops','INFO',`ROTATION ${S.rotationType} // PROCHAIN SECTEUR ACTIF ${nextLeg.dep}\u2192${nextLeg.arr} // ${nextLeg.missionRole} // PRÉPAREZ ET IMPORTEZ L OFP SIMBRIEF AVANT LE BRIEFING OPS`);
         }else{
           addAcars('ops','INFO',`ROTATION TERMIN\u00C9E // ${S.sessionFlights.length} VOL(S) EFFECTU\u00C9(S) // APPELEZ POUR NOUVELLE MISSION OU FIN DUTY`);
+          S.currentFlight=null;
+          applyRestoredPhase(0);
+          $('b-flt').textContent='\u2014';
         }
         $('main-call-btn').disabled=false;
         $('main-call-btn').onclick=initiateContextualCall;
-        setPhase(0);
-        S.currentFlight=null;
-        $('b-flt').textContent='\u2014';
         renderRotationPlan();
       }
     },options.fromAcars?400:3000);
@@ -2872,8 +2924,8 @@ function applyOperationalChange(action,f){
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 const CALL_SYS = {
   briefing:{
-    fr:(d,f,ac)=>`IMPORTANT: R\u00E9ponds en langage oral naturel uniquement. Tu es ${d.name}, dispatcher de ${currentOperator().name}, exploitation ${operationLabel(S.operationType)}. Tu appelles le ${f.rank} ${f.pilot} pour un briefing sur ${AIRCRAFT_DATA[ac].name}. Pr\u00E9sente strictement la rotation structur\u00E9e fournie: ne change aucune destination, heure, charge commerciale ou quantit\u00E9 de carburant. Adapte ton vocabulaire au type d exploitation. Style: ${d.style}. ${EASA}`,
-    en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language only. You are ${d.name}, dispatcher for ${currentOperator().name}, operating mode ${operationLabel(S.operationType)}. Brief ${f.rank} ${f.pilot} on the structured rotation using ${AIRCRAFT_DATA[ac].name}. Never change any destination, time, commercial load or fuel quantity. Style: ${d.style}. ${EASA}`,
+    fr:(d,f,ac)=>`IMPORTANT: R\u00E9ponds en langage oral naturel uniquement. Tu es ${d.name}, dispatcher de ${currentOperator().name}, exploitation ${operationLabel(S.operationType)}. Le ${f.rank} ${f.pilot} appelle pour le briefing du secteur courant sur ${AIRCRAFT_DATA[ac].name}. L OFP SimBrief importé et le dossier structuré sont tes sources prioritaires: ne change aucune destination, heure, charge commerciale ou quantité de carburant. Adapte ton vocabulaire au type d exploitation. Style: ${d.style}. ${EASA}`,
+    en:(d,f,ac)=>`IMPORTANT: Respond in natural spoken language only. You are ${d.name}, dispatcher for ${currentOperator().name}, operating mode ${operationLabel(S.operationType)}. ${f.rank} ${f.pilot} is calling for the current-sector briefing on the ${AIRCRAFT_DATA[ac].name}. The imported SimBrief OFP and structured flight file are your primary sources. Never change any destination, time, commercial load or fuel quantity. Style: ${d.style}. ${EASA}`,
   },
   free:{
     fr:(d,f,ac)=>`IMPORTANT: R\u00E9ponds comme dans une conversation t\u00E9l\u00E9phonique naturelle. Tu es ${d.name}, dispatcher de ${currentOperator().name}. Le ${f.rank} ${f.pilot} appelle les OPS. Identifie son besoin: question op\u00E9rationnelle, retard, charge commerciale, probl\u00E8me technique ou urgence. Adapte les termes \u00E0 ${operationLabel(S.operationType)}. N invente jamais une m\u00E9t\u00E9o ou un NOTAM r\u00E9el. Avion: ${AIRCRAFT_DATA[ac]?.name||ac}. Style: ${d.style}. ${EASA}`,
@@ -2892,8 +2944,8 @@ const CALL_SYS = {
     en:(d,f)=>`You are ${d.name}, dispatcher for ${currentOperator().name}. Provide a commercial load or passenger update. Only communicate useful changes. Style: ${d.style}.`,
   },
   next:{
-    fr:(d,f)=>`Tu es ${d.name}, dispatcher de ${currentOperator().name}. Le pilote a termin\u00E9 une rotation et rappelle pour la suivante. G\u00E9n\u00E8re une nouvelle rotation diff\u00E9rente. Style: ${d.style}. ${EASA}`,
-    en:(d,f)=>`You are ${d.name}, dispatcher for ${currentOperator().name}. Pilot finished a rotation and calls for the next one. Generate new different rotation. Style: ${d.style}. ${EASA}`,
+    fr:(d,f)=>`Tu es ${d.name}, dispatcher de ${currentOperator().name}. Le pilote a terminé une rotation et rappelle. Une nouvelle rotation vient d être attribuée par le moteur structuré; présente-la comme disponible dans le dossier et demande la préparation de l OFP SimBrief avant le briefing. Style: ${d.style}. ${EASA}`,
+    en:(d,f)=>`You are ${d.name}, dispatcher for ${currentOperator().name}. The pilot has completed a rotation and is calling again. The structured engine has assigned a new rotation; say it is available in the flight file and request SimBrief OFP preparation before the briefing. Style: ${d.style}. ${EASA}`,
   },
   emergency:{
     fr:(d,f)=>`Tu es ${d.name}, dispatcher de ${currentOperator().name}. URGENCE. Reste calme, collecte les informations rapidement et active les proc\u00E9dures. ${EASA}`,
@@ -2902,8 +2954,9 @@ const CALL_SYS = {
 };
 
 function initiateContextualCall(){
-  let type='free';
-  if(!S.currentFlight)type=S.rotationPlan?.[S.rotationIndex]?'next':'briefing';
+  // La ligne est polyvalente : le pilote exprime naturellement le motif.
+  const rotationComplete=S.rotationPlan?.length&&S.rotationIndex>=S.rotationPlan.length;
+  const type=!S.currentFlight&&rotationComplete?'next':'free';
   initiateCall(type);
 }
 
@@ -2914,7 +2967,6 @@ function usesAppleTouchAudio(){
 
 async function initiateCall(type){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
-  if(S.inFlight&&type!=='emergency'&&type!=='technical'){showToast('Communication vocale indisponible en vol \u2014 utilisez ACARS');return;}
   unlockVoicePlayback();
   S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
   // Safari iPad/iPhone g\u00E8re mal la lecture TTS lorsqu un flux getUserMedia
@@ -2948,23 +3000,17 @@ async function initiateCall(type){
   const lang=S.language;
   const greet=lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je vous \u00E9coute.`;
   addTx('ops',d.name,greet);await speak(greet);
-  let sysPrompt=CALL_SYS[type]?.[lang]?.(d,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](d,{pilot:S.pilot,rank:S.rank});
-  sysPrompt+=` ACTIVE OPERATOR IDENTITY: ${currentOperator().name}, ${currentOperator().fullName}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operations center ${currentOperator().opsCity}. Operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'} and ignore any contradictory historical identity. ${airportReferenceContext()}`;
   let planned=null;
-  if((type==='briefing'||type==='next')&&!S.currentFlight){
-    planned=type==='next'&&S.rotationPlan[S.rotationIndex]
-      ? S.rotationPlan[S.rotationIndex]
-      : generateOperationalRotation();
+  if(type==='next'&&!S.currentFlight){
+    planned=generateOperationalRotation();
     if(!planned){showToast('Impossible de g\u00E9n\u00E9rer une rotation');endCall();return;}
   }
   if(planned){
     handleBriefingResponse(planned);
-    S.briefingStage='awaiting-introduction';
-    $('mic-tip').textContent=S.language==='en'?'Introduce yourself; operations is listening…':'Présentez-vous, les OPS vous écoutent…';
-  }else{
-    const intro=await callAI(sysPrompt,'Commence l appel apr\u00E8s ton greeting. Sois naturel et concis.');
-    if(intro){addTx('ops',d.name,intro);await speak(intro);}
   }
+  // Le greeting suffit : on laisse ensuite réellement le temps au pilote de
+  // se présenter et d'annoncer le motif de son appel.
+  $('mic-tip').textContent=S.language==='en'?'Introduce yourself; operations is listening…':'Présentez-vous, les OPS vous écoutent…';
   addCallHist(type);
   if(S.callActive)startAutoListen();
 }
@@ -2985,15 +3031,16 @@ function makeSpokenBriefing(f,d,lang='fr'){
   return `Bonjour ${S.rank} ${S.pilot}. Voici la r\u00E9vision ${S.rotationRevision||0} de votre briefing op\u00E9rations ${op.name} pour le duty du ${formatDateFr(S.dutyDate)}, de ${S.dutyStart} \u00E0 ${S.dutyEnd} UTC. Vous \u00EAtes affect\u00E9 \u00E0 une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant \u00E0 effectuer. Programme pr\u00E9vu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. D\u00E9part pr\u00E9vu ${f.depT}, arriv\u00E9e estim\u00E9e ${f.arrT}, niveau planifi\u00E9 ${f.fl}, avec ${charge}. Le handling arriv\u00E9e est ${f.arrAp.handling||'\u00E0 confirmer'}, parking ${f.arrAp.parking||'\u00E0 confirmer'}, alternate de planification ${f.alt}. ${notes} La planification carburant reste en attente de la g\u00E9n\u00E9ration de l OFP SimBrief.`;
 }
 
-function handleBriefingResponse(rotation){
+function handleBriefingResponse(rotation,options={}){
   const rot=rotation&&typeof rotation==='object'?rotation:generateRotation();
   if(rot){
     S.currentFlight=rot;
     scheduleScenario(rot);
-    setTimeout(()=>{populateDossier(rot);},1000);
-    setTimeout(()=>{
-      addAcars('ops','INFO',`DOSSIER VOL ${rot.flightNo} TRANSMIS // ${rot.dep}\u2192${rot.arr} // DEP ${rot.depT} // ${rot.cargo?rot.cargo.weightKg.toLocaleString(uiLocale())+'KG FRET':rot.pax.length+' PAX'} // FUEL VIA SIMBRIEF`);
-    },2000);
+    populateDossier(rot,{selectedIndex:S.rotationIndex});
+    updateOperationalWorkflowUI();
+    if(options.announce!==false)setTimeout(()=>{
+      addAcars('ops','INFO',`DOSSIER VOL ${rot.flightNo} TRANSMIS // ${rot.dep}\u2192${rot.arr} // DEP ${rot.depT} // ${rot.cargo?rot.cargo.weightKg.toLocaleString(uiLocale())+'KG FRET':rot.pax.length+' PAX'} // OFP SIMBRIEF À PRÉPARER`);
+    },1200);
   }
 }
 
@@ -3441,6 +3488,12 @@ function rotationContextForAI(){
   return `DOSSIER STRUCTUR\u00C9 ${currentOperator().name}, R\u00C9VISION ${S.rotationRevision||0}, EXPLOITATION ${operationLabel(S.operationType)}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}. ${legs}`;
 }
 
+function formalBriefingOFPContext(f=operationalFlight()){
+  const ofp=f?.simbrief?.ofp;if(!ofp)return '';
+  const weather=ofp.weather||{};
+  return `OFP SIMBRIEF FORMEL DU SECTEUR ${f.flightNo}, RELEASE ${ofp.release||'non fournie'}, GÉNÉRÉ ${ofp.generated||ofp.importedAt}. ROUTE ATS ${ofp.route||'non fournie'}. CARBURANT BLOCK ${ofp.blockFuel||'non fourni'} ${ofp.units||''}, TRIP ${ofp.tripFuel||'non fourni'} ${ofp.units||''}, ZFW ${ofp.zfw||'non fournie'} ${ofp.units||''}, TOW ${ofp.tow||'non fournie'} ${ofp.units||''}, COST INDEX ${ofp.costIndex||'non fourni'}. MÉTÉO DÉPART: METAR ${weather.originMetar||'non fourni'}, TAF ${weather.originTaf||'non fourni'}. MÉTÉO ARRIVÉE: METAR ${weather.destinationMetar||'non fourni'}, TAF ${weather.destinationTaf||'non fourni'}. MÉTÉO ALTERNATE: METAR ${weather.alternateMetar||'non fourni'}, TAF ${weather.alternateTaf||'non fourni'}. REMARQUES DISPATCHER: ${ofp.dispatcherRemarks||f.simbrief?.dispatcherRemark||'aucune'}. NOTAM SIMBRIEF: ${ofp.notams?ofp.notams.slice(0,1800):'non fournis dans l OFP importé'}.`;
+}
+
 function briefingTopicsFromMessage(text){
   const value=normalizeSearchText(text),topics=[];
   if(/METEO|WEATHER|METAR|TAF|SIGMET/.test(value))topics.push('weather');
@@ -3458,6 +3511,8 @@ function recordBriefingInteraction(text){
   f.briefing.completedAt=f.briefing.completedAt||utcNow();
   f.briefing.revision=S.rotationRevision||0;
   f.briefing.topics=[...new Set([...(f.briefing.topics||[]),...briefingTopicsFromMessage(text)])];
+  updateOperationalWorkflowUI();
+  renderRotationPlan();
   saveSession();
 }
 
@@ -3565,14 +3620,29 @@ async function startAutoListen(fromIpadButton=false){
     addTx('pilot',S.pilot,text);
     $('mic-tip').textContent=S.language==='en'?'Operations is preparing a reply…':'Les OPS préparent leur réponse…';
     const dossierUpdate=await processDossierUpdateFromMessage(text,'APPEL OPS / \u00C9QUIPAGE');
+    const wantsBriefing=briefingRequestIntent(text),briefingFlight=operationalFlight();
+    let briefingJustStarted=false,briefingUnavailable=false;
+    if(wantsBriefing){
+      if(importedOFPReady(briefingFlight)){
+        briefingJustStarted=S.callType!=='briefing'&&!currentBriefingReady(briefingFlight);
+        S.callType='briefing';S.briefingStage=briefingJustStarted?'opening':'interactive';
+      }else briefingUnavailable=true;
+    }
+    // Toute révision opérationnelle qui périme l'OFP suspend le briefing formel.
+    if(S.callType==='briefing'&&!importedOFPReady(briefingFlight)){
+      S.callType='free';S.briefingStage=null;briefingUnavailable=true;
+    }
     const lang=S.language;
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
     sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'}. Ignore any contradictory historical identity. ${airportReferenceContext(text)}`;
     if(S.currentFlight)sys+=` ${rotationContextForAI()} Le moteur structur\u00E9 de l application est seul autoris\u00E9 \u00E0 modifier ces donn\u00E9es. Ne confirme que son r\u00E9sultat. Si le dossier indique qu un briefing a d\u00E9j\u00E0 eu lieu, reprends la conversation sans recommencer toute la pr\u00E9sentation.`;
+    if(S.callType==='briefing'&&importedOFPReady(briefingFlight))sys+=` ${formalBriefingOFPContext(briefingFlight)}`;
     if(dossierUpdate.message)sys+=` R\u00C9SULTAT DU MOTEUR DOSSIER: ${dossierUpdate.message} Confirme exactement ce r\u00E9sultat au pilote; ne pr\u00E9tends jamais avoir appliqu\u00E9 autre chose.`;
-    if(S.callType==='briefing'||S.callType==='next'){
-      if(S.briefingStage==='awaiting-introduction'){
-        sys+=` Le pilote vient de se pr\u00E9senter. Accuse r\u00E9ception naturellement. Donne uniquement le type de rotation, le nombre de secteurs, puis la route et l heure de d\u00E9part du premier secteur. Deux phrases courtes maximum. Ne donne pas encore m\u00E9t\u00E9o, carburant, passagers, handling, alternate ou d\u00E9tails des secteurs suivants. Termine en lui demandant ce qu il souhaite approfondir.`;
+    if(briefingUnavailable){
+      sys+=` Le pilote demande un briefing formel, mais le secteur courant ne possède pas d OFP SimBrief importé et à jour dans l application. Explique-le en une phrase naturelle: la rotation et le dossier préliminaire sont disponibles, mais il faut préparer puis importer l OFP avant le briefing. Ne prétends pas que le briefing a commencé. Reste disponible pour toute autre demande OPS.`;
+    }else if(S.callType==='briefing'){
+      if(briefingJustStarted||S.briefingStage==='opening'){
+        sys+=` L OFP SimBrief du secteur est importé et à jour. Ouvre maintenant le briefing formel. Confirme le numéro de vol, la route et les horaires, puis résume les éléments OFP essentiels réellement présents: route ATS, carburant block et trip, niveau ou cost index, météo et NOTAM lorsqu ils figurent dans le contexte. Trois à cinq phrases naturelles maximum. Termine en demandant au pilote quel point il souhaite approfondir. N invente aucune donnée absente.`;
       }else{
         sys+=` Le briefing est interactif. R\u00E9ponds uniquement \u00E0 la question pos\u00E9e, en une \u00E0 trois phrases courtes. Ne r\u00E9cite jamais tout le dossier et ne donne aucune information non demand\u00E9e.`;
       }
@@ -3580,8 +3650,9 @@ async function startAutoListen(fromIpadButton=false){
     sys+=` ${await requestedLiveContext(text)}`;
     const reply=await callAI(sys,text);
     if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
-    if(S.callType==='briefing'||S.callType==='next'||S.currentFlight?.briefing?.completedAt)recordBriefingInteraction(text);
-    if(S.briefingStage==='awaiting-introduction')S.briefingStage='interactive';
+    if(S.callType==='briefing'&&importedOFPReady(briefingFlight))recordBriefingInteraction(text);
+    if(S.briefingStage==='opening')S.briefingStage='interactive';
+    updateOperationalWorkflowUI();
     S.processingSpeech=false;
     if(S.callActive)setTimeout(startAutoListen,300);
   };

@@ -1,5 +1,5 @@
-const CACHE_NAME='ops-center-v3-airport-compatibility-14';
-const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js?v=14','./data/i18n.js?v=14','./data/world-land.geojson'];
+const CACHE_NAME='ops-center-v3-rotation-first-ofp-briefing-15';
+const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js?v=15','./data/i18n.js?v=15','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).catch(()=>{}));
