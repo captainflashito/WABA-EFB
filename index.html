@@ -1951,7 +1951,8 @@ function recordRotationRevision(reason,meta={}){
     id:`REV-${Date.now()}`,revision:S.rotationRevision,at:utcNow(),
     reason:String(reason||'MISE \u00C0 JOUR OPS'),source:meta.source||`${currentOperator().name} OPS`,
     affectedSector:meta.affectedSector??null,details:meta.details||'',
-    acknowledged:false,acknowledgedAt:null
+    acknowledged:meta.autoAcknowledged===true,acknowledgedAt:meta.autoAcknowledged===true?utcNow():null,
+    autoAcknowledged:meta.autoAcknowledged===true
   });
   saveSession();
 }
@@ -2175,7 +2176,7 @@ function renderRotationPlan(){
       const head=document.createElement('div');head.className='rev-head';
       const label=document.createElement('span');label.textContent=`REV ${item.revision} \u00B7 ${item.at} \u00B7 ${item.source||currentOperator().name+' OPS'}`;
       const ack=document.createElement('span');ack.className=item.acknowledged||Number(item.revision)===0?'rev-ack':'';
-      ack.textContent=Number(item.revision)===0?'\u00C9MIS':item.acknowledged?`RE\u00C7U ${item.acknowledgedAt||''}`:'EN ATTENTE';
+      ack.textContent=Number(item.revision)===0?'\u00C9MIS':item.autoAcknowledged?'APPLIQU\u00C9E':item.acknowledged?`RE\u00C7U ${item.acknowledgedAt||''}`:'\u00C0 ACQUITTER';
       const reason=document.createElement('div');reason.textContent=item.reason;
       head.append(label,ack);line.append(head,reason);
       if(item.details){const details=document.createElement('div');details.style.color='var(--text2)';details.textContent=item.details;line.append(details);}
@@ -2987,7 +2988,7 @@ function applyDossierChangeSet(changeSet,source='OPS'){
   if(needsResequence&&firstChanged>=0&&firstChanged+1<S.rotationPlan.length)resequenceFollowingLegs(firstChanged+1);
   if(S.rotationPlan[S.rotationIndex])S.currentFlight=S.rotationPlan[S.rotationIndex];
   S.rotationType=String(S.rotationType||'ROTATION').replace(/ \u00B7 REV \d+$/,'')+` \u00B7 REV ${Number(S.rotationRevision||0)+1}`;
-  recordRotationRevision(changeSet.summary||'MISE \u00C0 JOUR DU DOSSIER',{source,affectedSector:target+1,details:details.join(' \u00B7 ')});
+  recordRotationRevision(changeSet.summary||'MISE \u00C0 JOUR DU DOSSIER',{source,affectedSector:target+1,details:details.join(' \u00B7 '),autoAcknowledged:/\u00C9QUIPAGE/.test(source)});
   const selected=Math.min(S.dossierLegIndex??S.rotationIndex,S.rotationPlan.length-1);
   populateDossier(S.rotationPlan[selected],{preservePhase:true,selectedIndex:selected});
   return{applied:true,message:`R\u00E9vision ${S.rotationRevision} appliqu\u00E9e: ${details.join(', ')}.`};
