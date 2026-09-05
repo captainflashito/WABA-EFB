@@ -32,8 +32,10 @@ window.OPS_EXTRA_AIRCRAFT = {
   H25B:{name:'Hawker 800XP',categories:['business'],pax_max:8,range_nm:2540,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:900,fuel_taxi:120,fuel_reserve:400,mtow:12701,fuel_cap:4540},
 
   // Transport régional et monocouloir
-  AT43:{name:'ATR 42-500',categories:['scheduled','cargo'],pax_max:48,range_nm:716,cruise_kt:300,cruise_fl:'FL250',fuel_burn_kgh:560,fuel_taxi:75,fuel_reserve:260,mtow:18600,fuel_cap:4500,cargo_max:5000},
-  AT72:{name:'ATR 72-500',categories:['scheduled','cargo'],pax_max:72,range_nm:825,cruise_kt:275,cruise_fl:'FL250',fuel_burn_kgh:660,fuel_taxi:90,fuel_reserve:300,mtow:22800,fuel_cap:5000,cargo_max:7200},
+  AT43:{name:'ATR 42-300',categories:['scheduled','cargo'],pax_max:46,range_nm:716,cruise_kt:270,cruise_fl:'FL250',fuel_burn_kgh:560,fuel_taxi:75,fuel_reserve:260,mtow:16700,fuel_cap:4500,cargo_max:4700},
+  AT45:{name:'ATR 42-500',categories:['scheduled','cargo'],pax_max:48,range_nm:716,cruise_kt:300,cruise_fl:'FL250',fuel_burn_kgh:560,fuel_taxi:75,fuel_reserve:260,mtow:18600,fuel_cap:4500,cargo_max:5000},
+  AT72:{name:'ATR 72-201',categories:['scheduled','cargo'],pax_max:66,range_nm:825,cruise_kt:270,cruise_fl:'FL250',fuel_burn_kgh:660,fuel_taxi:90,fuel_reserve:300,mtow:21500,fuel_cap:5000,cargo_max:6800},
+  AT75:{name:'ATR 72-500',categories:['scheduled','cargo'],pax_max:72,range_nm:825,cruise_kt:275,cruise_fl:'FL250',fuel_burn_kgh:660,fuel_taxi:90,fuel_reserve:300,mtow:22800,fuel_cap:5000,cargo_max:7200},
   CRJ2:{name:'Bombardier CRJ-200',categories:['scheduled'],pax_max:50,range_nm:1700,cruise_kt:430,cruise_fl:'FL410',fuel_burn_kgh:1250,fuel_taxi:160,fuel_reserve:530,mtow:24041,fuel_cap:6490},
   CRJ7:{name:'Bombardier CRJ-700',categories:['scheduled'],pax_max:78,range_nm:1378,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1450,fuel_taxi:180,fuel_reserve:610,mtow:34019,fuel_cap:8820},
   E170:{name:'Embraer E170',categories:['scheduled'],pax_max:80,range_nm:2150,cruise_kt:447,cruise_fl:'FL410',fuel_burn_kgh:1550,fuel_taxi:195,fuel_reserve:650,mtow:38790,fuel_cap:11790},

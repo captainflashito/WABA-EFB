@@ -2,7 +2,7 @@
   "id": "./",
   "name": "OPS CENTER — Flight Operations Simulator",
   "short_name": "OPS CENTER",
-  "description": "Compagnon d’opérations aériennes pour simulateur de vol",
+  "description": "Flight operations companion for flight simulation",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

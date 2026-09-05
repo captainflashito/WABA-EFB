@@ -1,5 +1,5 @@
-const CACHE_NAME='ops-center-v3-product-shell-11';
-const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js','./data/world-land.geojson'];
+const CACHE_NAME='ops-center-v3-simbrief-i18n-12';
+const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js','./data/i18n.js','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).catch(()=>{}));
