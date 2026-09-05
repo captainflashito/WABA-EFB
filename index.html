@@ -486,6 +486,11 @@ html,body{width:100%;max-width:none;margin:0}
 .simbrief-help{font-size:8px;line-height:1.5;color:var(--text3);margin-top:5px}.simbrief-status{font-size:8px;font-weight:700;color:var(--green);margin:10px 0 0;min-height:12px}
 .fuel-waiting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px;border:1px dashed var(--border2);border-radius:8px;background:var(--bg3);font-size:10px;color:var(--text2)}
 .fuel-waiting strong{color:var(--text);text-align:right}
+.simbrief-import{display:grid;grid-template-columns:minmax(130px,.8fr) minmax(190px,1.2fr);gap:8px;align-items:end;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.simbrief-import .simbrief-label{margin:0 0 5px}.simbrief-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ofp-card{border-left:3px solid var(--green)}.ofp-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.ofp-value{padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);min-width:0}.ofp-value span{display:block;font-size:7px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}.ofp-value strong{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ofp-route{font:500 9px/1.65 var(--font-m);padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);overflow-wrap:anywhere}
 
 @media(min-width:861px){
   body{width:100%;max-width:none;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
@@ -499,10 +504,10 @@ html,body{width:100%;max-width:none;margin:0}
   #page-acars{grid-column:2;grid-row:3}.acars-msgs{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}.acars-in{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}
   .setup-ov,.boot-ov,.call-ov{max-width:none}.setup-ov>*{max-width:720px}.setup-ov{padding-top:30px}.setup-logo{font-size:25px}.setup-sub{margin-bottom:12px}.setup-tagline{margin-bottom:14px}.aircraft-specs{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
-@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}}
+@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}}
 </style>
-<script src="data/aircraft-catalog.js"></script>
-<script src="data/i18n.js"></script>
+<script src="data/aircraft-catalog.js?v=13"></script>
+<script src="data/i18n.js?v=13"></script>
 </head>
 <body>
 
@@ -764,8 +769,9 @@ html,body{width:100%;max-width:none;margin:0}
         <div class="dos-summary">
           <div class="dos-kpi"><span>DUTY UTC</span><strong id="dos-duty">&#x2014;</strong></div>
           <div class="dos-kpi"><span data-i18n="crew">&#xC9;QUIPAGE</span><strong id="dos-crew">&#x2014;</strong></div>
-          <div class="dos-kpi"><span>APPAREIL</span><strong id="dos-aircraft">&#x2014;</strong></div>
+          <div class="dos-kpi"><span data-i18n="aircraft">APPAREIL</span><strong id="dos-aircraft">&#x2014;</strong></div>
           <div class="dos-kpi"><span data-i18n="dossier_state">&#xC9;TAT DOSSIER</span><strong id="dos-revision">&#x2014;</strong></div>
+          <div class="dos-kpi"><span>BRIEFING OPS</span><strong id="dos-briefing">&#x2014;</strong></div>
         </div>
         <div data-i18n="sim_only" style="margin-top:9px;font:8px var(--font-m);color:var(--orange);line-height:1.5">SIMULATION UNIQUEMENT &#x2014; DONN&#xC9;ES NON CERTIFI&#xC9;ES POUR LA CONDUITE D&#x2019;UN VOL R&#xC9;EL</div>
       </div>
@@ -782,11 +788,11 @@ html,body{width:100%;max-width:none;margin:0}
         </div>
         <div class="rotation-map-meta">
           <div class="rotation-map-legend">
-            <span class="rotation-map-key"><i class="rotation-map-dot done"></i>Termin&#xE9;</span>
-            <span class="rotation-map-key"><i class="rotation-map-dot current"></i>Actif</span>
-            <span class="rotation-map-key"><i class="rotation-map-dot"></i>Planifi&#xE9;</span>
+            <span class="rotation-map-key"><i class="rotation-map-dot done"></i><span data-i18n="completed">Termin&#xE9;</span></span>
+            <span class="rotation-map-key"><i class="rotation-map-dot current"></i><span data-i18n="active">Actif</span></span>
+            <span class="rotation-map-key"><i class="rotation-map-dot"></i><span data-i18n="planned">Planifi&#xE9;</span></span>
           </div>
-          <span class="rotation-map-note">CADRAGE AUTOMATIQUE · NON DESTIN&#xC9; &#xC0; LA NAVIGATION</span>
+          <span class="rotation-map-note" data-i18n="auto_framing">CADRAGE AUTOMATIQUE · NON DESTIN&#xC9; &#xC0; LA NAVIGATION</span>
         </div>
       </div>
       <div class="card">
@@ -838,7 +844,7 @@ html,body{width:100%;max-width:none;margin:0}
             <div class="wx-v" id="wx-arr">Chargement...</div>
           </div>
         </div>
-        <div style="font-size:8px;color:var(--text3);margin-top:7px;font-family:var(--font-m)">
+        <div data-i18n="weather_disclaimer" style="font-size:8px;color:var(--text3);margin-top:7px;font-family:var(--font-m)">
           ATTENTION &#x2014; Donn&#xE9;es m&#xE9;t&#xE9;o indicatives, non valides pour un vol r&#xE9;el
         </div>
       </div>
@@ -849,15 +855,15 @@ html,body{width:100%;max-width:none;margin:0}
       </div>
       <div class="card" id="d-cargo-card" style="display:none">
         <div class="ctitle" data-i18n="cargo_manifest">Manifeste fret &#x2014; simulation</div>
-        <div class="crow"><span class="clbl">Nature</span><span class="cval" id="d-cargo-nature">&#x2014;</span></div>
-        <div class="crow"><span class="clbl">Masse charg&#xE9;e</span><span class="cval" id="d-cargo-weight">&#x2014;</span></div>
-        <div class="crow"><span class="clbl">Unit&#xE9;s / palettes</span><span class="cval" id="d-cargo-pieces">&#x2014;</span></div>
-        <div class="crow"><span class="clbl">Particularit&#xE9;s</span><span class="cval" id="d-cargo-special">&#x2014;</span></div>
+        <div class="crow"><span class="clbl" data-i18n="cargo_nature">Nature</span><span class="cval" id="d-cargo-nature">&#x2014;</span></div>
+        <div class="crow"><span class="clbl" data-i18n="loaded_weight">Masse charg&#xE9;e</span><span class="cval" id="d-cargo-weight">&#x2014;</span></div>
+        <div class="crow"><span class="clbl" data-i18n="units_pallets">Unit&#xE9;s / palettes</span><span class="cval" id="d-cargo-pieces">&#x2014;</span></div>
+        <div class="crow"><span class="clbl" data-i18n="special_handling">Particularit&#xE9;s</span><span class="cval" id="d-cargo-special">&#x2014;</span></div>
       </div>
       <!-- Fuel — SimBrief reste la source de calcul -->
       <div class="card">
         <div class="ctitle" data-i18n="fuel_planning">Planification carburant</div>
-        <div class="fuel-waiting"><span data-i18n="fuel_source">Source du calcul</span><strong data-i18n="fuel_pending">En attente de l’OFP SimBrief</strong></div>
+        <div class="fuel-waiting"><span data-i18n="fuel_source">Source du calcul</span><strong id="fuel-source-state" data-i18n="fuel_pending">En attente de l’OFP SimBrief</strong></div>
         <div class="crow" style="margin-top:7px"><span class="clbl" data-i18n="ops_extra">Extra demand&#xE9; par les OPS</span><span class="cval" id="fuel-extra-display">Aucun</span></div>
       </div>
       <!-- Notes terrain -->
@@ -885,7 +891,17 @@ html,body{width:100%;max-width:none;margin:0}
           <input class="simbrief-input simbrief-reason" id="sb-extra-reason" maxlength="140" data-i18n-placeholder="extra_reason_placeholder" placeholder="Ex. m&#xE9;t&#xE9;o destination / attente probable" oninput="updateSimBriefDraft()"/>
         </div>
         <div class="simbrief-status" id="sb-status" data-i18n="simbrief_ready">PR&#xCA;T &#xC0; V&#xC9;RIFIER DANS SIMBRIEF</div>
-        <button class="btn btn-gold" data-i18n="prepare_simbrief" onclick="openSimBrief()" style="font-size:10px;margin-top:10px">PR&#xC9;PARER DANS SIMBRIEF</button>
+        <div class="simbrief-import">
+          <div><label class="simbrief-label" data-i18n="simbrief_pilot_id" for="sb-pilot-id">Pilot ID SimBrief</label><input class="simbrief-input" id="sb-pilot-id" inputmode="numeric" pattern="[0-9]*" maxlength="12" data-i18n-placeholder="simbrief_pilot_id_placeholder" placeholder="Ex. 123456" oninput="saveSimBriefPilotId()"/><div class="simbrief-help" data-i18n="simbrief_pilot_id_help">Disponible dans les paramètres de votre compte SimBrief.</div></div>
+          <div class="simbrief-actions"><button class="btn btn-gold" data-i18n="prepare_simbrief" onclick="openSimBrief()" style="font-size:9px">PR&#xC9;PARER DANS SIMBRIEF</button><button class="btn btn-blue" id="sb-import-btn" data-i18n="import_ofp" onclick="importSimBriefOFP()" style="font-size:9px">IMPORTER LE DERNIER OFP</button></div>
+        </div>
+      </div>
+      <div class="card ofp-card" id="ofp-card" style="display:none">
+        <div class="ctitle" data-i18n="ofp_title">OFP SimBrief</div>
+        <div class="simbrief-intro" id="ofp-source" data-i18n="ofp_source">Données calculées par SimBrief</div>
+        <div class="ofp-grid" id="ofp-grid"></div>
+        <div class="simbrief-label" data-i18n="ofp_route">Route ATS</div><div class="ofp-route" id="ofp-route">—</div>
+        <a class="btn btn-sec" id="ofp-pdf" data-i18n="open_ofp_pdf" href="#" target="_blank" rel="noopener noreferrer" style="display:none;text-decoration:none;align-items:center;justify-content:center;margin-top:10px">OUVRIR L’OFP PDF</a>
       </div>
     </div>
   </div>
@@ -895,16 +911,16 @@ html,body{width:100%;max-width:none;margin:0}
 <div class="call-ov" id="call-ov">
   <div class="call-ring" id="call-ring"><span>W</span></div>
   <div class="call-name" id="call-name">&#x2014;</div>
-  <div class="call-sub" id="call-sub">FLIGHT OPERATIONS CENTER</div>
+  <div class="call-sub" id="call-sub" data-i18n="flight_operations_center">FLIGHT OPERATIONS CENTER</div>
   <div class="call-stat" id="call-stat">Connexion...</div>
   <div class="call-tx" id="call-tx"></div>
-  <button class="ipad-reply" id="ipad-reply" onclick="beginIpadReply()">R&#xC9;PONDRE AUX OPS</button>
+  <button class="ipad-reply" id="ipad-reply" data-i18n="reply_ops" onclick="beginIpadReply()">R&#xC9;PONDRE AUX OPS</button>
   <div class="call-ctrl">
-    <button class="cctrl c-sec" onclick="toggleSpk()">VOL</button>
-    <button class="cctrl c-sec" onclick="toggleAmbience()" title="Ambiance centre OPS">AMB</button>
-    <button class="cctrl c-end" onclick="endCall()">FIN</button>
+    <button class="cctrl c-sec" data-i18n="speaker" onclick="toggleSpk()">VOL</button>
+    <button class="cctrl c-sec" data-i18n="ambience" onclick="toggleAmbience()" title="Ambiance centre OPS">AMB</button>
+    <button class="cctrl c-end" data-i18n="end_call" onclick="endCall()">FIN</button>
   </div>
-  <div class="mic-tip" id="mic-tip">Microphone en attente</div>
+  <div class="mic-tip" id="mic-tip" data-i18n="microphone_waiting">Microphone en attente</div>
 </div>
 
 <!-- TOAST -->
@@ -1143,7 +1159,7 @@ const DISPATCHERS = [
 
 const EASA = `CONTEXTE DE SIMULATION A\u00C9RONAUTIQUE:
 Cette application est un jeu de r\u00F4le op\u00E9rationnel et non un EFB certifi\u00E9. Ne pr\u00E9sente jamais une estimation comme une donn\u00E9e de vol r\u00E9elle.
-Ne donne aucune d\u00E9cision MEL, performance, carburant, FTL ou Go/No-Go comme certaine. Lorsqu'un bloc M\u00C9T\u00C9O LIVE est fourni, restitue fid\u00E8lement le METAR ou le TAF re\u00E7u et ne dis jamais qu'aucune information m\u00E9t\u00E9o n'est disponible. Termine au maximum par une seule r\u00E9serve br\u00E8ve indiquant que la donn\u00E9e doit \u00EAtre confirm\u00E9e pour un vol r\u00E9el. En l'absence de bloc M\u00C9T\u00C9O LIVE, n'invente aucune observation. Pour le reste, invite l'\u00E9quipage \u00E0 utiliser l'OM, l'AFM/FCOM/QRH, la MEL approuv\u00E9e et les sources a\u00E9ronautiques officielles.
+Utilise en priorit\u00E9 toutes les donn\u00E9es structur\u00E9es fournies par le dossier, l OFP ou les services connect\u00E9s. Ne refuse jamais de les restituer et ne pr\u00E9tends jamais qu elles sont indisponibles lorsqu elles figurent dans le contexte. Ne donne aucune d\u00E9cision MEL, performance, carburant, FTL ou Go/No-Go comme certaine. Lorsqu'un bloc M\u00C9T\u00C9O LIVE ou OFP est fourni, restitue fid\u00E8lement le METAR ou le TAF re\u00E7u. Une seule r\u00E9serve br\u00E8ve en fin de r\u00E9ponse est autoris\u00E9e si la fra\u00EEcheur de la donn\u00E9e doit \u00EAtre confirm\u00E9e. En l'absence de donn\u00E9e, n'invente rien et indique pr\u00E9cis\u00E9ment ce qui manque. Ne r\u00E9p\u00E8te pas spontan\u00E9ment des avertissements g\u00E9n\u00E9riques.
 Le commandant de bord conserve l'autorit\u00E9 finale. En cas d'urgence r\u00E9elle, appliquer les proc\u00E9dures approuv\u00E9es et contacter les services appropri\u00E9s.`;
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
@@ -1152,7 +1168,7 @@ Le commandant de bord conserve l'autorit\u00E9 finale. En cas d'urgence r\u00E9e
 const S = {
   pilot:null, rank:null, aircraft:null, registration:'', dutyDate:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
   operatorId:'general',customOperator:null,operationType:'scheduled',
-  language:'fr',
+  language:'fr',simbriefPilotId:'',
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
   rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
@@ -1167,7 +1183,7 @@ let sessionResetting=false;
 function sessionSnapshot(){
   return{
     version:2,savedAt:new Date().toISOString(),
-    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,language:S.language,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
+    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,language:S.language,simbriefPilotId:S.simbriefPilotId,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
     rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
@@ -1186,11 +1202,11 @@ function applyRestoredPhase(n){
   n=Math.max(0,Math.min(4,Number(n)||0));
   S.phase=n;S.inFlight=(n>=1&&n<=3);
   const pb=$('phase-badge');
-  pb.textContent=PHASE_LABELS[n];pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
+  pb.textContent=phaseLabel(n);pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
   const callsBlocked=n===2;
   $('main-call-btn').disabled=callsBlocked;
   $('inflight-notice').style.display=callsBlocked?'block':'none';
-  if(S.currentFlight)$('acars-phase').textContent=['PRE-D\u00C9PART','ROULAGE/D\u00C9COLLAGE','EN CROISI\u00C8RE','DESCENTE/ARRIV\u00C9E','AU SOL'][n]+' \u00B7 '+(n<4?S.currentFlight.dep:S.currentFlight.arr);
+  if(S.currentFlight)$('acars-phase').textContent=phaseDetail(n)+' \u00B7 '+(n<4?S.currentFlight.dep:S.currentFlight.arr);
   renderAcarsQuickActions();
 }
 
@@ -1209,6 +1225,7 @@ function restoreSession(){
   saved.operatorId=saved.operatorId==='custom'&&saved.customOperator?'custom':OPERATORS[saved.operatorId]?saved.operatorId:'general';
   saved.operationType=['business','scheduled','cargo'].includes(saved.operationType)?saved.operationType:'scheduled';
   saved.language=saved.language==='en'?'en':'fr';
+  saved.simbriefPilotId=String(saved.simbriefPilotId||localStorage.getItem('ops_center_simbrief_pilot_id')||'').replace(/\D/g,'').slice(0,12);
   saved.rotationRevision=Number(saved.rotationRevision)||0;
   saved.rotationHistory=Array.isArray(saved.rotationHistory)?saved.rotationHistory:[];
   const dispatcher=DISPATCHERS.find(d=>d.id===saved.dispatcherId)||getDispatcher();
@@ -1270,6 +1287,16 @@ function operationalText(value){
     .replace(/DOUANES \u00C0 COORDONNER/gi,'CUSTOMS COORDINATION')
     .replace(/CARBURANT/gi,'FUEL');
 }
+function localizedOperationalValue(value,fallbackKey='to_be_confirmed'){
+  const text=String(value??'').trim();
+  if(!text||text==='—')return t(fallbackKey);
+  if(S.language==='en'){
+    if(/^(À|A) CONFIRMER$/i.test(text))return t('to_be_confirmed');
+    if(/^(NON RENSEIGN[ÉE]|INCONNU)$/i.test(text))return t('not_provided');
+    if(/HORAIRE (À|A) V[ÉE]RIFIER/i.test(text))return t('check_required');
+  }
+  return operationalText(text);
+}
 function setLanguage(language,options={}){
   S.language=language==='en'?'en':'fr';
   document.documentElement.lang=S.language;
@@ -1284,6 +1311,7 @@ function setLanguage(language,options={}){
     if(S.rotationPlan?.length)renderRotationPlan();
     const selected=S.rotationPlan?.[S.dossierLegIndex??S.rotationIndex];
     if(selected)populateDossier(selected,{preservePhase:true,selectedIndex:S.dossierLegIndex??S.rotationIndex});
+    if(typeof updateAlertUI==='function')updateAlertUI();
   }
 }
 function toggleLanguage(){setLanguage(S.language==='fr'?'en':'fr');saveSession();}
@@ -1335,7 +1363,7 @@ function rebuildAirportIndexes(){
 
 async function loadAirportDatabase(){
   const button=$('start-duty-btn');
-  if(button){button.disabled=true;button.textContent='CHARGEMENT DES A\u00C9ROPORTS...';}
+  if(button){button.disabled=true;button.textContent=t('airports_loading');}
   try{
     const response=await fetch('./data/airports.min.json?v=20260904',{cache:'no-store'});
     if(!response.ok)throw new Error(`HTTP ${response.status}`);
@@ -1350,13 +1378,13 @@ async function loadAirportDatabase(){
     });
     rebuildAirportIndexes();
     const icaoCount=AIRPORTS.filter(isIcaoAirport).length;
-    showToast(`${icaoCount.toLocaleString('fr-FR')} terrains OACI disponibles · ${AIRPORTS.length.toLocaleString('fr-FR')} fiches chargées`,5000);
+    showToast(`${icaoCount.toLocaleString(uiLocale())} ${t('airports_available')} · ${AIRPORTS.length.toLocaleString(uiLocale())} ${t('records_loaded')}`,5000);
   }catch(error){
     console.warn('[OPS CENTER] Base mondiale indisponible, base embarqu\u00E9e utilis\u00E9e',error);
     rebuildAirportIndexes();
-    showToast(`Base embarqu\u00E9e utilis\u00E9e (${AIRPORTS.length} a\u00E9roports)`,5000);
+    showToast(`${t('embedded_database')} (${AIRPORTS.length.toLocaleString(uiLocale())})`,5000);
   }finally{
-    if(button){button.disabled=false;button.textContent='PRENDRE SON SERVICE \u2192';}
+    if(button){button.disabled=false;button.textContent=t('start_duty');}
   }
 }
 async function loadWorldMap(){
@@ -2229,6 +2257,12 @@ function renderRotationPlan(){
   if($('dos-duty'))$('dos-duty').textContent=`${formatDateFr(S.dutyDate)} \u00B7 ${S.dutyStart}\u2013${S.dutyEnd}Z`;
   if($('dos-crew'))$('dos-crew').textContent=`${S.rank} ${S.pilot}`;
   if($('dos-aircraft'))$('dos-aircraft').textContent=aircraftIdentity();
+  const selectedBriefing=S.rotationPlan[S.dossierLegIndex??S.rotationIndex]?.briefing;
+  if($('dos-briefing')){
+    const current=selectedBriefing?.completedAt&&Number(selectedBriefing.revision||0)===Number(S.rotationRevision||0);
+    $('dos-briefing').textContent=current?`${t('briefing_current')} · ${selectedBriefing.completedAt}`:selectedBriefing?.completedAt?`${t('briefing_recorded')} · REV ${selectedBriefing.revision||0}`:t('briefing_not_done');
+    $('dos-briefing').style.color=current?'var(--green)':'var(--orange)';
+  }
   const pending=(S.rotationHistory||[]).filter(item=>Number(item.revision)>0&&!item.acknowledged).length;
   if($('dos-revision')){
     $('dos-revision').textContent=`REV ${S.rotationRevision||0} \u00B7 ${pending?(S.language==='en'?pending+' TO ACKNOWLEDGE':pending+' \u00C0 ACQUITTER'):(S.language==='en'?'CURRENT':'\u00C0 JOUR')}`;
@@ -2307,17 +2341,17 @@ function populateDossier(f,options={}){
   $('d-dist').textContent=f.dist+' NM';
   $('d-block').textContent=fmtDur(f.durMin);
   $('d-alt').textContent=airportLabel(f.alt);
-  $('d-dep-handling').textContent=f.depAp.handling||'\u00C0 confirmer';
-  $('d-handling').textContent=f.arrAp.handling||'\u2014';
-  $('d-parking').textContent=f.arrAp.parking||'\u2014';
-  $('d-runway').textContent=f.arrAp.runwayFt?`${f.arrAp.runwayFt.toLocaleString('fr-FR')} ft \u00B7 ${f.arrAp.surface||'surface non renseign\u00E9e'}`:'\u00C0 v\u00E9rifier';
-  $('d-customs').textContent=f.arrAp.customs?.status==='available'?'Disponibles':f.arrAp.customs?.status==='unavailable'?'Non disponibles':f.depAp.country!==f.arrAp.country?'\u00C0 v\u00E9rifier \u2014 arriv\u00E9e internationale':'Selon manifeste et statut du vol';
-  $('d-curfew').textContent=f.arrAp.curfew?.status==='restricted'?`${f.arrAp.curfew.startLocal||'horaire \u00E0 v\u00E9rifier'}\u2013${f.arrAp.curfew.endLocal||'horaire \u00E0 v\u00E9rifier'} local`:f.arrAp.curfew?.status==='none'?'Aucun couvre-feu publi\u00E9':'Non renseign\u00E9 \u2014 v\u00E9rifier AIP/NOTAM';
+  $('d-dep-handling').textContent=localizedOperationalValue(f.depAp.handling);
+  $('d-handling').textContent=localizedOperationalValue(f.arrAp.handling);
+  $('d-parking').textContent=localizedOperationalValue(f.arrAp.parking);
+  $('d-runway').textContent=f.arrAp.runwayFt?`${f.arrAp.runwayFt.toLocaleString(uiLocale())} ft \u00B7 ${localizedOperationalValue(f.arrAp.surface,'surface_unknown')}`:t('check_required');
+  $('d-customs').textContent=f.arrAp.customs?.status==='available'?t('available'):f.arrAp.customs?.status==='unavailable'?t('unavailable'):f.depAp.country!==f.arrAp.country?t('international_arrival_check'):t('according_to_manifest');
+  $('d-curfew').textContent=f.arrAp.curfew?.status==='restricted'?`${f.arrAp.curfew.startLocal||t('check_required')}\u2013${f.arrAp.curfew.endLocal||t('check_required')} ${S.language==='en'?'local time':'heure locale'}`:f.arrAp.curfew?.status==='none'?t('no_published_curfew'):t('verify_aip_notam');
   // WX
   $('wx-dep-lbl').textContent='DEP '+f.dep;
   $('wx-arr-lbl').textContent='ARR '+f.arr;
-  $('wx-dep').textContent='Chargement...';
-  $('wx-arr').textContent='Chargement...';
+  $('wx-dep').textContent=t('weather_loading');
+  $('wx-arr').textContent=t('weather_loading');
   fetchWX(f.dep,f.depAp.lat,f.depAp.lon).then(w=>{
     $('wx-dep-ic').textContent=w.icon;
     $('wx-dep').innerHTML=`<span class="wx-tag">VENT</span> ${w.wind}<br><span class="wx-tag">VIS</span> ${w.vis}<br><span class="wx-tag">NUAG</span> ${w.clouds}<br><span class="wx-tag">TEMP</span> ${w.temp}`;
@@ -2453,8 +2487,119 @@ function populateSimBriefPreparation(f){
   $('sb-extra-value').value=Math.max(0,Number(extra.value)||0);
   $('sb-extra-unit').value=extra.unit==='min'?'min':'kg';
   $('sb-extra-reason').value=extra.reason||'';
+  $('sb-pilot-id').value=S.simbriefPilotId||localStorage.getItem('ops_center_simbrief_pilot_id')||'';
   const value=Math.max(0,Number(extra.value)||0);
   $('fuel-extra-display').textContent=value?`${value.toLocaleString(uiLocale())} ${extra.unit==='min'?'MIN':'KG'}${extra.reason?' \u00B7 '+extra.reason:''}`:t('no_extra');
+  renderImportedOFP(f);
+}
+
+function saveSimBriefPilotId(){
+  S.simbriefPilotId=String($('sb-pilot-id')?.value||'').replace(/\D/g,'').slice(0,12);
+  if($('sb-pilot-id'))$('sb-pilot-id').value=S.simbriefPilotId;
+  try{localStorage.setItem('ops_center_simbrief_pilot_id',S.simbriefPilotId);}catch{}
+  saveSession();
+}
+
+function ofpPath(source,path){
+  return String(path).split('.').reduce((value,key)=>value&&value[key]!==undefined?value[key]:null,source);
+}
+function ofpFirst(source,paths,fallback=''){
+  for(const path of paths){const value=ofpPath(source,path);if(value!==null&&value!==undefined&&String(value).trim()!=='')return value;}
+  return fallback;
+}
+function compactOFPText(value,limit=5000){
+  const lines=[];
+  const visit=node=>{
+    if(lines.join('\n').length>=limit||node===null||node===undefined)return;
+    if(typeof node==='string'||typeof node==='number'){const text=String(node).trim();if(text)lines.push(text);return;}
+    if(Array.isArray(node)){node.slice(0,40).forEach(visit);return;}
+    if(typeof node==='object')Object.values(node).slice(0,60).forEach(visit);
+  };
+  visit(value);return [...new Set(lines)].join('\n').slice(0,limit);
+}
+function simbriefPdfUrl(data){
+  const direct=ofpFirst(data,['files.pdf.link','files.pdf.url','links.pdf','general.ofp_pdf']);
+  if(direct){try{return new URL(String(direct),'https://www.simbrief.com').href;}catch{}}
+  const directory=ofpFirst(data,['files.directory']),name=ofpFirst(data,['files.pdf.name']);
+  if(directory&&name){try{return new URL(String(name),String(directory).endsWith('/')?String(directory):String(directory)+'/').href;}catch{}}
+  return '';
+}
+function extractSimBriefOFP(data){
+  const origin=String(ofpFirst(data,['origin.icao_code','origin.icao','general.orig'])).toUpperCase();
+  const destination=String(ofpFirst(data,['destination.icao_code','destination.icao','general.dest'])).toUpperCase();
+  const alternate=String(ofpFirst(data,['alternate.icao_code','alternate.icao','general.altn'])).toUpperCase();
+  const units=String(ofpFirst(data,['params.units','general.units'],'KGS')).toUpperCase();
+  return{
+    importedAt:new Date().toISOString(),origin,destination,alternate,units,
+    flightNumber:String(ofpFirst(data,['general.flight_number','general.fltnum'])),
+    callsign:String(ofpFirst(data,['atc.callsign','general.callsign'])),
+    release:String(ofpFirst(data,['general.release','general.release_number'],'1')),
+    generated:String(ofpFirst(data,['params.time_generated','general.date','times.sched_out'])),
+    route:String(ofpFirst(data,['general.route','general.route_ifps','navlog.route'],'DCT')),
+    costIndex:String(ofpFirst(data,['aircraft.ci','aircraft.costindex','params.costindex'],'—')),
+    blockFuel:Number(ofpFirst(data,['fuel.plan_ramp','fuel.block','fuel.ramp'],0))||0,
+    tripFuel:Number(ofpFirst(data,['fuel.enroute_burn','fuel.trip','fuel.plan_burn'],0))||0,
+    zfw:Number(ofpFirst(data,['weights.est_zfw','weights.plan_zfw'],0))||0,
+    tow:Number(ofpFirst(data,['weights.est_tow','weights.plan_tow'],0))||0,
+    ldw:Number(ofpFirst(data,['weights.est_ldw','weights.plan_ldw'],0))||0,
+    flightTime:Number(ofpFirst(data,['times.est_time_enroute','times.sched_time_enroute','times.est_block'],0))||0,
+    dispatcherRemarks:String(ofpFirst(data,['general.dx_rmk','general.manualrmk','general.remarks'])).slice(0,2500),
+    weather:{
+      originMetar:String(ofpFirst(data,['weather.orig_metar','weather.origin_metar'])).slice(0,800),
+      originTaf:String(ofpFirst(data,['weather.orig_taf','weather.origin_taf'])).slice(0,1600),
+      destinationMetar:String(ofpFirst(data,['weather.dest_metar','weather.destination_metar'])).slice(0,800),
+      destinationTaf:String(ofpFirst(data,['weather.dest_taf','weather.destination_taf'])).slice(0,1600),
+      alternateMetar:String(ofpFirst(data,['weather.altn_metar','weather.alternate_metar'])).slice(0,800),
+      alternateTaf:String(ofpFirst(data,['weather.altn_taf','weather.alternate_taf'])).slice(0,1600)
+    },
+    notams:compactOFPText(ofpFirst(data,['notams'],''),5000),pdfUrl:simbriefPdfUrl(data)
+  };
+}
+function formatOFPWeight(value,units){
+  const number=Number(value)||0;if(!number)return '—';
+  return `${Math.round(number).toLocaleString(uiLocale())} ${String(units||'KGS').startsWith('L')?'LB':'KG'}`;
+}
+function formatOFPDuration(seconds){
+  const value=Number(seconds)||0;if(!value)return '—';
+  const minutes=value>600?Math.round(value/60):Math.round(value);
+  return fmtDur(minutes);
+}
+function renderImportedOFP(f){
+  const ofp=f?.simbrief?.ofp,card=$('ofp-card'),fuelState=$('fuel-source-state');if(!card)return;
+  if(!ofp){card.style.display='none';if(fuelState){fuelState.textContent=t('fuel_pending');fuelState.style.color='';fuelState.dataset.i18n='fuel_pending';}return;}
+  const stale=f.simbrief?.status==='stale';
+  card.style.display='block';if(fuelState){fuelState.textContent=stale?t('ofp_outdated'):`SimBrief OFP · REV ${ofp.release||'1'}`;fuelState.style.color=stale?'var(--orange)':'var(--text)';fuelState.removeAttribute('data-i18n');}
+  const values=[
+    [t('ofp_release'),ofp.release||'—'],[t('ofp_block_fuel'),formatOFPWeight(ofp.blockFuel,ofp.units)],[t('ofp_trip_fuel'),formatOFPWeight(ofp.tripFuel,ofp.units)],
+    [t('ofp_zfw'),formatOFPWeight(ofp.zfw,ofp.units)],[t('ofp_tow'),formatOFPWeight(ofp.tow,ofp.units)],[t('ofp_ldw'),formatOFPWeight(ofp.ldw,ofp.units)],
+    [t('ofp_time'),formatOFPDuration(ofp.flightTime)],[t('ofp_cost_index'),ofp.costIndex||'—'],[t('ofp_generated'),ofp.generated||new Date(ofp.importedAt).toLocaleString(uiLocale())]
+  ];
+  $('ofp-grid').replaceChildren(...values.map(([label,value])=>{const box=document.createElement('div');box.className='ofp-value';const span=document.createElement('span'),strong=document.createElement('strong');span.textContent=label;strong.textContent=value;box.append(span,strong);return box;}));
+  $('ofp-route').textContent=ofp.route||'DCT';$('ofp-source').textContent=stale?t('ofp_outdated'):t('ofp_source');$('ofp-source').style.color=stale?'var(--orange)':'';
+  const pdf=$('ofp-pdf');if(ofp.pdfUrl&&/^https:\/\//i.test(ofp.pdfUrl)){pdf.href=ofp.pdfUrl;pdf.style.display='flex';pdf.textContent=t('open_ofp_pdf');}else{pdf.removeAttribute('href');pdf.style.display='none';}
+}
+
+async function importSimBriefOFP(){
+  const f=selectedDossierFlight();if(!f)return;
+  saveSimBriefPilotId();
+  if(!/^\d{3,12}$/.test(S.simbriefPilotId)){showToast(S.language==='en'?'Enter your numeric SimBrief Pilot ID':'Renseignez votre Pilot ID SimBrief numérique',5000);$('sb-pilot-id')?.focus();return;}
+  const draft=ensureSimBriefDraft(f),button=$('sb-import-btn');button.disabled=true;button.textContent=t('importing_ofp');
+  try{
+    const params=new URLSearchParams({userid:S.simbriefPilotId});if(draft.staticId)params.set('static_id',draft.staticId);
+    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+    const response=await fetch(`${OPS_PROXY}/simbrief?${params}`,{cache:'no-store',signal:controller.signal});clearTimeout(timer);
+    if(!response.ok)throw new Error(`HTTP ${response.status}`);
+    const raw=await response.json(),ofp=extractSimBriefOFP(raw);
+    if(ofp.origin!==f.dep||ofp.destination!==f.arr)throw new Error('IDENTITY_MISMATCH');
+    draft.ofp=ofp;draft.status='imported';draft.importedAt=ofp.importedAt;
+    if(ofp.alternate)f.alt=ofp.alternate;
+    if(ofp.dispatcherRemarks&&!draft.dispatcherRemark.includes(ofp.dispatcherRemarks))draft.dispatcherRemark=`${draft.dispatcherRemark}\nSIMBRIEF: ${ofp.dispatcherRemarks}`.slice(0,1200);
+    saveSession();populateDossier(f,{preservePhase:true,selectedIndex:S.dossierLegIndex??S.rotationIndex});
+    $('sb-status').textContent=`${t('ofp_imported')} · ${utcNow()}`;showToast(t('ofp_imported'),4000);
+  }catch(error){
+    const message=error.message==='IDENTITY_MISMATCH'?t('ofp_identity_mismatch'):t('ofp_import_error');
+    console.warn('[OPS CENTER] SimBrief OFP import',error);showToast(message,6500);$('sb-status').textContent=message.toUpperCase();
+  }finally{button.disabled=false;button.textContent=t('import_ofp');}
 }
 
 function updateSimBriefDraft(){
@@ -2476,7 +2621,7 @@ function updateSimBriefDraft(){
 
 function openSimBrief(){
   const f=selectedDossierFlight();if(!f)return;
-  updateSimBriefDraft();
+  saveSimBriefPilotId();updateSimBriefDraft();
   const op=currentOperator(),draft=ensureSimBriefDraft(f),params=new URLSearchParams();
   const [depHour,depMinute]=String(f.depT||S.dutyStart||'00:00').replace('Z','').split(':');
   const set=(key,value)=>{if(value!==undefined&&value!==null&&String(value).trim()!=='')params.set(key,String(value));};
@@ -2484,6 +2629,7 @@ function openSimBrief(){
   set('type',simbriefTypeForAircraft(S.aircraft));set('orig',f.dep);set('dest',f.arr);set('altn',f.alt);
   set('date',simbriefDate(f.depDate||S.dutyDate));set('deph',depHour);set('depm',depMinute);
   set('pax',f.pax?.length||0);set('cpt',S.pilot);set('dxname',S.dispatcher?.name||'OPS');
+  if(S.simbriefPilotId)set('pid',S.simbriefPilotId);
   if(S.registration)set('reg',S.registration);
   if(f.cargo?.weightKg>0)set('cargo',(f.cargo.weightKg/1000).toFixed(3));
   let remarks=draft.dispatcherRemark||defaultDispatcherRemark(f);
@@ -2508,6 +2654,8 @@ function openSimBrief(){
 // PHASES
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 const PHASE_LABELS=['PRE-DEP','D\u00C9PART','CRUISE','ARRIV\u00C9E','ON BLKS'];
+function phaseLabel(n){return S.language==='en'?['PRE-DEP','DEPARTURE','CRUISE','ARRIVAL','ON BLOCKS'][n]:PHASE_LABELS[n];}
+function phaseDetail(n){return S.language==='en'?['PRE-DEPARTURE','TAXI / TAKE-OFF','IN CRUISE','DESCENT / ARRIVAL','ON THE GROUND'][n]:['PRE-DÉPART','ROULAGE/DÉCOLLAGE','EN CROISIÈRE','DESCENTE/ARRIVÉE','AU SOL'][n];}
 
 function setPhase(n,options={}){
   if(!options.inferred&&n!==0&&n!==S.phase+1){showToast('Validez les phases dans l ordre');return;}
@@ -2515,7 +2663,7 @@ function setPhase(n,options={}){
   S.inFlight=(n>=1&&n<=3);
   // Phase badge
   const pb=$('phase-badge');
-  pb.textContent=PHASE_LABELS[n];
+  pb.textContent=phaseLabel(n);
   pb.className='pbadge '+(n===2?'flight':n>0?'ground':'');
   // OPS call button
   const inFlight=(n===2);
@@ -2562,7 +2710,7 @@ function setPhase(n,options={}){
       }
     },options.fromAcars?400:3000);
   }
-  $('acars-phase').textContent=['PRE-D\u00C9PART','ROULAGE/D\u00C9COLLAGE','EN CROISI\u00C8RE','DESCENTE/ARRIV\u00C9E','AU SOL'][n]+' \u00B7 '+(n<4?f.dep:f.arr);
+  $('acars-phase').textContent=phaseDetail(n)+' \u00B7 '+(n<4?f.dep:f.arr);
   renderAcarsQuickActions();
   saveSession();
 }
@@ -2577,7 +2725,7 @@ function inferPhaseFromAcars(type,text){
   else if(/\b(?:READY|RDY|PREDEP|PRE-DEP)\b/.test(value))target=0;
   if(target===null||target===S.phase||!S.currentFlight)return;
   setPhase(target,{inferred:true,fromAcars:true});
-  showToast(`Phase d\u00E9duite par ACARS : ${PHASE_LABELS[target]}`,3500);
+  showToast(S.language==='en'?`Phase inferred from ACARS: ${phaseLabel(target)}`:`Phase déduite par ACARS : ${phaseLabel(target)}`,3500);
   renderAcarsQuickActions();
 }
 
@@ -2743,8 +2891,8 @@ async function initiateCall(type){
   $('call-sub').textContent=dispatcherRoleForOperation(d).toUpperCase()+` \u00B7 ${currentOperator().opsCity.toUpperCase()} OPS`;
   $('call-tx').innerHTML='';
   $('ipad-reply').classList.remove('on');
-  $('mic-tip').textContent=appleTouchAudio?'Pr\u00E9paration audio iPad...':'Activation du microphone pour cet appel...';
-  $('call-stat').textContent=kokoroReady?'Connexion en cours...':'Connexion \u00E0 la voix OPS...';
+  $('mic-tip').textContent=S.language==='en'?(appleTouchAudio?'Preparing iPad audio…':'Enabling microphone for this call…'):(appleTouchAudio?'Préparation audio iPad…':'Activation du microphone pour cet appel…');
+  $('call-stat').textContent=S.language==='en'?(kokoroReady?'Connecting…':'Connecting to the operations voice…'):(kokoroReady?'Connexion en cours…':'Connexion à la voix OPS…');
   $('status-dot').className='dot call';
   if(!kokoroReady){
     await Promise.race([initElevenLabs(),sleep(10000)]);
@@ -2752,12 +2900,12 @@ async function initiateCall(type){
   }
   await micPromise;
   if(!S.callActive)return;
-  $('call-stat').textContent='Connexion en cours...';
+  $('call-stat').textContent=S.language==='en'?'Connecting…':'Connexion en cours…';
   await sleep(1500);
-  $('call-stat').textContent=d.name+' d\u00E9croche...';
+  $('call-stat').textContent=S.language==='en'?`${d.name} is answering…`:`${d.name} décroche…`;
   await sleep(700);
   stopRingback();playPickup();startOpsAmbience();
-  $('call-stat').textContent='EN COMMUNICATION';
+  $('call-stat').textContent=S.language==='en'?'CONNECTED':'EN COMMUNICATION';
   const lang=S.language;
   const greet=lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je vous \u00E9coute.`;
   addTx('ops',d.name,greet);await speak(greet);
@@ -2773,7 +2921,7 @@ async function initiateCall(type){
   if(planned){
     handleBriefingResponse(planned);
     S.briefingStage='awaiting-introduction';
-    $('mic-tip').textContent='Pr\u00E9sentez-vous, les OPS vous \u00E9coutent...';
+    $('mic-tip').textContent=S.language==='en'?'Introduce yourself; operations is listening…':'Présentez-vous, les OPS vous écoutent…';
   }else{
     const intro=await callAI(sysPrompt,'Commence l appel apr\u00E8s ton greeting. Sois naturel et concis.');
     if(intro){addTx('ops',d.name,intro);await speak(intro);}
@@ -3211,6 +3359,13 @@ function applyDossierChangeSet(changeSet,source='OPS'){
   if(!details.length)return{applied:false,message:'Modification non appliqu\u00E9e: donn\u00E9es insuffisantes ou incompatibles.'};
   const firstChanged=Math.min(...changedIndexes);
   if(needsResequence&&firstChanged>=0&&firstChanged+1<S.rotationPlan.length)resequenceFollowingLegs(firstChanged+1);
+  const flightPlanFields=new Set(['remaining_route','destination','diversion','delay_minutes','departure_time','pax_count','pax_add','pax_remove','alternate','flight_level','cargo_weight','cargo_pieces','cancel_sector']);
+  if(changeSet.changes.some(change=>flightPlanFields.has(String(change?.field||'')))){
+    for(let index=Math.max(0,firstChanged);index<S.rotationPlan.length;index++){
+      const draft=S.rotationPlan[index]?.simbrief;
+      if(draft?.ofp){draft.status='stale';draft.staleAt=new Date().toISOString();}
+    }
+  }
   if(S.rotationPlan[S.rotationIndex])S.currentFlight=S.rotationPlan[S.rotationIndex];
   S.rotationType=String(S.rotationType||'ROTATION').replace(/ \u00B7 REV \d+$/,'')+` \u00B7 REV ${Number(S.rotationRevision||0)+1}`;
   recordRotationRevision(changeSet.summary||'MISE \u00C0 JOUR DU DOSSIER',{source,affectedSector:target+1,details:details.join(' \u00B7 '),autoAcknowledged:/\u00C9QUIPAGE/.test(source)});
@@ -3239,9 +3394,42 @@ function rotationContextForAI(){
   const legs=remaining.map((leg,index)=>{
     const next=remaining[index+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
     const ground=wait?` Attente au sol suivante: ${fmtDur(wait)} \u00E0 ${leg.arr}, motif ${leg.groundReason||'attente op\u00E9rationnelle ou client'}.`:'';
-    return `Secteur ${index+1}: ${leg.flightNo}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${airportLabel(leg.alt)}, carburant en attente de l OFP SimBrief.${ground}`;
+    const ofp=leg.simbrief?.ofp;
+    const fuel=ofp?`OFP SimBrief ${leg.simbrief?.status==='stale'?'ancien et \u00E0 r\u00E9g\u00E9n\u00E9rer apr\u00E8s la r\u00E9vision':'import\u00E9'}, block fuel ${ofp.blockFuel} ${ofp.units}, trip fuel ${ofp.tripFuel} ${ofp.units}, route ${ofp.route}, cost index ${ofp.costIndex}, remarks dispatcher ${ofp.dispatcherRemarks||'aucune'}`:'carburant en attente de l OFP SimBrief';
+    const briefing=leg.briefing?.completedAt?`Briefing d\u00E9j\u00E0 effectu\u00E9 ${leg.briefing.completedAt}, sujets couverts ${(leg.briefing.topics||[]).join(', ')||'vue d ensemble'}`:'briefing non encore enregistr\u00E9';
+    return `Secteur ${index+1}: ${leg.flightNo}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${airportLabel(leg.alt)}, ${fuel}. ${briefing}.${ground}`;
   }).join(' ');
   return `DOSSIER STRUCTUR\u00C9 ${currentOperator().name}, R\u00C9VISION ${S.rotationRevision||0}, EXPLOITATION ${operationLabel(S.operationType)}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}. ${legs}`;
+}
+
+function briefingTopicsFromMessage(text){
+  const value=normalizeSearchText(text),topics=[];
+  if(/METEO|WEATHER|METAR|TAF|SIGMET/.test(value))topics.push('weather');
+  if(/NOTAM/.test(value))topics.push('notams');
+  if(/PAX|PASSAGER|PASSENGER|CLIENT|FRET|CARGO|LOAD/.test(value))topics.push('commercial load');
+  if(/FUEL|CARBURANT|OFP|SIMBRIEF/.test(value))topics.push('fuel and OFP');
+  if(/SLOT|CTOT|RETARD|DELAY|ATC/.test(value))topics.push('slots and timing');
+  if(/PARKING|STAND|HANDLING|DOUANE|CUSTOMS/.test(value))topics.push('ground handling');
+  if(/ROUTE|TRAJET|ROTATION|SECTEUR|LEG|ESCALE/.test(value))topics.push('rotation');
+  return topics;
+}
+function recordBriefingInteraction(text){
+  const f=S.currentFlight;if(!f)return;
+  if(!f.briefing)f.briefing={startedAt:new Date().toISOString(),completedAt:null,topics:[],revision:S.rotationRevision||0};
+  f.briefing.completedAt=f.briefing.completedAt||utcNow();
+  f.briefing.revision=S.rotationRevision||0;
+  f.briefing.topics=[...new Set([...(f.briefing.topics||[]),...briefingTopicsFromMessage(text)])];
+  saveSession();
+}
+
+function importedOFPWeatherContext(icao){
+  const f=S.currentFlight,ofp=f?.simbrief?.ofp;if(!ofp)return '';
+  let metar='',taf='';
+  if(icao===ofp.origin){metar=ofp.weather?.originMetar;taf=ofp.weather?.originTaf;}
+  else if(icao===ofp.destination){metar=ofp.weather?.destinationMetar;taf=ofp.weather?.destinationTaf;}
+  else if(icao===ofp.alternate){metar=ofp.weather?.alternateMetar;taf=ofp.weather?.alternateTaf;}
+  if(!metar&&!taf)return '';
+  return `M\u00C9T\u00C9O ISSUE DE L OFP SIMBRIEF POUR ${icao}, import\u00E9e ${ofp.importedAt}. METAR: ${metar||'non fourni'}. TAF: ${taf||'non fourni'}. Donne d abord les conditions et l \u00E9volution demand\u00E9es, sans dire que la m\u00E9t\u00E9o est indisponible. Pr\u00E9cise seulement \u00E0 la fin qu il s agit du snapshot de l OFP si une donn\u00E9e live plus r\u00E9cente n est pas fournie.`;
 }
 
 function normalizeSearchText(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();}
@@ -3278,9 +3466,11 @@ async function indicativeWeatherContext(icao){
 async function requestedLiveContext(text){
   const normalized=normalizeSearchText(text);
   if(/\bNOTAM/.test(normalized)){
+    const ofp=S.currentFlight?.simbrief?.ofp;
+    if(ofp?.notams)return `DOSSIER NOTAM SIMBRIEF DISPONIBLE, import\u00E9 ${ofp.importedAt}. Extraits: ${ofp.notams.slice(0,3500)}. R\u00E9ponds uniquement sur le terrain ou le sujet demand\u00E9. Indique bri\u00E8vement que le pilote doit confirmer la validit\u00E9 actuelle dans sa source officielle; ne dis pas qu aucun NOTAM n est disponible.`;
     return `NOTAM: aucun flux NOTAM officiel authentifi\u00E9 n est connect\u00E9 \u00E0 ${currentOperator().name}. Dis-le clairement et invite le pilote \u00E0 consulter sa source NOTAM officielle. N invente et ne r\u00E9sume aucun NOTAM.`;
   }
-  if(!/METEO|WEATHER|METAR|TAF|CONDITIONS/.test(normalized))return '';
+  if(!/METEO|WEATHER|METAR|TAF|CONDITIONS|SIGMET/.test(normalized))return '';
   const icao=requestedWeatherAirport(text);
   if(!icao)return `M\u00C9T\u00C9O LIVE: terrain non identifi\u00E9. Demande le code OACI au pilote.`;
   const cached=liveWeatherCache.get(icao);
@@ -3302,6 +3492,7 @@ async function requestedLiveContext(text){
     else context=`M\u00C9T\u00C9O LIVE DISPONIBLE POUR ${icao}. Source AviationWeather.gov, r\u00E9cup\u00E9r\u00E9e ${data.fetched_at}. METAR: ${metar||'non fourni'}. TAF: ${(taf||'non fourni').slice(0,1200)}. CONSIGNE PRIORITAIRE: donne directement la m\u00E9t\u00E9o demand\u00E9e en langage naturel et deux phrases maximum. Ne dis pas que tu n'as pas d'information, que tu n'as pas de connectivit\u00E9, ni que le pilote doit aller chercher lui-m\u00EAme la m\u00E9t\u00E9o. Une seule conclusion courte, \u00AB \u00E0 confirmer pour un vol r\u00E9el \u00BB, est autoris\u00E9e.`;
     liveWeatherCache.set(icao,{at:Date.now(),context});return context;
   }catch(e){
+    const imported=importedOFPWeatherContext(icao);if(imported)return imported;
     const fallback=await indicativeWeatherContext(icao);
     const context=fallback?`M\u00C9T\u00C9O ${icao}: ${fallback}`:`M\u00C9T\u00C9O LIVE ${icao}: service indisponible. Dis-le clairement sans inventer.`;
     liveWeatherCache.set(icao,{at:Date.now(),context});return context;
@@ -3312,20 +3503,20 @@ async function startAutoListen(fromIpadButton=false){
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted||S.listenRestartPending)return;
   if(usesAppleTouchAudio()&&!fromIpadButton){
     $('ipad-reply').classList.add('on');
-    $('mic-tip').textContent='Touchez R\u00E9pondre aux OPS, puis parlez';
+    $('mic-tip').textContent=S.language==='en'?'Tap REPLY TO OPS, then speak':'Touchez RÉPONDRE AUX OPS, puis parlez';
     return;
   }
   S.listenRestartPending=true;
   S.listenRestartPending=false;
   if(!S.callActive||S.micActive||S.processingSpeech||!S.micGranted)return;
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){$('mic-tip').textContent='Reconnaissance vocale indisponible \u2014 utilisez ACARS';return;}
+  if(!SR){$('mic-tip').textContent=S.language==='en'?'Speech recognition unavailable — use ACARS':'Reconnaissance vocale indisponible — utilisez ACARS';return;}
   const recognition=new SR();
   S.recognition=recognition;
   recognition.lang=S.language==='en'?'en-US':'fr-FR';
   recognition.continuous=false;
   recognition.interimResults=false;
-  recognition.onstart=()=>{S.micActive=true;$('mic-tip').textContent='Je vous \u00E9coute...';};
+  recognition.onstart=()=>{S.micActive=true;$('mic-tip').textContent=S.language==='en'?'Listening…':'Je vous écoute…';};
   recognition.onresult=async event=>{
     const text=event.results?.[0]?.[0]?.transcript?.trim();
     if(!text)return;
@@ -3333,12 +3524,12 @@ async function startAutoListen(fromIpadButton=false){
     S.micActive=false;
     callTone([900],.035,.009);
     addTx('pilot',S.pilot,text);
-    $('mic-tip').textContent='OPS pr\u00E9pare sa r\u00E9ponse...';
+    $('mic-tip').textContent=S.language==='en'?'Operations is preparing a reply…':'Les OPS préparent leur réponse…';
     const dossierUpdate=await processDossierUpdateFromMessage(text,'APPEL OPS / \u00C9QUIPAGE');
     const lang=S.language;
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
     sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'}. Ignore any contradictory historical identity. ${airportReferenceContext(text)}`;
-    if(S.currentFlight)sys+=` ${rotationContextForAI()} Le moteur structur\u00E9 de l application est seul autoris\u00E9 \u00E0 modifier ces donn\u00E9es. Ne confirme que son r\u00E9sultat.`;
+    if(S.currentFlight)sys+=` ${rotationContextForAI()} Le moteur structur\u00E9 de l application est seul autoris\u00E9 \u00E0 modifier ces donn\u00E9es. Ne confirme que son r\u00E9sultat. Si le dossier indique qu un briefing a d\u00E9j\u00E0 eu lieu, reprends la conversation sans recommencer toute la pr\u00E9sentation.`;
     if(dossierUpdate.message)sys+=` R\u00C9SULTAT DU MOTEUR DOSSIER: ${dossierUpdate.message} Confirme exactement ce r\u00E9sultat au pilote; ne pr\u00E9tends jamais avoir appliqu\u00E9 autre chose.`;
     if(S.callType==='briefing'||S.callType==='next'){
       if(S.briefingStage==='awaiting-introduction'){
@@ -3350,6 +3541,7 @@ async function startAutoListen(fromIpadButton=false){
     sys+=` ${await requestedLiveContext(text)}`;
     const reply=await callAI(sys,text);
     if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
+    if(S.callType==='briefing'||S.callType==='next'||S.currentFlight?.briefing?.completedAt)recordBriefingInteraction(text);
     if(S.briefingStage==='awaiting-introduction')S.briefingStage='interactive';
     S.processingSpeech=false;
     if(S.callActive)setTimeout(startAutoListen,300);
@@ -3542,10 +3734,10 @@ function alertTitle(level){
 function updateAlertUI(){
   const state=$('alert-state'),btn=$('alert-enable-btn');if(!state||!btn)return;
   if(operationalAlertsEnabled){
-    state.textContent=`Actives \u00B7 son${'vibrate' in navigator?' \u00B7 vibration':''}${'Notification' in window&&Notification.permission==='granted'?' \u00B7 notifications syst\u00E8me':''}`;
-    state.style.color='var(--green)';btn.textContent='D\u00C9SACTIVER';
+    state.textContent=S.language==='en'?`Enabled · sound${'vibrate' in navigator?' · vibration':''}${'Notification' in window&&Notification.permission==='granted'?' · system notifications':''}`:`Actives · son${'vibrate' in navigator?' · vibration':''}${'Notification' in window&&Notification.permission==='granted'?' · notifications système':''}`;
+    state.style.color='var(--green)';btn.textContent=S.language==='en'?'DISABLE':'DÉSACTIVER';
   }else{
-    state.textContent='Non activ\u00E9es sur cet appareil';state.style.color='var(--text2)';btn.textContent='ACTIVER';
+    state.textContent=t('alerts_disabled');state.style.color='var(--text2)';btn.textContent=t('enable');
   }
 }
 
