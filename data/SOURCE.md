@@ -8,6 +8,11 @@
 
 Selection includes every open large, medium and small land airport in the source that has valid coordinates and an explicit ICAO code. GPS identifiers, national identifiers and internal OurAirports identifiers are excluded. The source currently contains 10,055 eligible ICAO-coded land airports.
 
+The compact airport records also retain the longest reported lighted runway and
+the longest reported paved lighted runway. Night suitability is used as a
+conservative simulation filter. It is not a substitute for current runway-lighting
+status, operating hours, PPR, AIP or NOTAM information.
+
 Customs, immigration and curfew fields default to `unknown`. They must be enriched from current national AIP, NOTAM and competent-authority sources before being presented as verified operational information.
 
 ## World map
