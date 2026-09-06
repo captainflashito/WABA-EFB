@@ -1,5 +1,5 @@
-const CACHE_NAME='ops-center-v3-enriched-ofp-16';
-const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js?v=16','./data/i18n.js?v=16','./data/world-land.geojson'];
+const CACHE_NAME='ops-center-v3-operator-networks-18';
+const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json','./data/aircraft-catalog.js?v=18','./data/operator-catalog.js?v=18','./data/operator-profiles.js?v=18','./data/i18n.js?v=18','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).catch(()=>{}));

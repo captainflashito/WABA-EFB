@@ -16,3 +16,21 @@ Customs, immigration and curfew fields default to `unknown`. They must be enrich
 - Source URL: https://www.naturalearthdata.com/downloads/110m-physical-vectors/
 - License: Public Domain
 - Local file: `world-land.geojson`
+
+## Operator identity catalogue
+
+- Source: Wikidata structured data
+- Source URL: https://www.wikidata.org/
+- License: CC0 1.0
+- Local file: `operator-catalog.js`
+- Records selected: 600 ICAO three-letter operator identities
+
+The catalogue is used only to recognise an operator identity, country and broad
+network family. It does not contain or reproduce real flight schedules, flight
+numbers or dated rotations. The simulator creates original rotations from the
+entered base, aircraft capabilities, duty window and a stable pool of plausible
+airports. Hand-curated profiles in `operator-profiles.js` add representative
+hubs, fleets and airport pools for selected passenger and cargo operators.
+
+The ICAO Doc 8585 dataset remains the authoritative source for current airline
+and telephony designators. It is not redistributed in this project.
