@@ -146,6 +146,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .ipad-reply{display:none;margin:2px 0 12px;padding:12px 22px;border:1px solid var(--gold);
   border-radius:999px;background:var(--gold);color:#111;font:700 11px var(--font-b);cursor:pointer}
 .ipad-reply.on{display:block}
+.incoming-actions{display:none;gap:10px;margin:2px 0 14px}.incoming-actions.on{display:flex}.incoming-actions button{min-width:132px;padding:12px 14px;border-radius:8px;border:1px solid var(--border);font:700 9px var(--font-m);letter-spacing:.5px}.incoming-answer{background:var(--green);color:white}.incoming-defer{background:var(--bg3);color:var(--text)}
 
 /* ACARS */
 .acars-hdr{padding:9px 16px;background:var(--bg2);border-bottom:1px solid var(--border);
@@ -496,6 +497,7 @@ html,body{width:100%;max-width:none;margin:0}
 .ofp-value{padding:9px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);min-width:0}.ofp-value span{display:block;font-size:7px;color:var(--text3);text-transform:uppercase;margin-bottom:4px}.ofp-value strong{display:block;font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ofp-route{font:500 9px/1.65 var(--font-m);padding:10px;border-radius:8px;background:var(--bg3);border:1px solid var(--border);overflow-wrap:anywhere}
 .ofp-section{margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}.ofp-runway-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.ofp-runway{padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg3)}.ofp-runway h4{font:700 9px var(--font-m);color:var(--blue);margin:0 0 8px}.ofp-runway .crow{padding:4px 0}.ofp-runway .clbl,.ofp-runway .cval{font-size:8px}.ofp-details{margin-top:8px;border:1px solid var(--border);border-radius:8px;background:var(--bg3);overflow:hidden}.ofp-details summary{cursor:pointer;padding:10px;font:700 9px var(--font-m);color:var(--text2);list-style:none}.ofp-details summary::-webkit-details-marker{display:none}.ofp-details summary::after{content:'+';float:right;color:var(--blue)}.ofp-details[open] summary::after{content:'−'}.ofp-raw{margin:0;padding:0 10px 11px;white-space:pre-wrap;overflow-wrap:anywhere;font:500 8px/1.55 var(--font-m);color:var(--text2);max-height:300px;overflow:auto}.ofp-caution{font-size:8px;line-height:1.55;color:var(--orange);margin-top:9px}
+.amendment-card{border-left:3px solid var(--orange)}.amendment-item{padding:11px 0;border-bottom:1px solid var(--border)}.amendment-item:last-child{border-bottom:0}.amendment-head{display:flex;justify-content:space-between;gap:10px;font:700 9px var(--font-m);color:var(--orange)}.amendment-kind{margin-top:4px;font:700 8px var(--font-m);color:var(--text2)}.amendment-reason{margin-top:7px;font-size:11px;line-height:1.55}.amendment-changes{margin-top:7px;white-space:pre-wrap;font:500 8px/1.6 var(--font-m);color:var(--text2)}
 
 @media(min-width:861px){
   body{width:100%;max-width:none;display:grid;grid-template-columns:190px minmax(0,1fr);grid-template-rows:58px 48px minmax(0,1fr)}
@@ -511,10 +513,11 @@ html,body{width:100%;max-width:none;margin:0}
 }
 @media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}.ofp-runway-grid{grid-template-columns:1fr}}
 </style>
-<script src="data/aircraft-catalog.js?v=19"></script>
-<script src="data/operator-catalog.js?v=19"></script>
-<script src="data/operator-profiles.js?v=19"></script>
-<script src="data/i18n.js?v=19"></script>
+<script src="data/aircraft-catalog.js?v=21"></script>
+<script src="data/operator-catalog.js?v=21"></script>
+<script src="data/operator-profiles.js?v=21"></script>
+<script src="data/i18n.js?v=21"></script>
+<script src="data/ops-core.js?v=21"></script>
 </head>
 <body>
 
@@ -933,6 +936,11 @@ html,body{width:100%;max-width:none;margin:0}
         </div>
         <a class="btn btn-sec" id="ofp-pdf" data-i18n="open_ofp_pdf" href="#" target="_blank" rel="noopener noreferrer" style="display:none;text-decoration:none;align-items:center;justify-content:center;margin-top:10px">OUVRIR L’OFP PDF</a>
       </div>
+      <div class="card amendment-card" id="amendment-card" style="display:none">
+        <div class="ctitle" id="amendment-title">Amendements opérationnels en vol</div>
+        <div class="simbrief-intro" id="amendment-intro">L’OFP SimBrief original reste verrouillé. Les décisions et changements post-départ sont consignés séparément.</div>
+        <div id="amendment-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -944,6 +952,7 @@ html,body{width:100%;max-width:none;margin:0}
   <div class="call-sub" id="call-sub" data-i18n="flight_operations_center">FLIGHT OPERATIONS CENTER</div>
   <div class="call-stat" id="call-stat">Connexion...</div>
   <div class="call-tx" id="call-tx"></div>
+  <div class="incoming-actions" id="incoming-actions"><button class="incoming-answer" onclick="answerInboundOpsCall()">RÉPONDRE</button><button class="incoming-defer" onclick="deferInboundOpsCall()">OCCUPÉ / ACARS</button></div>
   <button class="ipad-reply" id="ipad-reply" data-i18n="reply_ops" onclick="beginIpadReply()">R&#xC9;PONDRE AUX OPS</button>
   <div class="call-ctrl">
     <button class="cctrl c-sec" data-i18n="speaker" onclick="toggleSpk()">VOL</button>
@@ -1234,7 +1243,7 @@ const DISPATCHERS = [
   {id:'marc',name:'Marc Lebrun',ini:'ML',col:'#B8973E',bg:'rgba(184,151,62,.1)',role:'Dispatch Senior \u00B7 Nuit',shift:[20,8],style:'calme, professionnel et exp\u00E9riment\u00E9. Coordonne les urgences, la technique et les op\u00E9rations de nuit.',greet:'Bonsoir, Marc au centre des op\u00E9rations, j \u00E9coute.',greet_en:'Good evening, Marc at operations, go ahead.'},
   {id:'sophie',name:'Sophie Aubert',ini:'SA',col:'#4A9BB8',bg:'rgba(74,155,184,.1)',role:'Planification \u00B7 R\u00E9glementation',shift:[6,20],style:'efficace, pr\u00E9cise et tr\u00E8s organis\u00E9e. Supervise les rotations, les horaires, la m\u00E9t\u00E9o et les contraintes r\u00E9glementaires.',greet:'Sophie Aubert aux op\u00E9rations, j \u00E9coute.',greet_en:'Sophie Aubert at operations, go ahead.'},
   {id:'hind',name:'Hind Amrani',ini:'HA',col:'#5A9E6F',bg:'rgba(90,158,111,.1)',role:'Coordination \u00B7 International',shift:[8,20],style:'multilingue, pos\u00E9e et tr\u00E8s professionnelle. Sp\u00E9cialiste du handling international et des changements de derni\u00E8re minute.',greet:'Centre des op\u00E9rations, Hind Amrani, bonjour.',greet_en:'Operations center, Hind Amrani, good day.'},
-  {id:'antoine',name:'Antoine Ferrara',ini:'AF',col:'#B85A4A',bg:'rgba(184,90,74,.1)',role:'Technique \u00B7 Suivi en vol',shift:[12,24],style:'chaleureux, r\u00E9actif et ancien navigant. Coordonne les pannes, les d\u00E9routements, l ACARS et le suivi op\u00E9rationnel en vol.',greet:'Antoine aux op\u00E9rations, je vous \u00E9coute.',greet_en:'Antoine at operations, go ahead Captain.'},
+  {id:'antoine',name:'Antoine Ferrara',ini:'AF',col:'#B85A4A',bg:'rgba(184,90,74,.1)',role:'Technique \u00B7 Suivi en vol',shift:[12,24],style:'chaleureux, r\u00E9actif et ancien navigant. Coordonne les pannes, les d\u00E9routements, l ACARS et le suivi op\u00E9rationnel en vol.',greet:'Antoine aux op\u00E9rations, je t\u2019\u00E9coute.',greet_en:'Antoine at operations, go ahead Captain.'},
 ];
 
 const EASA = `CONTEXTE DE SIMULATION A\u00C9RONAUTIQUE:
@@ -1252,9 +1261,10 @@ const S = {
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
   rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
+  opsMemory:null,
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
-  convHistory:[], acarsHistory:[], position:'LFPO', callController:null,briefingStage:null,callMicStream:null,
+  convHistory:[], acarsHistory:[], position:'LFPO', callController:null,briefingStage:null,callMicStream:null,incomingCall:null,
 };
 
 const SESSION_STORAGE_KEY='ops_center_session_v2';
@@ -1262,13 +1272,14 @@ let sessionResetting=false;
 
 function sessionSnapshot(){
   return{
-    version:2,savedAt:new Date().toISOString(),
+    version:3,savedAt:new Date().toISOString(),
     pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,language:S.language,simbriefPilotId:S.simbriefPilotId,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
     rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
     rotationRevision:S.rotationRevision,rotationHistory:S.rotationHistory,
-    position:S.position,inFlight:S.inFlight,acarsHistory:S.acarsHistory.slice(-30)
+    position:S.position,inFlight:S.inFlight,acarsHistory:S.acarsHistory.slice(-60),
+    opsMemory:window.OPS_CORE?.ensureMemory(S.opsMemory)
   };
 }
 
@@ -1293,13 +1304,13 @@ function applyRestoredPhase(n){
 function restoreSession(){
   let saved;
   try{saved=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||'null');}catch{return false;}
-  if(!saved||![1,2].includes(saved.version)||!saved.pilot)return false;
+  if(!saved||![1,2,3].includes(saved.version)||!saved.pilot)return false;
   if(saved.version===1){
     if(saved.aircraft==='B737')saved.aircraft='B738';
     else if(saved.aircraft==='B738'&&saved.operationType==='business')saved.aircraft='BBJ2';
     if(saved.aircraft==='AT45')saved.aircraft='AT46';
   }
-  saved.version=2;
+  saved.version=3;
   if(!AIRCRAFT_DATA[saved.aircraft])return false;
   saved.dutyDate=saved.dutyDate||new Date().toISOString().slice(0,10);
   saved.operatorId=saved.operatorId==='custom'&&saved.customOperator?'custom':OPERATORS[saved.operatorId]?saved.operatorId:'general';
@@ -1309,6 +1320,7 @@ function restoreSession(){
   saved.rotationRevision=Number(saved.rotationRevision)||0;
   saved.rotationHistory=Array.isArray(saved.rotationHistory)?saved.rotationHistory:[];
   const dispatcher=DISPATCHERS.find(d=>d.id===saved.dispatcherId)||getDispatcher();
+  saved.opsMemory=window.OPS_CORE?.ensureMemory(saved.opsMemory);
   Object.assign(S,saved,{dispatcher,callActive:false,micActive:false,micGranted:false,processingSpeech:false,recognition:null,callController:null,callMicStream:null,convHistory:[],acarsHistory:Array.isArray(saved.acarsHistory)?saved.acarsHistory:[]});
   setLanguage(S.language,{persist:false,rerender:false});
   $('setup').style.display='none';$('boot-ov').style.display='none';$('status-dot').className='dot on';
@@ -1512,7 +1524,7 @@ function airportReferenceContext(text=''){
   const codes=new Set(),add=code=>{if(getAP(code))codes.add(code);};
   if(S.currentFlight){add(S.currentFlight.dep);add(S.currentFlight.arr);add(S.currentFlight.alt);}
   (S.rotationPlan||[]).forEach(leg=>{add(leg.dep);add(leg.arr);add(leg.alt);});
-  const upper=normalizeSearchText(text);
+  const upper=normalizedAviationInput(text);
   (upper.match(/\b[A-Z]{4}\b/g)||[]).forEach(add);
   AIRPORTS.forEach(ap=>{if(upper.includes(normalizeSearchText(ap.city)))add(ap.icao);});
   if(!codes.size)return '';
@@ -1531,7 +1543,7 @@ $('utc-clock').textContent=utcNow();
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 function currentOperator(){return S.operatorId==='custom'&&S.customOperator?S.customOperator:(OPERATORS[S.operatorId]||OPERATORS.general);}
 function operationalFlight(){return S.currentFlight||S.rotationPlan?.[S.rotationIndex]||null;}
-function importedOFPReady(f=operationalFlight()){return !!(f?.simbrief?.ofp&&f.simbrief.status==='imported');}
+function importedOFPReady(f=operationalFlight()){return !!(f?.simbrief?.ofp&&['imported','locked','locked-amended'].includes(f.simbrief.status));}
 function currentBriefingReady(f=operationalFlight()){
   return !!(f?.briefing?.completedAt&&Number(f.briefing.revision||0)===Number(S.rotationRevision||0));
 }
@@ -1709,6 +1721,7 @@ async function startDuty(){
   S.dutyStart=$('s-start').value;
   S.dutyEnd=$('s-end').value;
   S.dutyMinutes=dutyMinutes;
+  S.opsMemory=window.OPS_CORE?.createMemory({dutyId:`${S.dutyDate}-${currentOperator().icao}-${Date.now()}`});
   // Mode al\u00E9atoire
   const r=Math.random();
   S.mode=r<0.5?'normal':r<0.8?'challenging':'fullops';
@@ -2884,9 +2897,10 @@ function ofpWeatherReport(ofp){
 }
 function renderImportedOFP(f){
   const ofp=f?.simbrief?.ofp,card=$('ofp-card'),fuelState=$('fuel-source-state');if(!card)return;
-  if(!ofp){card.style.display='none';if(fuelState){fuelState.textContent=t('fuel_pending');fuelState.style.color='';fuelState.dataset.i18n='fuel_pending';}return;}
-  const stale=f.simbrief?.status==='stale';
-  card.style.display='block';if(fuelState){fuelState.textContent=stale?t('ofp_outdated'):`SimBrief OFP · REV ${ofp.release||'1'}`;fuelState.style.color=stale?'var(--orange)':'var(--text)';fuelState.removeAttribute('data-i18n');}
+  if(!ofp){card.style.display='none';renderOperationalAmendments(f);if(fuelState){fuelState.textContent=t('fuel_pending');fuelState.style.color='';fuelState.dataset.i18n='fuel_pending';}return;}
+  const status=f.simbrief?.status||'imported',stale=status==='stale',locked=status==='locked',amended=status==='locked-amended';
+  const statusLabel=stale?t('ofp_outdated'):amended?(S.language==='en'?'LOCKED BASELINE · AMENDED':'RÉFÉRENCE VERROUILLÉE · AMENDÉE'):locked?(S.language==='en'?'LOCKED BASELINE':'RÉFÉRENCE VERROUILLÉE'):`SimBrief OFP · REV ${ofp.release||'1'}`;
+  card.style.display='block';if(fuelState){fuelState.textContent=statusLabel;fuelState.style.color=(stale||amended)?'var(--orange)':'var(--text)';fuelState.removeAttribute('data-i18n');}
   const values=[
     [t('ofp_release'),ofp.release||'—'],[t('ofp_block_fuel'),formatOFPWeight(ofp.blockFuel,ofp.units)],[t('ofp_trip_fuel'),formatOFPWeight(ofp.tripFuel,ofp.units)],
     [t('ofp_zfw'),formatOFPWeight(ofp.zfw,ofp.units)],[t('ofp_tow'),formatOFPWeight(ofp.tow,ofp.units)],[t('ofp_ldw'),formatOFPWeight(ofp.ldw,ofp.units)],
@@ -2894,12 +2908,36 @@ function renderImportedOFP(f){
     ['AIRAC',ofp.airac||'—'],[S.language==='en'?'Initial altitude':'Altitude initiale',ofp.cruiseAltitude||'—'],[t('distance'),ofp.routeDistance?`${ofp.routeDistance} NM`:'—']
   ];
   $('ofp-grid').replaceChildren(...values.map(([label,value])=>{const box=document.createElement('div');box.className='ofp-value';const span=document.createElement('span'),strong=document.createElement('strong');span.textContent=label;strong.textContent=value;box.append(span,strong);return box;}));
-  $('ofp-route').textContent=ofp.route||'DCT';$('ofp-source').textContent=stale?t('ofp_outdated'):t('ofp_source');$('ofp-source').style.color=stale?'var(--orange)':'';
+  $('ofp-route').textContent=ofp.route||'DCT';$('ofp-source').textContent=stale?t('ofp_outdated'):amended?(S.language==='en'?'Original SimBrief OFP — see operational amendment below':'OFP SimBrief original — voir l’amendement opérationnel ci-dessous'):locked?(S.language==='en'?'Original SimBrief OFP locked at departure':'OFP SimBrief original verrouillé au départ'):t('ofp_source');$('ofp-source').style.color=(stale||amended)?'var(--orange)':'';
   const runwayGrid=$('ofp-runway-grid');runwayGrid.replaceChildren(renderOFPRunwayCard('takeoff',ofp.runwayAnalysis?.takeoff,ofp.units),renderOFPRunwayCard('landing',ofp.runwayAnalysis?.landing,ofp.units));
   $('ofp-weather-text').textContent=ofpWeatherReport(ofp);
   $('ofp-sigmet-text').textContent=[ofp.sigmets,ofp.etops].filter(Boolean).join('\n\n')||t('ofp_no_data');
   $('ofp-notam-text').textContent=ofp.notams||t('ofp_no_data');
   const pdf=$('ofp-pdf');if(ofp.pdfUrl&&/^https:\/\//i.test(ofp.pdfUrl)){pdf.href=ofp.pdfUrl;pdf.style.display='flex';pdf.textContent=t('open_ofp_pdf');}else{pdf.removeAttribute('href');pdf.style.display='none';}
+  renderOperationalAmendments(f);
+}
+
+function renderOperationalAmendments(f){
+  const card=$('amendment-card'),list=$('amendment-list');if(!card||!list)return;
+  const amendments=Array.isArray(f?.operationalAmendments)?f.operationalAmendments:[];
+  card.style.display=amendments.length?'block':'none';list.replaceChildren();
+  if(!amendments.length)return;
+  $('amendment-title').textContent=S.language==='en'?'In-flight operational amendments':'Amendements opérationnels en vol';
+  $('amendment-intro').textContent=S.language==='en'?'The original SimBrief OFP remains locked. Post-departure decisions are recorded separately.':'L’OFP SimBrief original reste verrouillé. Les décisions et changements post-départ sont consignés séparément.';
+  amendments.forEach(item=>{
+    const wrap=document.createElement('div');wrap.className='amendment-item';
+    const head=document.createElement('div');head.className='amendment-head';
+    const id=document.createElement('span');id.textContent=`${item.id||'AMDT'} · ${item.priority||'INFO'}`;
+    const status=document.createElement('span');status.textContent=item.status||'ISSUED';head.append(id,status);
+    const kind=document.createElement('div');kind.className='amendment-kind';kind.textContent=`${item.kind||'OPERATIONAL AMENDMENT'} · ${item.issuedAt?new Date(item.issuedAt).toLocaleString(uiLocale(),{hour12:false}):utcNow()} · ${item.dispatcher||'OPS'}`;
+    const reason=document.createElement('div');reason.className='amendment-reason';reason.textContent=item.reason||'Operational change';
+    const changes=document.createElement('div');changes.className='amendment-changes';
+    const lines=(item.changes||[]).map(change=>`${String(change.field||'CHANGE').replaceAll('_',' ').toUpperCase()}: ${Array.isArray(change.value)?change.value.join(' → '):change.value}`);
+    if(item.fuelReportedKg!==null&&item.fuelReportedKg!==undefined)lines.push(`FUEL REPORTED: ${item.fuelReportedKg} KG`);
+    if(item.position)lines.push(`POSITION REPORTED: ${item.position}`);
+    if(item.openItems?.length)lines.push(`OPEN ITEMS: ${item.openItems.join(' · ')}`);
+    changes.textContent=lines.join('\n');wrap.append(head,kind,reason,changes);list.appendChild(wrap);
+  });
 }
 
 async function importSimBriefOFP(){
@@ -2915,6 +2953,11 @@ async function importSimBriefOFP(){
     const raw=await response.json(),ofp=extractSimBriefOFP(raw);
     if(ofp.origin!==f.dep||ofp.destination!==f.arr)throw new Error('IDENTITY_MISMATCH');
     draft.ofp=ofp;draft.status='imported';draft.importedAt=ofp.importedAt;
+    if(window.OPS_CORE){
+      S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+      window.OPS_CORE.setFact(S.opsMemory,`ofp:${f.flightNo}`,{release:ofp.release||'1',origin:ofp.origin,destination:ofp.destination,alternate:ofp.alternate,route:ofp.route,importedAt:ofp.importedAt},{source:'ofp',confidence:'documented'});
+      window.OPS_CORE.recordEvent(S.opsMemory,{type:'OFP_IMPORTED',source:'ofp',flightNo:f.flightNo,summary:`OFP ${ofp.release||'1'} ${ofp.origin}-${ofp.destination}`});
+    }
     if(ofp.alternate)f.alt=ofp.alternate;
     if(ofp.dispatcherRemarks&&!draft.dispatcherRemark.includes(ofp.dispatcherRemarks))draft.dispatcherRemark=`${draft.dispatcherRemark}\nSIMBRIEF: ${ofp.dispatcherRemarks}`.slice(0,1200);
     saveSession();populateDossier(f,{preservePhase:true,selectedIndex:S.dossierLegIndex??S.rotationIndex});
@@ -2987,6 +3030,15 @@ function setPhase(n,options={}){
   if(!options.inferred&&n!==0&&n!==S.phase+1){showToast('Validez les phases dans l ordre');return;}
   S.phase=n;
   S.inFlight=(n>=1&&n<=3);
+  if(window.OPS_CORE){
+    S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+    window.OPS_CORE.setFact(S.opsMemory,'phase',{index:n,label:phaseLabel(n)},{source:options.fromAcars?'crew_report':'ops_plan'});
+    window.OPS_CORE.recordEvent(S.opsMemory,{type:'PHASE_CHANGE',source:options.fromAcars?'crew_report':'ops_plan',flightNo:S.currentFlight?.flightNo||null,summary:phaseLabel(n)});
+  }
+  if(n===1&&S.currentFlight?.simbrief?.ofp&&S.currentFlight.simbrief.status==='imported'){
+    S.currentFlight.simbrief.status='locked';
+    S.currentFlight.simbrief.lockedAt=new Date().toISOString();
+  }
   // Phase badge
   const pb=$('phase-badge');
   pb.textContent=phaseLabel(n);
@@ -3008,12 +3060,12 @@ function setPhase(n,options={}){
     if(!options.fromAcars)addAcars('pilot','UPD',msgs[n]);
     setTimeout(async()=>{
       const acks={
-        1:`BON VOL // M\u00C9T\u00C9O ARR NOMINALE // ${S.dispatcher.name.toUpperCase()} DISPONIBLE`,
-        2:`RE\u00C7U // WX DEST NOMINALE // PROCHAIN CHECK ETA-30MIN`,
-        3:`RE\u00C7U // PARKING ${f.arrAp.parking} CONFIRM\u00C9 // HANDLING ALERT\u00C9`,
-        4:`BIEN RE\u00C7U // BON TRAVAIL // ${S.rotationIndex+1<S.rotationPlan.length?'SECTEUR SUIVANT MAINTENU':'ROTATION TERMIN\u00C9E'}`,
+        1:['OFF-BLOCK RECEIVED','FLIGHT WATCH ACTIVE'],
+        2:['AIRBORNE REPORT RECEIVED','NEXT ROUTINE CHECK ETA MINUS 30'],
+        3:[`DESCENT REPORT RECEIVED`,`PARKING ${f.arrAp.parking||'TO BE CONFIRMED'} · HANDLING ADVISED`],
+        4:['ON-BLOCK REPORT RECEIVED',S.rotationIndex+1<S.rotationPlan.length?'NEXT SECTOR REMAINS PLANNED':'ROTATION COMPLETE'],
       };
-      if(!options.fromAcars)addAcars('ops','INFO',`${f.flightNo} \u2014 ${acks[n]}`);
+      if(!options.fromAcars)addAcars('ops','INFO',opsAcarsBlock({category:'FLIGHT WATCH',priority:'INFO',flightNo:f.flightNo,lines:acks[n],reply:'NIL',source:'CREW PHASE REPORT'}));
       // Apr\u00E8s ONBLK \u2014 proposer rotation suivante
       if(n===4){
         S.sessionFlights.push(S.currentFlight);
@@ -3025,9 +3077,9 @@ function setPhase(n,options={}){
           S.currentFlight=nextLeg;
           scheduleScenario(nextLeg);
           populateDossier(nextLeg,{selectedIndex:S.rotationIndex});
-          addAcars('ops','INFO',`ROTATION ${S.rotationType} // PROCHAIN SECTEUR ACTIF ${nextLeg.dep}\u2192${nextLeg.arr} // ${nextLeg.missionRole} // PRÉPAREZ ET IMPORTEZ L OFP SIMBRIEF AVANT LE BRIEFING OPS`);
+          addAcars('ops','ACTION',opsAcarsBlock({category:'TURNAROUND',priority:'ACTION',flightNo:nextLeg.flightNo,lines:[`NEXT SECTOR ${nextLeg.dep}-${nextLeg.arr}`,nextLeg.missionRole],action:'PREPARE AND IMPORT SIMBRIEF OFP BEFORE OPS BRIEFING',reply:'ACK'}));
         }else{
-          addAcars('ops','INFO',`ROTATION TERMIN\u00C9E // ${S.sessionFlights.length} VOL(S) EFFECTU\u00C9(S) // APPELEZ POUR NOUVELLE MISSION OU FIN DUTY`);
+          addAcars('ops','INFO',opsAcarsBlock({category:'ROTATION',priority:'INFO',flightNo:f.flightNo,lines:['ROTATION COMPLETE',`${S.sessionFlights.length} SECTOR(S) COMPLETED`],action:'CALL OPS FOR NEW ASSIGNMENT OR END OF DUTY',reply:'NIL'}));
           S.currentFlight=null;
           applyRestoredPhase(0);
           $('b-flt').textContent='\u2014';
@@ -3072,56 +3124,39 @@ function renderAcarsQuickActions(){
 }
 
 const scenarioTimers=new Map();
-let majorEventsDuty=0;
 
 function scheduleScenario(f){
   if(!f||scenarioTimers.has(f.flightNo))return;
-  // L \u00E9v\u00E9nement peut appara\u00EEtre \u00E0 toute phase. En temps de simulation sans
-  // MSFS, la fen\u00EAtre murale reste volontairement testable: 45 s \u00E0 8 min.
+  // Fenêtre courte en temps réel pour permettre les tests sans MSFS.
   const delay=45000+Math.random()*435000;
   const timer=setTimeout(()=>{
     scenarioTimers.delete(f.flightNo);
-    if(!S.currentFlight||S.currentFlight.flightNo!==f.flightNo||S.phase===4)return;
-    const eventChance=S.mode==='normal'?.20:S.mode==='challenging'?.35:.50;
-    if(Math.random()>eventChance)return;
+    if(!S.currentFlight||S.currentFlight.flightNo!==f.flightNo)return;
     triggerWeightedScenario(f);
   },delay);
   scenarioTimers.set(f.flightNo,timer);
 }
 
 function triggerWeightedScenario(f){
-  const roll=Math.random()*29;
-  let kind=roll<8?'parking':roll<15?'weather':roll<20?'slot':roll<24?'client-info':roll<26?'client-change':roll<28?'technical':'diversion';
-  if(majorEventsDuty>=1&&['client-change','technical','diversion'].includes(kind))kind=Math.random()<.5?'weather':'client-info';
-  const phase=S.phase;
-  const commercialInfo=S.operationType==='cargo'
-    ?`LOAD CONTROL EN COORDINATION // AJUSTEMENT MINEUR POSSIBLE DU CHARGEMENT SUIVANT // AUCUNE MODIFICATION \u00C0 CE STADE`
-    :S.operationType==='scheduled'
-      ?`STATION EN COORDINATION // CORRESPONDANCES ET TURNAROUND DU SECTEUR SUIVANT \u00C0 SURVEILLER // PROGRAMME MAINTENU`
-      :`CLIENT / ASSISTANT EN CONTACT AVEC OPS // AJUSTEMENT MINEUR POSSIBLE SUR LE PROGRAMME SUIVANT // AUCUNE MODIFICATION DU DOSSIER \u00C0 CE STADE`;
-  const commercialChange=S.operationType==='cargo'
-    ?`CHARGEMENT DU SECTEUR SUIVANT EN R\u00C9VISION // LOAD CONTROL \u00C9TUDIE LA NOUVELLE MASSE // DOSSIER NON MODIFI\u00C9 AVANT CONFIRMATION`
-    :S.operationType==='scheduled'
-      ?`PROGRAMME DU SECTEUR SUIVANT EN R\u00C9VISION // SLOT ET ROTATION APPAREIL \u00C0 L \u00C9TUDE // ATTENTE CONFIRMATION DISPATCH`
-      :`CLIENT DEMANDE UNE MODIFICATION DU SECTEUR SUIVANT // \u00C9TUDE DISPATCH EN COURS // DOSSIER NON MODIFI\u00C9 AVANT CONFIRMATION`;
-  const scenarios={
-    parking:{code:'INFO',msg:`HANDLING ${f.arr} \u2014 PARKING ${['A-12','B-07','C-03','G-15'][Math.floor(Math.random()*4)]} PROPOS\u00C9 // CONFIRMATION FINALE \u00C0 L ARRIV\u00C9E`},
-    weather:{code:'WX',msg:`WX UPDATE ${f.arr} \u2014 \u00C9VOLUTION \u00C0 SURVEILLER // DEMANDEZ METAR/TAF ACTUALIS\u00C9S SI N\u00C9CESSAIRE`},
-    slot:phase<=1
-      ?{code:'ATC',msg:`SLOT ATC / CTOT SIGNAL\u00C9 // CR\u00C9NEAU PROVISOIRE ${formatAbsTime(f.depMinuteOfDay+15)} // TENEZ OPS INFORM\u00C9S DE TOUT GO ATC OU R\u00C9VISION`}
-      :{code:'ATC',msg:`R\u00C9GULATION ATC \u00C0 L ARRIV\u00C9E ${f.arr} // D\u00C9LAI POSSIBLE 10-20MIN // CONFIRMEZ TOUTE CLAIRANCE DIRECTE OU ABSENCE DE CONTRAINTE`},
-    'client-info':{code:'OPS',msg:commercialInfo},
-    'client-change':{code:'OPS',msg:commercialChange,action:'client-change'},
-    technical:{code:'ALERT',msg:`CAMO \u2014 INFORMATION TECHNIQUE \u00C0 CLARIFIER // CONTR\u00D4LE TECH LOG DEMAND\u00C9 \u00C0 LA PROCHAINE ESCALE`,major:true},
-    diversion:{code:'ALERT',msg:`OPTION D\u00C9ROUTEMENT \u00C0 L \u00C9TUDE VERS ${f.alt} // AUCUNE D\u00C9CISION APPLIQU\u00C9E // ATTENTE INSTRUCTIONS \u00C9QUIPAGE / ATC`,major:true},
-  };
-  const scenario=scenarios[kind];
-  if(!scenario)return;
-  if(scenario.major||kind==='client-change')majorEventsDuty++;
-  addAcars('ops',scenario.code,`${f.flightNo} \u2014 ${scenario.msg}`,scenario.code==='ALERT');
-  // Une demande client ne modifie plus silencieusement la rotation: elle ouvre
-  // une \u00E9tude. La modification effective exige ensuite un \u00E9change explicite.
-  beep(scenario.code==='ALERT');
+  if(!window.OPS_CORE)return;
+  S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+  const scenario=window.OPS_CORE.chooseScenario(S.opsMemory,S.operationType,S.mode==='fullops'?'intense':S.mode);
+  if(!scenario){
+    window.OPS_CORE.recordEvent(S.opsMemory,{type:'NOMINAL_SECTOR',source:'scenario',flightNo:f.flightNo,summary:'SECTOR CONTINUES NOMINALLY'});
+    saveSession();return;
+  }
+  const detail=window.OPS_CORE.scenarioDetail(scenario.id);
+  const groundNow=[0,4].includes(S.phase),target=detail.phase==='ground'&&!groundNow?(S.rotationPlan[S.rotationIndex+1]||f):f;
+  const sectorPrefix=target===f?'SECTOR':'NEXT SECTOR';
+  const facts=[`${scenario.id} ${scenario.title}`,`${sectorPrefix} ${target.dep}-${target.arr}`,...detail.facts];
+  if(scenario.category==='slot')facts.push(`CURRENT CTOT REFERENCE ${formatAbsTime(target.depMinuteOfDay+15)}Z`);
+  if(scenario.category==='handling')facts.push(`ARRIVAL HANDLING ${target.arr} ${target.arrAp?.handling||'TO BE CONFIRMED'}`);
+  const message=window.OPS_CORE.formatAcars({category:scenario.category,priority:detail.priority,flightNo:target.flightNo,time:utcNow(),lines:facts,action:detail.action,reply:detail.priority==='INFO'?'NIL':detail.priority==='ADVISORY'?'ACK IF RECEIVED':'ACK OR ADVISE',source:'OPS SCENARIO ENGINE'});
+  window.OPS_CORE.recordEvent(S.opsMemory,{type:'SCENARIO',source:'scenario',flightNo:target.flightNo,scenarioId:scenario.id,severity:scenario.severity,summary:scenario.title});
+  if(detail.priority!=='INFO')window.OPS_CORE.addAction(S.opsMemory,{category:scenario.category,priority:detail.priority,flightNo:target.flightNo,summary:detail.action,scenarioId:scenario.id});
+  addAcars('ops',detail.priority,message,detail.priority==='URGENT');
+  if(detail.call&&groundNow)setTimeout(()=>showIncomingOpsCall({scenario,detail,flightNo:target.flightNo,title:scenario.title,reason:detail.facts.join('. '),urgent:detail.priority==='URGENT'}),4000+Math.random()*8000);
+  saveSession();
 }
 
 function applyOperationalChange(action,f){
@@ -3157,6 +3192,28 @@ function applyOperationalChange(action,f){
 }
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+function showIncomingOpsCall(payload={}){
+  if(S.callActive||S.incomingCall)return;
+  if(![0,4].includes(S.phase)&&!payload.urgent){
+    const deferred=window.OPS_CORE?.formatAcars({category:'OPS',priority:'ADVISORY',flightNo:payload.flightNo||S.currentFlight?.flightNo,time:utcNow(),lines:[payload.title||'OPS WISHES TO SPEAK WITH THE CREW'],action:'CALL OPS WHEN WORKLOAD PERMITS',reply:'ACK'});
+    addAcars('ops','ADVISORY',deferred||'APPELEZ LES OPS LORSQUE LA CHARGE DE TRAVAIL LE PERMET');return;
+  }
+  unlockVoicePlayback();S.incomingCall=payload;S.callActive=true;
+  const dispatcher=DISPATCHERS.find(item=>item.id===payload.scenario?.dispatcher)||S.dispatcher;if(dispatcher)S.dispatcher=dispatcher;
+  $('call-ov').classList.add('on');$('call-ring').innerHTML='<span>OPS</span>';$('call-name').textContent=S.dispatcher?.name||'OPS';
+  $('call-sub').textContent=`APPEL ENTRANT · ${currentOperator().name} OPS`;$('call-stat').textContent=payload.urgent?'PRIORITÉ URGENTE':(payload.title||'INFORMATION OPÉRATIONNELLE');
+  $('call-tx').innerHTML='';$('incoming-actions').classList.add('on');$('ipad-reply').classList.remove('on');$('mic-tip').textContent='Les OPS souhaitent vous parler';$('status-dot').className='dot call';
+  startRingback(Boolean(payload.urgent));
+}
+
+function answerInboundOpsCall(){const payload=S.incomingCall;if(!payload)return;stopRingback();S.callActive=false;$('incoming-actions').classList.remove('on');initiateCall('free',{incoming:true,payload});}
+
+function deferInboundOpsCall(){
+  const payload=S.incomingCall;if(!payload)return;stopRingback();S.callActive=false;S.incomingCall=null;$('incoming-actions').classList.remove('on');$('call-ov').classList.remove('on');$('status-dot').className='dot on';
+  const message=window.OPS_CORE?.formatAcars({category:payload.scenario?.category||'OPS',priority:payload.detail?.priority||'ACTION',flightNo:payload.flightNo||S.currentFlight?.flightNo,time:utcNow(),lines:[payload.title||'MISSED OPS CALL',payload.reason||'OPERATIONAL INFORMATION AVAILABLE'],action:'CONTACT OPS WHEN AVAILABLE',reply:'ACK'});
+  addAcars('ops',payload.detail?.priority||'ACTION',message||`${payload.title||'APPEL OPS'} // RAPPELEZ LORSQUE DISPONIBLE`,Boolean(payload.urgent));
+}
+
 // CALL SYSTEM
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 const CALL_SYS = {
@@ -3202,22 +3259,24 @@ function usesAppleTouchAudio(){
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 }
 
-async function initiateCall(type){
+async function initiateCall(type,options={}){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
+  const inbound=Boolean(options.incoming),inboundPayload=options.payload||S.incomingCall;
   unlockVoicePlayback();
-  S.callType=type;S.callActive=true;S.convHistory=[];S.briefingStage=null;
+  S.callType=type;S.callActive=true;S.incomingCall=null;S.convHistory=[];S.briefingStage=null;
   // Safari iPad/iPhone g\u00E8re mal la lecture TTS lorsqu un flux getUserMedia
   // reste ouvert. Sur ces appareils, la reconnaissance active donc le micro
   // seulement pendant les tours de parole du pilote (mode semi-duplex).
   const appleTouchAudio=usesAppleTouchAudio();
   const micPromise=requestMicAccess(!appleTouchAudio);
-  startRingback(type==='emergency');
+  if(!inbound)startRingback(type==='emergency');
   const d=S.dispatcher;
   $('call-ov').classList.add('on');
   $('call-ring').innerHTML='<span>W</span>';
   $('call-name').textContent=d.name;
   $('call-sub').textContent=dispatcherRoleForOperation(d).toUpperCase()+` \u00B7 ${currentOperator().opsCity.toUpperCase()} OPS`;
   $('call-tx').innerHTML='';
+  $('incoming-actions').classList.remove('on');
   $('ipad-reply').classList.remove('on');
   $('mic-tip').textContent=S.language==='en'?(appleTouchAudio?'Preparing iPad audio…':'Enabling microphone for this call…'):(appleTouchAudio?'Préparation audio iPad…':'Activation du microphone pour cet appel…');
   $('call-stat').textContent=S.language==='en'?(kokoroReady?'Connecting…':'Connecting to the operations voice…'):(kokoroReady?'Connexion en cours…':'Connexion à la voix OPS…');
@@ -3229,14 +3288,24 @@ async function initiateCall(type){
   await micPromise;
   if(!S.callActive)return;
   $('call-stat').textContent=S.language==='en'?'Connecting…':'Connexion en cours…';
-  await sleep(1500);
-  $('call-stat').textContent=S.language==='en'?`${d.name} is answering…`:`${d.name} décroche…`;
-  await sleep(700);
+  if(!inbound){
+    await sleep(1500);
+    $('call-stat').textContent=S.language==='en'?`${d.name} is answering…`:`${d.name} décroche…`;
+    await sleep(700);
+  }
   stopRingback();playPickup();startOpsAmbience();
   $('call-stat').textContent=S.language==='en'?'CONNECTED':'EN COMMUNICATION';
   const lang=S.language;
-  const greet=lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je vous \u00E9coute.`;
+  const greet=inbound
+    ?(lang==='en'?`${d.name} from ${currentOperator().name} operations. I’m calling about ${String(inboundPayload?.title||'an operational update').toLowerCase()}. Do you have a moment?`:`${d.name} aux opérations ${currentOperator().name}. Je t’appelle au sujet de ${String(inboundPayload?.title||'une information opérationnelle').toLowerCase()}. Tu as une minute ?`)
+    :(lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je t\u2019\u00E9coute.`);
   addTx('ops',d.name,greet);await speak(greet);
+  if(inboundPayload&&window.OPS_CORE){
+    S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+    window.OPS_CORE.recordEvent(S.opsMemory,{type:'INBOUND_CALL_ANSWERED',source:'ops_plan',flightNo:inboundPayload.flightNo||S.currentFlight?.flightNo,summary:inboundPayload.title||'OPS CALL'});
+    window.OPS_CORE.setFact(S.opsMemory,'activeCallReason',{title:inboundPayload.title,reason:inboundPayload.reason,scenarioId:inboundPayload.scenario?.id},{source:'ops_plan'});
+    saveSession();
+  }
   let planned=null;
   if(type==='next'&&!S.currentFlight){
     planned=generateOperationalRotation();
@@ -3247,7 +3316,7 @@ async function initiateCall(type){
   }
   // Le greeting suffit : on laisse ensuite réellement le temps au pilote de
   // se présenter et d'annoncer le motif de son appel.
-  $('mic-tip').textContent=S.language==='en'?'Introduce yourself; operations is listening…':'Présentez-vous, les OPS vous écoutent…';
+  $('mic-tip').textContent=S.language==='en'?'Introduce yourself; operations is listening…':'Présente-toi, les OPS t\u2019écoutent…';
   addCallHist(type);
   if(S.callActive)startAutoListen();
 }
@@ -3265,7 +3334,7 @@ function makeSpokenBriefing(f,d,lang='fr'){
   const arrCity=f.arrAp?.city||f.arr;
   const notes=f.arrAp.notes?`Points particuliers arriv\u00E9e: ${f.arrAp.notes}.`:'';
   const charge=f.cargo?`${f.cargo.weightKg.toLocaleString('fr-FR')} kilogrammes de fret, ${f.cargo.nature}`:`${f.pax.length} passagers`;
-  return `Bonjour ${S.rank} ${S.pilot}. Voici la r\u00E9vision ${S.rotationRevision||0} de votre briefing op\u00E9rations ${op.name} pour le duty du ${formatDateFr(S.dutyDate)}, de ${S.dutyStart} \u00E0 ${S.dutyEnd} UTC. Vous \u00EAtes affect\u00E9 \u00E0 une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant \u00E0 effectuer. Programme pr\u00E9vu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. D\u00E9part pr\u00E9vu ${f.depT}, arriv\u00E9e estim\u00E9e ${f.arrT}, niveau planifi\u00E9 ${f.fl}, avec ${charge}. Le handling arriv\u00E9e est ${f.arrAp.handling||'\u00E0 confirmer'}, parking ${f.arrAp.parking||'\u00E0 confirmer'}, alternate de planification ${f.alt}. ${notes} La planification carburant reste en attente de la g\u00E9n\u00E9ration de l OFP SimBrief.`;
+  return `Bonjour ${S.pilot}. Voici la r\u00E9vision ${S.rotationRevision||0} de ton briefing op\u00E9rations ${op.name} pour le duty du ${formatDateFr(S.dutyDate)}, de ${S.dutyStart} \u00E0 ${S.dutyEnd} UTC. Tu es affect\u00E9 \u00E0 une rotation de type ${S.rotationType.toLowerCase()}, comprenant ${remaining.length} secteurs restant \u00E0 effectuer. Programme pr\u00E9vu: ${sequence}. Le secteur courant est le ${f.flightNo}, de ${depCity}, ${f.dep}, vers ${arrCity}, ${f.arr}. D\u00E9part pr\u00E9vu ${f.depT}, arriv\u00E9e estim\u00E9e ${f.arrT}, niveau planifi\u00E9 ${f.fl}, avec ${charge}. Le handling arriv\u00E9e est ${f.arrAp.handling||'\u00E0 confirmer'}, parking ${f.arrAp.parking||'\u00E0 confirmer'}, alternate de planification ${f.alt}. ${notes} La planification carburant reste en attente de la g\u00E9n\u00E9ration de l OFP SimBrief.`;
 }
 
 function handleBriefingResponse(rotation,options={}){
@@ -3461,12 +3530,13 @@ function spellIcao(value){return String(value).split('').map(c=>ICAO_PHONETIC[c]
 function aviationForSpeech(text){
   let out=String(text||'');
   const op=currentOperator();
-  out=out.replace(new RegExp(`\\b${op.icao}(\\d+)\\b`,'g'),(_,n)=>`${op.telephony} ${spellDigits(n)}`);
-  out=out.replace(/\bWAB(\d+)\b/g,(_,n)=>`WestJet ${spellDigits(n)}`);
-  out=out.replace(/\bFL(\d{2,3})\b/g,(_,n)=>`niveau de vol ${Number(n)}`);
-  out=out.replace(/\b(\d{1,2}):(\d{2})Z\b/g,(_,h,m)=>`${Number(h)} heures ${m==='00'?'':Number(m)} Zulu`);
-  out=out.replace(/\b(\d{1,2}):(\d{2}) UTC\b/g,(_,h,m)=>`${Number(h)} heures ${m==='00'?'':Number(m)} Zulu`);
-  AIRPORTS.forEach(ap=>{out=out.replace(new RegExp(`\\b${ap.icao}\\b`,'g'),spellIcao(ap.icao));});
+  const opCode=String(op.icao||'OPS').replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  out=out.replace(new RegExp(`\\b${opCode}[ -]?(\\d+)\\b`,'gi'),(_,n)=>`${op.telephony} ${spellDigits(n)}`);
+  out=out.replace(/\b(?:niveau de vol\s+|flight level\s+)?FL\s*(\d{2,3})\b/gi,(_,n)=>`${S.language==='en'?'flight level':'niveau de vol'} ${spellDigits(n)}`);
+  out=out.replace(/\bniveau de vol\s+(\d{2,3})\b/gi,(_,n)=>`niveau de vol ${spellDigits(n)}`);
+  out=out.replace(/\b(?:RWY|RUNWAY|PISTE)\s*([0-3]?\d)([LRC])?\b/gi,(_,n,side)=>`${S.language==='en'?'runway':'piste'} ${spellDigits(String(n).padStart(2,'0'))}${side?` ${spellIcao(side)}`:''}`);
+  out=out.replace(/\b(\d{1,2}):(\d{2})\s*(?:Z|UTC)\b/gi,(_,h,m)=>`${spellDigits(String(h).padStart(2,'0'))} ${m==='00'?'':spellDigits(m)} Zulu`);
+  out=out.replace(/\b[A-Z]{4}\b/g,code=>isIcaoAirport(getAP(code))?spellIcao(code):code);
   out=out.replace(/\bPAX\b/g,'passagers').replace(/\bOPS\b/g,'op\u00E9rations');
   out=out.replace(/\bQNH\b/g,'Q N H').replace(/\bMETAR\b/g,'m\u00E9tar').replace(/\bTAF\b/g,'taf').replace(/\bSIGMET\b/g,'sigmet');
   out=out.replace(/\bOFFBLK\b/g,'heure de d\u00E9part bloc').replace(/\bONBLK\b/g,'heure arriv\u00E9e bloc');
@@ -3601,13 +3671,26 @@ function releaseCallMicrophone(){
   S.micGranted=false;S.micActive=false;
 }
 
+function operationalInputAnalysis(text){
+  return window.OPS_CORE?.analyzeUtterance(text,{isAirport:code=>isIcaoAirport(getAP(code))})||{
+    raw:String(text||''),normalized:normalizeSearchText(text),intent:'conversation',question:false,emergency:false,atc:false,shouldAnalyzeDossier:false,
+    entities:{icaoCodes:[],flightLevel:null,runway:null,fuelKg:null,ctotMention:false,ctotCancelled:false,time:null}
+  };
+}
+function normalizedAviationInput(text){return operationalInputAnalysis(text).normalized;}
+function rememberOperationalVoice(role,text){
+  if(!window.OPS_CORE)return;
+  S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+  window.OPS_CORE.rememberVoiceTurn(S.opsMemory,role,text,{flightNo:S.currentFlight?.flightNo||null});
+}
+function persistentOpsContext(){return window.OPS_CORE?.compactContext(S.opsMemory)||'';}
+
 function dossierChangeIntent(text){
-  const value=normalizeSearchText(text);
-  return /\b(CHG|CHANG\w*|MODIFI\w*|REMPLAC\w*|SUPPR\w*|AJOUT\w*|DEROUT\w*|DIVERT\w*|RETARD\w*|DELAY\w*|PAX|PASSAGER\w*|PARKING|POSTE|STAND|HANDLING|ASSISTANCE|ALTERNATE|DEGAGEMENT|FRET|CARGO|NIVEAU|FLIGHT LEVEL|ANNUL\w*|CANCEL\w*|ESCALE\w*|ROUTE|DESTINATION)\b/.test(value);
+  return operationalInputAnalysis(text).shouldAnalyzeDossier;
 }
 
 function mentionedAirportCodes(text){
-  const normalized=normalizeSearchText(text),mentions=[];
+  const normalized=normalizedAviationInput(text),mentions=[];
   const pattern=/\b[A-Z]{4}\b/g;let match;
   while((match=pattern.exec(normalized))){if(isIcaoAirport(getAP(match[0])))mentions.push({code:match[0],index:match.index,explicit:true});}
   AIRPORTS.forEach(ap=>{
@@ -3618,7 +3701,7 @@ function mentionedAirportCodes(text){
 }
 
 function declaredGroundWaitMinutes(text){
-  const value=normalizeSearchText(text);
+  const value=normalizedAviationInput(text);
   const minutes=value.match(/\b(\d{1,3})\s*(?:MIN|MINUTE|MINUTES)\b/);if(minutes)return Math.min(720,Number(minutes[1]));
   const hours=value.match(/\b(\d+(?:[.,]\d+)?)\s*(?:H|HEURE|HEURES|HOUR|HOURS)\b/);if(hours)return Math.min(720,Math.round(Number(hours[1].replace(',','.'))*60));
   const words={UNE:60,UN:60,DEUX:120,TROIS:180,QUATRE:240,CINQ:300,SIX:360};
@@ -3626,7 +3709,7 @@ function declaredGroundWaitMinutes(text){
 }
 
 function explicitCrewDecisionChangeSet(text){
-  const value=normalizeSearchText(text);
+  const value=normalizedAviationInput(text);
   const diversion=/\b(?:JE\s+DEROUTE|NOUS\s+DEROUTONS|EQUIPAGE\s+DEROUTE|DIVERTING|DIVERSION\s+CONFIRMED|DEROUTEMENT\s+(?:CONFIRME|DECIDE|EFFECTIF)|OK\s+(?:POUR\s+LE\s+)?DEROUTEMENT|^DIVERSION\b)/.test(value);
   const conditional=/\b(?:ENVISAGE|ENVISAGEONS|POSSIBLE|POSSIBILITE|OPTION|ETUDE|PROPOSE|PROPOSITION|PEUT ON|POURRAIT|CAN WE|COULD WE|REQUEST|DEMANDE D ETUDE)\b/.test(value)||value.includes('?');
   if(!diversion||conditional||!S.currentFlight)return null;
@@ -3681,6 +3764,9 @@ function applyDossierChangeSet(changeSet,source='OPS'){
   const details=[],changedIndexes=new Set();let needsResequence=false;
   let target=Number(changeSet.targetSector)-1;
   if(!Number.isInteger(target)||target<0||target>=S.rotationPlan.length)target=Math.min(S.rotationIndex,S.rotationPlan.length-1);
+  const initialTarget=target;
+  const originalTargetSnapshot=S.rotationPlan[target]?JSON.parse(JSON.stringify(S.rotationPlan[target])):null;
+  const currentInFlightChange=!!(S.inFlight&&target===S.rotationIndex);
   const priority={diversion:0,destination:0,ground_wait_minutes:1,subsequent_route:2,remaining_route:2};
   const orderedChanges=[...changeSet.changes].sort((a,b)=>(priority[String(a?.field)]??5)-(priority[String(b?.field)]??5));
   for(const change of orderedChanges){
@@ -3748,22 +3834,42 @@ function applyDossierChangeSet(changeSet,source='OPS'){
   const firstChanged=Math.min(...changedIndexes);
   if(needsResequence&&firstChanged>=0&&firstChanged+1<S.rotationPlan.length)resequenceFollowingLegs(firstChanged+1);
   const flightPlanFields=new Set(['remaining_route','subsequent_route','destination','diversion','ground_wait_minutes','delay_minutes','departure_time','pax_count','pax_add','pax_remove','alternate','flight_level','cargo_weight','cargo_pieces','cancel_sector']);
-  if(changeSet.changes.some(change=>flightPlanFields.has(String(change?.field||'')))){
+  const affectsFlightPlan=changeSet.changes.some(change=>flightPlanFields.has(String(change?.field||'')));
+  if(affectsFlightPlan){
     for(let index=Math.max(0,firstChanged);index<S.rotationPlan.length;index++){
       const draft=S.rotationPlan[index]?.simbrief;
-      if(draft?.ofp){draft.status='stale';draft.staleAt=new Date().toISOString();}
+      if(!draft?.ofp)continue;
+      if(currentInFlightChange&&index===S.rotationIndex){
+        draft.status='locked-amended';draft.amendedAt=new Date().toISOString();
+      }else{
+        draft.status='stale';draft.staleAt=new Date().toISOString();
+      }
     }
   }
   if(S.rotationPlan[S.rotationIndex])S.currentFlight=S.rotationPlan[S.rotationIndex];
   S.rotationType=String(S.rotationType||'ROTATION').replace(/ \u00B7 REV \d+$/,'')+` \u00B7 REV ${Number(S.rotationRevision||0)+1}`;
   recordRotationRevision(changeSet.summary||'MISE \u00C0 JOUR DU DOSSIER',{source,affectedSector:target+1,details:details.join(' \u00B7 '),autoAcknowledged:/\u00C9QUIPAGE/.test(source)});
+  if(currentInFlightChange&&window.OPS_CORE&&originalTargetSnapshot){
+    S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+    const major=changeSet.changes.some(change=>['destination','diversion','remaining_route'].includes(String(change?.field||'')));
+    const amendment=window.OPS_CORE.createAmendment(S.opsMemory,originalTargetSnapshot,changeSet,{
+      kind:major?'OPERATIONAL AMENDMENT':affectsFlightPlan?'IN-FLIGHT REPLANNING':'OPERATIONAL UPDATE',priority:major?'ACTION':'INFO',source,
+      reason:changeSet.summary||details.join(' · '),dispatcher:S.dispatcher?.name||'OPS',
+      crewStatus:/ÉQUIPAGE/.test(source)?'CREW DECISION RECORDED':'ACKNOWLEDGED',
+      position:S.position||null,openItems:major?['WX REVIEW','NOTAM REVIEW','HANDLING COORDINATION']:[]
+    });
+    const amendedLeg=S.rotationPlan[Math.min(initialTarget,S.rotationPlan.length-1)];
+    if(amendedLeg)amendedLeg.operationalAmendments=[...(amendedLeg.operationalAmendments||[]),amendment];
+    details.push(`${amendment.id} émis`);
+  }
   const selected=Math.min(S.dossierLegIndex??S.rotationIndex,S.rotationPlan.length-1);
   populateDossier(S.rotationPlan[selected],{preservePhase:true,selectedIndex:selected});
   return{applied:true,message:`R\u00E9vision ${S.rotationRevision} appliqu\u00E9e: ${details.join(', ')}.`};
 }
 
-async function processDossierUpdateFromMessage(text,source='OPS'){
-  if(!S.rotationPlan?.length||!dossierChangeIntent(text))return{applied:false,message:''};
+async function processDossierUpdateFromMessage(text,source='OPS',providedAnalysis=null){
+  const analysis=providedAnalysis||operationalInputAnalysis(text);
+  if(!S.rotationPlan?.length||!analysis.shouldAnalyzeDossier)return{applied:false,message:''};
   const explicitDecision=explicitCrewDecisionChangeSet(text);
   if(explicitDecision)return applyDossierChangeSet(explicitDecision,source);
   try{
@@ -3771,7 +3877,7 @@ async function processDossierUpdateFromMessage(text,source='OPS'){
     const res=await fetch(`${OPS_PROXY}/ai`,{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({
       model:'claude-haiku-4-5-20251001',max_tokens:500,
       system:`Tu extrais uniquement les modifications explicites d un dossier de vol de simulation. Une décision déclarée par l équipage, notamment JE DÉROUTE, NOUS DÉROUTONS ou DÉROUTEMENT CONFIRMÉ, est une instruction immédiatement applicable et non une demande d étude. Ne transforme jamais une question, une hypothèse ou une simple option en modification. Réponds en JSON brut valide: {"changeRequested":boolean,"targetSector":number|null,"summary":"texte court","changes":[{"field":"remaining_route|subsequent_route|destination|diversion|ground_wait_minutes|delay_minutes|departure_time|pax_count|pax_add|pax_remove|parking|handling|alternate|flight_level|cargo_weight|cargo_pieces|cancel_sector|operational_note","value":valeur}]}. ground_wait_minutes est l attente après l arrivée du secteur ciblé. subsequent_route contient toutes les arrivées après le secteur ciblé; remaining_route remplace le secteur ciblé et toute sa suite. Utilise seulement des codes OACI valides fournis dans le message ou le référentiel. ${rotationContextForAI()} ${airportReferenceContext(text)}`,
-      messages:[{role:'user',content:text}]
+      messages:[{role:'user',content:`MESSAGE ORIGINAL: ${text}\nINTERPRÉTATION AÉRONAUTIQUE: ${analysis.normalized}`}]
     })});
     clearTimeout(timer);if(!res.ok)throw new Error(`HTTP ${res.status}`);
     const data=await res.json(),changeSet=parseJsonObject(data.content?.[0]?.text||'');
@@ -3786,9 +3892,11 @@ function rotationContextForAI(){
     const next=remaining[index+1],wait=next?Math.max(0,next.depMinuteOfDay-leg.arrMinuteOfDay):0;
     const ground=wait?` Attente au sol suivante: ${fmtDur(wait)} \u00E0 ${leg.arr}, motif ${leg.groundReason||'attente op\u00E9rationnelle ou client'}.`:'';
     const ofp=leg.simbrief?.ofp;
-    const fuel=ofp?`OFP SimBrief ${leg.simbrief?.status==='stale'?'ancien et \u00E0 r\u00E9g\u00E9n\u00E9rer apr\u00E8s la r\u00E9vision':'import\u00E9'}, block fuel ${ofp.blockFuel} ${ofp.units}, trip fuel ${ofp.tripFuel} ${ofp.units}, route ${ofp.route}, cost index ${ofp.costIndex}, remarks dispatcher ${ofp.dispatcherRemarks||'aucune'}`:'carburant en attente de l OFP SimBrief';
+    const ofpState=leg.simbrief?.status==='stale'?'ancien et à régénérer avant le prochain départ':leg.simbrief?.status==='locked-amended'?'original verrouillé; changements post-départ consignés dans un amendement séparé':leg.simbrief?.status==='locked'?'original verrouillé au départ':'importé';
+    const fuel=ofp?`OFP SimBrief ${ofpState}, block fuel ${ofp.blockFuel} ${ofp.units}, trip fuel ${ofp.tripFuel} ${ofp.units}, route ${ofp.route}, cost index ${ofp.costIndex}, remarks dispatcher ${ofp.dispatcherRemarks||'aucune'}`:'carburant en attente de l OFP SimBrief';
+    const amendments=(leg.operationalAmendments||[]).map(item=>`${item.id} ${item.kind}: ${item.reason}; changements ${(item.changes||[]).map(change=>`${change.field}=${Array.isArray(change.value)?change.value.join('>'):change.value}`).join(', ')}`).join(' | ');
     const briefing=leg.briefing?.completedAt?`Briefing d\u00E9j\u00E0 effectu\u00E9 ${leg.briefing.completedAt}, sujets couverts ${(leg.briefing.topics||[]).join(', ')||'vue d ensemble'}`:'briefing non encore enregistr\u00E9';
-    return `Secteur ${index+1}: ${leg.flightNo}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${airportLabel(leg.alt)}, ${fuel}. ${briefing}.${ground}`;
+    return `Secteur ${index+1}: ${leg.flightNo}, ${airportLabel(leg.dep)} vers ${airportLabel(leg.arr)}, ${leg.depDate||S.dutyDate} ${leg.depT} \u00E0 ${leg.arrT}, ${leg.missionRole}, ${leg.cargo?leg.cargo.weightKg+' kg de fret':leg.pax.length+' passagers'}, ${leg.fl}, alternate ${airportLabel(leg.alt)}, ${fuel}. ${briefing}. ${amendments?`AMENDEMENTS EN VOL: ${amendments}.`:''}${ground}`;
   }).join(' ');
   const profileContext=profile&&S.operationType==='scheduled'?` PROFIL OPÉRATEUR RECONNU: ${profile.name}, modèle de réseau ${operatorNetworkLabel(profile)}, hubs ${profile.hubs.join(', ')}, flotte indicative ${profile.fleet.join(', ')}. Ce profil est une référence de simulation et non un horaire réel.`:'';
   return `DOSSIER STRUCTUR\u00C9 ${currentOperator().name}, R\u00C9VISION ${S.rotationRevision||0}, EXPLOITATION ${operationLabel(S.operationType)}, DUTY ${S.dutyDate} ${S.dutyStart}-${S.dutyEnd} ZULU, TYPE ${S.rotationType}.${profileContext} ${legs}`;
@@ -3798,7 +3906,8 @@ function formalBriefingOFPContext(f=operationalFlight()){
   const ofp=f?.simbrief?.ofp;if(!ofp)return '';
   const weather=ofp.weather||{};
   const tlr=(label,a)=>a?`${label}: ${a.airport} piste ${a.plannedRunway}, masse analysée ${a.plannedWeight||'non fournie'} ${ofp.units||''}, vent ${a.windDirection||'---'}/${a.windSpeed||'--'} noeuds, température ${a.temperature||'non fournie'}, surface ${a.surface||'non fournie'}, TORA ${a.tora||'non fournie'}, LDA ${a.lda||'non fournie'}, pente ${a.gradient||'non fournie'}, composantes vent de face ${a.headwind||'non fournie'} et travers ${a.crosswind||'non fournie'}, configuration volets ${a.flap||'non fournie'}, poussée ${a.thrust||'non fournie'}, masse limite ${a.maxWeight||'non fournie'}, code limite ${a.limitCode||'non fourni'}, vitesses V1 ${a.v1||'non fournie'}, VR ${a.vr||'non fournie'}, V2 ou VREF ${a.v2||a.vref||'non fournie'}`:`${label}: non incluse dans l OFP`;
-  return `OFP SIMBRIEF FORMEL DU SECTEUR ${f.flightNo}, RELEASE ${ofp.release||'non fournie'}, GÉNÉRÉ ${ofp.generated||ofp.importedAt}, AIRAC ${ofp.airac||'non fourni'}. ROUTE ATS ${ofp.route||'non fournie'}, altitude initiale ${ofp.cruiseAltitude||'non fournie'}, distance route ${ofp.routeDistance||'non fournie'} milles nautiques. CARBURANT BLOCK ${ofp.blockFuel||'non fourni'} ${ofp.units||''}, TRIP ${ofp.tripFuel||'non fourni'} ${ofp.units||''}, ZFW ${ofp.zfw||'non fournie'} ${ofp.units||''}, TOW ${ofp.tow||'non fournie'} ${ofp.units||''}, COST INDEX ${ofp.costIndex||'non fourni'}. RUNWAY ANALYSIS SIMBRIEF: ${tlr('décollage',ofp.runwayAnalysis?.takeoff)}. ${tlr('atterrissage',ofp.runwayAnalysis?.landing)}. Cette analyse devient périmée si la masse, la météo, la piste ou la surface changent; ne la présente jamais comme une performance certifiée de l application. MÉTÉO DÉPART: METAR ${weather.originMetar||'non fourni'}, TAF ${weather.originTaf||'non fourni'}. MÉTÉO ARRIVÉE: METAR ${weather.destinationMetar||'non fourni'}, TAF ${weather.destinationTaf||'non fourni'}. MÉTÉO ALTERNATE: METAR ${weather.alternateMetar||'non fourni'}, TAF ${weather.alternateTaf||'non fourni'}. MÉTÉO EN ROUTE ET SIGMET: ${ofp.sigmets||'non fournis dans l OFP'}. REMARQUES DISPATCHER: ${ofp.dispatcherRemarks||f.simbrief?.dispatcherRemark||'aucune'}. EXTRAIT NOTAM OPÉRATIONNEL SIMBRIEF: ${ofp.notamImportant||'non fourni dans l OFP importé'}. Ne cite que les données présentes et distingue toujours le snapshot OFP d une donnée météo live plus récente.`;
+  const amendmentContext=(f.operationalAmendments||[]).map(item=>`${item.id} ${item.kind}, ${item.reason}, changements ${(item.changes||[]).map(change=>`${change.field} ${Array.isArray(change.value)?change.value.join(' puis '):change.value}`).join(', ')}, statut ${item.status}`).join('. ');
+  return `OFP SIMBRIEF FORMEL DU SECTEUR ${f.flightNo}, RELEASE ${ofp.release||'non fournie'}, GÉNÉRÉ ${ofp.generated||ofp.importedAt}, AIRAC ${ofp.airac||'non fourni'}. ${f.simbrief?.status==='locked-amended'?'Cet OFP est la référence originale verrouillée et ne doit jamais être présenté comme réécrit. Les changements en vol figurent dans l annexe suivante: '+amendmentContext+'.':''} ROUTE ATS ${ofp.route||'non fournie'}, altitude initiale ${ofp.cruiseAltitude||'non fournie'}, distance route ${ofp.routeDistance||'non fournie'} milles nautiques. CARBURANT BLOCK ${ofp.blockFuel||'non fourni'} ${ofp.units||''}, TRIP ${ofp.tripFuel||'non fourni'} ${ofp.units||''}, ZFW ${ofp.zfw||'non fournie'} ${ofp.units||''}, TOW ${ofp.tow||'non fournie'} ${ofp.units||''}, COST INDEX ${ofp.costIndex||'non fourni'}. RUNWAY ANALYSIS SIMBRIEF: ${tlr('décollage',ofp.runwayAnalysis?.takeoff)}. ${tlr('atterrissage',ofp.runwayAnalysis?.landing)}. Cette analyse devient périmée si la masse, la météo, la piste ou la surface changent; ne la présente jamais comme une performance certifiée de l application. MÉTÉO DÉPART: METAR ${weather.originMetar||'non fourni'}, TAF ${weather.originTaf||'non fourni'}. MÉTÉO ARRIVÉE: METAR ${weather.destinationMetar||'non fourni'}, TAF ${weather.destinationTaf||'non fourni'}. MÉTÉO ALTERNATE: METAR ${weather.alternateMetar||'non fourni'}, TAF ${weather.alternateTaf||'non fourni'}. MÉTÉO EN ROUTE ET SIGMET: ${ofp.sigmets||'non fournis dans l OFP'}. REMARQUES DISPATCHER: ${ofp.dispatcherRemarks||f.simbrief?.dispatcherRemark||'aucune'}. EXTRAIT NOTAM OPÉRATIONNEL SIMBRIEF: ${ofp.notamImportant||'non fourni dans l OFP importé'}. Ne cite que les données présentes et distingue toujours le snapshot OFP d une donnée météo live plus récente.`;
 }
 
 function briefingTopicsFromMessage(text){
@@ -3837,7 +3946,7 @@ function normalizeSearchText(value){return String(value||'').normalize('NFD').re
 const liveWeatherCache=new Map();
 
 function requestedWeatherAirport(text){
-  const normalized=normalizeSearchText(text).replace(/\b([A-Z])\s+([A-Z])\s+([A-Z])\s+([A-Z])\b/g,'$1$2$3$4');
+  const normalized=normalizedAviationInput(text).replace(/\b([A-Z])\s+([A-Z])\s+([A-Z])\s+([A-Z])\b/g,'$1$2$3$4');
   const explicit=normalized.match(/(?:METAR|TAF|OACI|AEROPORT|TERRAIN)(?:\s+DE|\s+A|\s+SUR)?\s+([A-Z]{4})\b/)?.[1];
   if(explicit)return explicit;
   const direct=normalized.match(/\b[A-Z]{4}\b/g)?.find(code=>isIcaoAirport(getAP(code)));
@@ -3917,16 +4026,30 @@ async function startAutoListen(fromIpadButton=false){
   recognition.lang=S.language==='en'?'en-US':'fr-FR';
   recognition.continuous=false;
   recognition.interimResults=false;
+  try{
+    if('phrases' in recognition&&window.SpeechRecognitionPhrase){
+      const codes=[S.currentFlight?.dep,S.currentFlight?.arr,S.currentFlight?.alt,...(S.rotationPlan||[]).flatMap(leg=>[leg.dep,leg.arr])].filter(Boolean);
+      recognition.phrases=[...new Set(['SimBrief','METAR','TAF','SIGMET','NOTAM','CTOT','Zulu','niveau de vol','carburant',...codes])].map(value=>new window.SpeechRecognitionPhrase(value,5));
+    }
+  }catch{}
   recognition.onstart=()=>{S.micActive=true;$('mic-tip').textContent=S.language==='en'?'Listening…':'Je vous écoute…';};
   recognition.onresult=async event=>{
     const text=event.results?.[0]?.[0]?.transcript?.trim();
     if(!text)return;
+    const inputAnalysis=operationalInputAnalysis(text);
+    if(window.OPS_CORE){
+      S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+      window.OPS_CORE.absorbCrewReport(S.opsMemory,inputAnalysis,{flightNo:S.currentFlight?.flightNo||null,phase:phaseLabel(S.phase)});
+      if(inputAnalysis.intent==='acknowledgement')window.OPS_CORE.acknowledgeLatestAction(S.opsMemory,'ACKNOWLEDGED DURING OPS CALL');
+      rememberOperationalVoice('pilot',text);
+    }
     S.processingSpeech=true;
     S.micActive=false;
     callTone([900],.035,.009);
     addTx('pilot',S.pilot,text);
     $('mic-tip').textContent=S.language==='en'?'Operations is preparing a reply…':'Les OPS préparent leur réponse…';
-    const dossierUpdate=await processDossierUpdateFromMessage(text,'APPEL OPS / \u00C9QUIPAGE');
+    const liveContextPromise=requestedLiveContext(text);
+    const dossierUpdate=await processDossierUpdateFromMessage(text,'APPEL OPS / \u00C9QUIPAGE',inputAnalysis);
     const wantsBriefing=briefingRequestIntent(text),briefingFlight=operationalFlight();
     let briefingJustStarted=false,briefingUnavailable=false;
     if(wantsBriefing){
@@ -3941,7 +4064,9 @@ async function startAutoListen(fromIpadButton=false){
     }
     const lang=S.language;
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
-    sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'}. Address the caller as Captain, crew, équipage or by flight number; in French always use vous and never tu, and do not use the pilot first name in an operational exchange. A confirmed crew decision may modify the structured dossier through the application engine. Never claim that dispatch is unable to modify routing or the flight file; report only the engine result supplied below. Ignore any contradictory historical identity. ${airportReferenceContext(text)}`;
+    const dispatcherProfile=window.OPS_CORE?.DISPATCHER_PROFILES?.[S.dispatcher?.id];
+    if(dispatcherProfile)sys+=` DISPATCHER OPERATIONAL PROFILE: specialty ${dispatcherProfile.specialties.join(', ')}; current operational constraints ${dispatcherProfile.constraints.join(', ')}. These constraints influence coordination time and the information requested, but never justify inventing a refusal or ignoring a confirmed crew decision.`;
+    sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'}. This is a spoken telephone exchange between aviation colleagues. In French, use a natural professional tu form and you may address the pilot by first name; never sound ceremonial or administrative. This spoken-call register is deliberately different from ACARS, where messages remain standardized and addressed to the crew or flight number. A confirmed crew decision may modify the structured dossier through the application engine. Never claim that dispatch is unable to modify routing or the flight file; report only the engine result supplied below. Ignore any contradictory historical identity. INTERPRÉTATION DE LA PAROLE: intention ${inputAnalysis.intent}, texte normalisé ${inputAnalysis.normalized}. ${airportReferenceContext(inputAnalysis.normalized)} ${persistentOpsContext()}`;
     if(S.currentFlight)sys+=` ${rotationContextForAI()} Le moteur structur\u00E9 de l application est seul autoris\u00E9 \u00E0 modifier ces donn\u00E9es. Ne confirme que son r\u00E9sultat. Si le dossier indique qu un briefing a d\u00E9j\u00E0 eu lieu, reprends la conversation sans recommencer toute la pr\u00E9sentation.`;
     if(S.callType==='briefing'&&importedOFPReady(briefingFlight))sys+=` ${formalBriefingOFPContext(briefingFlight)}`;
     if(dossierUpdate.message)sys+=` R\u00C9SULTAT DU MOTEUR DOSSIER: ${dossierUpdate.message} Confirme exactement ce r\u00E9sultat au pilote; ne pr\u00E9tends jamais avoir appliqu\u00E9 autre chose.`;
@@ -3954,12 +4079,13 @@ async function startAutoListen(fromIpadButton=false){
         sys+=` Le briefing est interactif. R\u00E9ponds uniquement \u00E0 la question pos\u00E9e, en une \u00E0 trois phrases courtes. Ne r\u00E9cite jamais tout le dossier et ne donne aucune information non demand\u00E9e.`;
       }
     }
-    sys+=` ${await requestedLiveContext(text)}`;
+    sys+=` ${await liveContextPromise}`;
     const reply=await callAI(sys,text);
-    if(reply&&S.callActive){addTx('ops',S.dispatcher.name,reply);await speak(reply);}
+    if(reply&&S.callActive){rememberOperationalVoice('dispatcher',reply);addTx('ops',S.dispatcher.name,reply);await speak(reply);}
     if(S.callType==='briefing'&&importedOFPReady(briefingFlight))recordBriefingInteraction(text);
     if(S.briefingStage==='opening')S.briefingStage='interactive';
     updateOperationalWorkflowUI();
+    saveSession();
     S.processingSpeech=false;
     if(S.callActive)setTimeout(startAutoListen,300);
   };
@@ -3989,7 +4115,9 @@ function beginIpadReply(){
 
 function endCall(){
   S.callActive=false;
+  S.incomingCall=null;
   S.listenRestartPending=false;
+  $('incoming-actions').classList.remove('on');
   $('ipad-reply').classList.remove('on');
   stopRingback();stopOpsAmbience();playHangup();
   S.processingSpeech=false;S.micActive=false;
@@ -4026,6 +4154,16 @@ function addCallHist(type){
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // ACARS
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+function opsAcarsBlock({category='OPS',priority='INFO',flightNo,lines=[],action='',reply='',source=''}){
+  return window.OPS_CORE?.formatAcars({category,priority,flightNo:flightNo||S.currentFlight?.flightNo||`${currentOperator().icao}---`,time:utcNow(),lines,action,reply,source})||lines.join(' // ');
+}
+
+function normalizeOpsAcarsReply(text,{category='OPS',priority='INFO',flightNo}={}){
+  const clean=String(text||'').replace(/```/g,'').trim();if(!clean)return '';
+  if(/^\s*[A-Z _/-]+\s+(?:MESSAGE|UPDATE\s+\d+)\s*\/\/\s*(?:INFO|ADVISORY|ACTION|PROPOSAL|REVISION|URGENT)/i.test(clean)&&/\bFLT\s+/i.test(clean))return clean.toUpperCase();
+  return opsAcarsBlock({category,priority,flightNo,lines:[clean],reply:priority==='INFO'?'NIL':'ACK OR ADVISE',source:'OPS ANALYSIS OF CREW MESSAGE'});
+}
+
 function addAcars(from,code,text,urgent=false){
   const msgs=$('acars-msgs');
   const ph=msgs.querySelector('div[style*="text-align:center"]');if(ph)ph.remove();
@@ -4046,7 +4184,11 @@ function addAcars(from,code,text,urgent=false){
     role:from==='ops'?'assistant':'user',
     content:`${utcNow()} [${String(code||'INFO')}] ${String(text||'')}`
   });
-  if(S.acarsHistory.length>30)S.acarsHistory=S.acarsHistory.slice(-30);
+  if(S.acarsHistory.length>60)S.acarsHistory=S.acarsHistory.slice(-60);
+  if(window.OPS_CORE){
+    S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+    window.OPS_CORE.recordEvent(S.opsMemory,{type:'ACARS',source:from==='ops'?'ops_plan':'crew_report',flightNo:S.currentFlight?.flightNo||null,channel:'ACARS',code:String(code||'INFO'),summary:String(text||'').slice(0,500)});
+  }
   if(!$('tab-acars').classList.contains('on')&&from==='ops'){
     S.acarsUnread++;
     const b=$('acars-bdg');b.textContent=S.acarsUnread;b.style.display='flex';
@@ -4061,6 +4203,12 @@ async function sendAcars(){
   if(!txt)return;
   const flt=S.currentFlight?.flightNo||`${currentOperator().icao}---`;
   const outgoing=txt.startsWith(flt)?txt:`${flt} \u2014 ${txt}`;
+  const inputAnalysis=operationalInputAnalysis(txt);
+  if(window.OPS_CORE){
+    S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+    window.OPS_CORE.absorbCrewReport(S.opsMemory,inputAnalysis,{flightNo:flt,phase:phaseLabel(S.phase)});
+    if(inputAnalysis.intent==='acknowledgement')window.OPS_CORE.acknowledgeLatestAction(S.opsMemory,'ACKNOWLEDGED BY ACARS');
+  }
   addAcars('pilot',type,outgoing);
   const historyCutoff=S.acarsHistory.length;
   $('acars-input').value='';
@@ -4072,7 +4220,7 @@ async function sendAcars(){
   const responseDueAt=Date.now()+responseDelay.ms;
   // Une décision équipage modifie le dossier avant le délai humain de réponse.
   // Le dispatcher conserve ensuite son temps réaliste de lecture/coordination.
-  const dossierUpdate=await processDossierUpdateFromMessage(txt,'ACARS ÉQUIPAGE');
+  const dossierUpdate=await processDossierUpdateFromMessage(txt,'ACARS ÉQUIPAGE',inputAnalysis);
   if(dossierUpdate.applied)showToast(dossierUpdate.message,6500);
   await sleep(Math.max(0,responseDueAt-Date.now()));
   // AI response
@@ -4081,13 +4229,13 @@ async function sendAcars(){
     const controller=new AbortController();
     const timer=setTimeout(()=>controller.abort(),15000);
     const acarsContext=S.currentFlight
-      ? `${rotationContextForAI()} ${airportReferenceContext(txt)} Phase d\u00E9clar\u00E9e: ${PHASE_LABELS[S.phase]}. Heure actuelle ${utcNow()}.`
+      ? `${rotationContextForAI()} ${airportReferenceContext(inputAnalysis.normalized)} ${persistentOpsContext()} INTERPRÉTATION DU MESSAGE: intention ${inputAnalysis.intent}, texte normalisé ${inputAnalysis.normalized}. Phase d\u00E9clar\u00E9e: ${PHASE_LABELS[S.phase]}. Heure actuelle ${utcNow()}.`
       : `Aucun vol courant. ${airportReferenceContext(txt)} Heure actuelle ${utcNow()}.`;
     const res=await fetch(`${OPS_PROXY}/ai`,{
       method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
       body:JSON.stringify({
         model:'claude-haiku-4-5-20251001',max_tokens:120,
-        system:`Tu es ${S.dispatcher?.name||'dispatcher'}, dispatcher de ${currentOperator().name}, ${currentOperator().fullName}. Type d exploitation: ${operationLabel(S.operationType)}. Réponds uniquement en ${S.language==='en'?'anglais':'français'}. Adresse toujours le message au numéro de vol ${flt} ou à l équipage; ne tutoie jamais le pilote et n utilise jamais son prénom dans un message ACARS. Tu assures le suivi déclaratif du vol sans connexion MSFS. Synthétise les messages du pilote dans leur ordre chronologique, tiens compte des heures déclarées et de la phase déduite, puis réponds uniquement au dernier message. N invente jamais une position, une heure de passage, une météo ou un événement non transmis. Format ACARS professionnel et standardisé, deux lignes maximum. Adapte le vocabulaire à l exploitation: mission et handling à la demande, programme et rotation en transport régulier, manifeste et chargement en cargo. Le moteur dossier a retourné: ${dossierUpdate.message||'aucune modification explicite appliquée'}. Si une révision est appliquée, confirme le numéro de révision et son contenu. Ne dis jamais que le dispatcher ne peut pas modifier le routing ou le dossier: seul le résultat du moteur structuré fait foi. Si une information essentielle manque, demande-la. Si URG, active le protocole urgence. Mode: ${S.mode}. ${acarsContext} ${liveContext} ${EASA}`,
+        system:`Tu es ${S.dispatcher?.name||'dispatcher'}, dispatcher de ${currentOperator().name}, ${currentOperator().fullName}. Type d exploitation: ${operationLabel(S.operationType)}. Réponds uniquement en ${S.language==='en'?'anglais':'français'}. Adresse toujours le message au numéro de vol ${flt} ou à l équipage; ne tutoie jamais le pilote et n utilise jamais son prénom dans un message ACARS. Tu assures le suivi déclaratif du vol sans connexion MSFS. Synthétise les messages du pilote dans leur ordre chronologique, tiens compte des heures déclarées et de la phase déduite, puis réponds uniquement au dernier message. N invente jamais une position, une heure de passage, une météo ou un événement non transmis. Format imposé: ligne 1 CATEGORIE MESSAGE // PRIORITE; ligne 2 FLT ${flt} // HEURE ZULU; puis une à trois lignes factuelles; ACTION si nécessaire; REPLY si nécessaire; SOURCE pour toute donnée équipage, ATC/VATSIM/IVAO, OFP ou météo live. Aucune salutation, aucun prénom, aucun paragraphe narratif. Adapte le vocabulaire à l exploitation: mission et handling à la demande, programme et rotation en transport régulier, manifeste et chargement en cargo. Le moteur dossier a retourné: ${dossierUpdate.message||'aucune modification explicite appliquée'}. Si une révision est appliquée, confirme le numéro de révision et son contenu. Ne dis jamais que le dispatcher ne peut pas modifier le routing ou le dossier: seul le résultat du moteur structuré fait foi. Si une information essentielle manque, demande-la. Si URG, active le protocole urgence. Mode: ${S.mode}. ${acarsContext} ${liveContext} ${EASA}`,
         messages:S.acarsHistory.slice(0,historyCutoff).slice(-12)
       })
     });
@@ -4095,7 +4243,7 @@ async function sendAcars(){
     if(!res.ok)throw new Error(`Proxy HTTP ${res.status}`);
     const data=await res.json();
     const reply=data.content?.[0]?.text;
-    if(reply)addAcars('ops','INFO',reply);
+    if(reply){const priority=dossierUpdate.applied?'REVISION':inputAnalysis.emergency?'URGENT':'INFO';addAcars('ops',priority,normalizeOpsAcarsReply(reply,{category:type,priority,flightNo:flt}),priority==='URGENT');}
   }catch(e){console.error(e);addAcars('ops','ALERT','LIAISON OPS INDISPONIBLE \u2014 R\u00C9ESSAYEZ',true);}
 }
 

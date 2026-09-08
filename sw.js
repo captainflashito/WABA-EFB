@@ -1,5 +1,5 @@
-const CACHE_NAME='ops-center-v3-crew-diversion-19';
-const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json?v=20260906','./data/aircraft-catalog.js?v=19','./data/operator-catalog.js?v=19','./data/operator-profiles.js?v=19','./data/i18n.js?v=19','./data/world-land.geojson'];
+const CACHE_NAME='ops-center-v4-ops-core-21';
+const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json?v=20260906','./data/aircraft-catalog.js?v=21','./data/operator-catalog.js?v=21','./data/operator-profiles.js?v=21','./data/i18n.js?v=21','./data/ops-core.js?v=21','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE_NAME).then(cache=>cache.addAll(APP_FILES)).catch(()=>{}));
