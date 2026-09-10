@@ -1,4 +1,4 @@
-const CACHE_NAME='ops-center-v5-briefing-22';
+const CACHE_NAME='ops-center-v6-captain-briefing-22';
 const APP_FILES=['./','./index.html','./manifest.webmanifest','./ops-icon.svg','./data/airports.min.json?v=20260906','./data/aircraft-catalog.js?v=22','./data/operator-catalog.js?v=22','./data/operator-profiles.js?v=22','./data/i18n.js?v=22','./data/ops-core.js?v=22','./data/world-land.geojson'];
 
 self.addEventListener('install',event=>{

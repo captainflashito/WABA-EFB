@@ -17,9 +17,10 @@ IMPORTANT
 
 PRINCIPALES NOUVEAUTÉS V22
 
-- briefing OFP complet en six séquences vocales courtes ;
-- reprise automatique au bon endroit après une coupure ou avec la commande « continue » ;
-- validation du briefing seulement après la dernière séquence ;
+- briefing OFP interactif conduit par le commandant ;
+- courte introduction OPS, puis réponses uniquement aux questions posées ;
+- commande « continue » limitée à un seul point supplémentaire ;
+- clôture du briefing seulement lorsque le commandant la confirme ;
 - messages ACARS courts, structurés et sans répétition d’en-tête ;
 - priorités ACARS recalibrées : URGENT réservé aux urgences déclarées ;
 - appels entrants conservant le motif et le contexte du vol ;

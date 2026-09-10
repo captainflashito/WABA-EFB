@@ -1560,6 +1560,11 @@ function briefingContinuationIntent(text){
   return /^(?:CONTINUE|CONTINUEZ|POURSUIS|POURSUIVEZ|SUITE|VAS Y|ALLEZ Y|REPRENDS|REPRENEZ|GO AHEAD|CARRY ON|NEXT|RESUME)(?:\s+(?:LE|LA|THE)?\s*BRIEF(?:ING)?)?$/.test(value)||
     /\b(?:CONTINUE|POURSUIS|REPRENDS|CARRY ON|RESUME)\b.{0,20}\b(?:BRIEF|BRIEFING|OFP)\b/.test(value);
 }
+function briefingCompletionIntent(text){
+  const value=normalizeSearchText(text).trim();
+  return /\b(?:BRIEFING|BRIEF)\b.{0,24}\b(?:TERMINE|CLOTURE|COMPLET|FINI|COMPLETE|CLOSED|FINISHED)\b/.test(value)||
+    /^(?:C EST BON|ON A FAIT LE TOUR|RIEN D AUTRE|THAT S ALL|ALL GOOD)(?:\s+(?:POUR MOI|MERCI|THANKS))?[.! ]*$/.test(value);
+}
 function updateOperationalWorkflowUI(){
   const rotation=$('workflow-rotation'),ofpStep=$('workflow-ofp'),briefing=$('workflow-briefing'),summary=$('workflow-summary');
   if(!rotation||!ofpStep||!briefing||!summary)return;
@@ -4028,6 +4033,10 @@ function recordBriefingInteraction(text,{completed=false,section=null}={}){
     briefing.sequence.lastSection=section.id;
     briefing.sequence.covered=[...new Set([...(briefing.sequence.covered||[]),section.id])];
     briefing.sequence.index=Math.max(Number(briefing.sequence.index||0),BRIEFING_SECTIONS.findIndex(item=>item.id===section.id)+1);
+  }else{
+    const topics=briefingTopicsFromMessage(text),topicMap={weather:'weather',notams:'notams_runway','commercial load':'mission','fuel and OFP':'fuel','slots and timing':'threats_ground','ground handling':'threats_ground',rotation:'route'};
+    const covered=topics.map(topic=>topicMap[topic]).filter(Boolean);
+    briefing.sequence.covered=[...new Set([...(briefing.sequence.covered||[]),...covered])];
   }
   if(completed)briefing.completedAt=new Date().toISOString();
   updateOperationalWorkflowUI();
@@ -4041,23 +4050,26 @@ async function runBriefingSequence(f,baseSystem,{restart=false}={}){
     const done=S.language==='en'?'The complete briefing is already recorded. Tell me which point you want to review.':'Le briefing complet est déjà enregistré. Dis-moi simplement quel point tu veux reprendre.';
     addTx('ops',S.dispatcher.name,done);await speak(done);return;
   }
-  while(S.callActive&&Number(sequence.index)<BRIEFING_SECTIONS.length){
-    const section=BRIEFING_SECTIONS[Number(sequence.index)],number=Number(sequence.index)+1;
-    $('mic-tip').textContent=`Briefing OFP · ${number}/${BRIEFING_SECTIONS.length} · ${section.topic}`;
-    const sectionSystem=`${baseSystem} BRIEFING SÉQUENCÉ: tu présentes uniquement la section ${number} sur ${BRIEFING_SECTIONS.length}, ${section.topic}. ${section.instruction} Commence directement par les informations utiles. N annonce pas le numéro de section. N utilise ni listes, ni titres, ni avertissement générique. Ne termine pas au milieu d une phrase. La section suivante sera générée séparément.`;
-    const prompt=S.language==='en'?`Continue the formal OFP briefing with ${section.topic}.`:`Poursuis le briefing OFP avec ${section.topic}.`;
-    const reply=await callAI(sectionSystem,prompt,{maxTokens:210});
-    if(!S.callActive)return;
-    if(!reply){
-      $('mic-tip').textContent=S.language==='en'?'Briefing paused — say “continue”':'Briefing suspendu — dis « continue »';
-      return;
-    }
-    rememberOperationalVoice('dispatcher',reply);addTx('ops',S.dispatcher.name,reply);
-    await speak(reply);
-    if(!S.callActive)return;
-    recordBriefingInteraction(prompt,{section,completed:number===BRIEFING_SECTIONS.length});
-    await sleep(260);
+  if(!S.callActive)return;
+  const section=BRIEFING_SECTIONS[Number(sequence.index)],number=Number(sequence.index)+1;
+  $('mic-tip').textContent=`Briefing OFP · ${section.topic}`;
+  const handover=number===1
+    ?'Termine en disant au commandant que tu le laisses conduire le briefing et demande par quel point il souhaite commencer.'
+    :'Après cette réponse, arrête-toi et attends la prochaine question du commandant.';
+  const sectionSystem=`${baseSystem} BRIEFING CONDUIT PAR LE COMMANDANT: tu présentes uniquement ${section.topic}. ${section.instruction} Commence directement par les informations utiles. N annonce pas le numéro de section. N utilise ni listes, ni titres, ni avertissement générique. Ne termine pas au milieu d une phrase. ${handover} Ne poursuis jamais spontanément avec une autre section.`;
+  const prompt=number===1
+    ?(S.language==='en'?'Open the formal OFP briefing briefly, then hand control to the captain.':'Ouvre brièvement le briefing OFP, puis laisse le commandant le conduire.')
+    :(S.language==='en'?`Continue only with ${section.topic}.`:`Continue uniquement avec ${section.topic}.`);
+  const reply=await callAI(sectionSystem,prompt,{maxTokens:number===1?145:165});
+  if(!S.callActive)return;
+  if(!reply){
+    $('mic-tip').textContent=S.language==='en'?'Briefing paused — ask your next question':'Briefing suspendu — pose ta prochaine question';
+    return;
   }
+  rememberOperationalVoice('dispatcher',reply);addTx('ops',S.dispatcher.name,reply);
+  await speak(reply);
+  if(!S.callActive)return;
+  recordBriefingInteraction(prompt,{section,completed:false});
   S.briefingStage='interactive';
 }
 
@@ -4195,6 +4207,7 @@ async function startAutoListen(fromIpadButton=false){
     if(S.callType==='briefing'&&!importedOFPReady(briefingFlight)){
       S.callType='free';S.briefingStage=null;briefingUnavailable=true;
     }
+    const briefingCompletedByCaptain=S.callType==='briefing'&&briefingCompletionIntent(text);
     const lang=S.language;
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
     const dispatcherProfile=window.OPS_CORE?.DISPATCHER_PROFILES?.[S.dispatcher?.id];
@@ -4208,7 +4221,9 @@ async function startAutoListen(fromIpadButton=false){
       sys+=` Le pilote demande un briefing formel, mais le secteur courant ne possède pas d OFP SimBrief importé et à jour dans l application. Explique-le en une phrase naturelle: la rotation et le dossier préliminaire sont disponibles, mais il faut préparer puis importer l OFP avant le briefing. Ne prétends pas que le briefing a commencé. Reste disponible pour toute autre demande OPS.`;
     }else if(S.callType==='briefing'){
       if(shouldRunBriefingSequence){
-        sys+=` L OFP SimBrief du secteur est importé et à jour. Le briefing complet est produit en plusieurs séquences courtes et mémorisées. Respecte strictement la section demandée par le moteur.`;
+        sys+=` L OFP SimBrief du secteur est importé et à jour. Le briefing est conduit par le commandant. Donne uniquement la courte introduction ou le point demandé par le moteur, puis attends la prochaine question.`;
+      }else if(briefingCompletedByCaptain){
+        sys+=` Le commandant clôture explicitement le briefing. Confirme la clôture en une seule phrase naturelle et reste disponible; n ajoute aucune nouvelle information.`;
       }else{
         sys+=` Le briefing est interactif. R\u00E9ponds uniquement \u00E0 la question pos\u00E9e, en une \u00E0 trois phrases courtes. Ne r\u00E9cite jamais tout le dossier et ne donne aucune information non demand\u00E9e.`;
       }
@@ -4220,9 +4235,9 @@ async function startAutoListen(fromIpadButton=false){
       if(S.callActive)setTimeout(startAutoListen,300);
       return;
     }
-    const reply=await callAI(sys,text);
+    const reply=await callAI(sys,text,{maxTokens:S.callType==='briefing'?150:180});
     if(reply&&S.callActive){rememberOperationalVoice('dispatcher',reply);maybeScheduleSpokenFollowUp(reply);addTx('ops',S.dispatcher.name,reply);await speak(reply);}
-    if(S.callType==='briefing'&&importedOFPReady(briefingFlight))recordBriefingInteraction(text);
+    if(S.callType==='briefing'&&importedOFPReady(briefingFlight))recordBriefingInteraction(text,{completed:briefingCompletedByCaptain});
     if(S.briefingStage==='opening')S.briefingStage='interactive';
     updateOperationalWorkflowUI();
     saveSession();
