@@ -159,7 +159,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-b);
 .amsg.from-pilot{align-self:flex-end}
 .amsg-hdr{display:flex;align-items:center;gap:5px;font-size:8px;font-family:var(--font-m);color:var(--text3)}
 .amsg-hdr.r{justify-content:flex-end}
-.abub{padding:7px 11px;border-radius:7px;font-size:10px;font-family:var(--font-m);line-height:1.6}
+.abub{padding:7px 11px;border-radius:7px;font-size:10px;font-family:var(--font-m);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
 .from-ops .abub{background:var(--bg3);border:1px solid var(--border);border-top-left-radius:2px}
 .from-pilot .abub{background:rgba(184,151,62,.08);border:1px solid rgba(184,151,62,.18);
   border-top-right-radius:2px;color:var(--gold)}
@@ -513,11 +513,11 @@ html,body{width:100%;max-width:none;margin:0}
 }
 @media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}.ofp-runway-grid{grid-template-columns:1fr}}
 </style>
-<script src="data/aircraft-catalog.js?v=21"></script>
-<script src="data/operator-catalog.js?v=21"></script>
-<script src="data/operator-profiles.js?v=21"></script>
-<script src="data/i18n.js?v=21"></script>
-<script src="data/ops-core.js?v=21"></script>
+<script src="data/aircraft-catalog.js?v=22"></script>
+<script src="data/operator-catalog.js?v=22"></script>
+<script src="data/operator-profiles.js?v=22"></script>
+<script src="data/i18n.js?v=22"></script>
+<script src="data/ops-core.js?v=22"></script>
 </head>
 <body>
 
@@ -1264,7 +1264,7 @@ const S = {
   opsMemory:null,
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
-  convHistory:[], acarsHistory:[], position:'LFPO', callController:null,briefingStage:null,callMicStream:null,incomingCall:null,
+  convHistory:[], acarsHistory:[], position:'LFPO', callController:null,briefingStage:null,callMicStream:null,incomingCall:null,activeCallContext:null,
 };
 
 const SESSION_STORAGE_KEY='ops_center_session_v2';
@@ -1272,7 +1272,7 @@ let sessionResetting=false;
 
 function sessionSnapshot(){
   return{
-    version:3,savedAt:new Date().toISOString(),
+    version:4,savedAt:new Date().toISOString(),
     pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,language:S.language,simbriefPilotId:S.simbriefPilotId,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
@@ -1339,6 +1339,7 @@ function restoreSession(){
   updateOperationalWorkflowUI();
   addAcars('ops','INFO',`SESSION RESTAUR\u00C9E // DUTY ${S.dutyStart}Z-${S.dutyEnd}Z // ${S.rotationPlan.length} SECTEUR(S)`);
   showToast(`Session ${currentOperator().name} restaur\u00E9e`,5000);
+  rearmOpsFollowUps();
   initElevenLabs();
   return true;
 }
@@ -1553,6 +1554,11 @@ function briefingRequestIntent(text){
   return /^(?:LE |UN |THE )?(?:BRIEF|BRIEFING|FLIGHT BRIEFING)$/i.test(value.trim())||
     /\b(?:POUR|FAIRE|LANCER|COMMENCER|AVOIR|DEMANDER|APPELER|READY FOR|START|REQUEST|CALLING FOR)\b.{0,45}\b(?:BRIEF|BRIEFING|DOSSIER DE VOL|FLIGHT BRIEF)/.test(value)||
     /\b(?:BRIEF|BRIEFING|FLIGHT BRIEF)\b.{0,30}\b(?:S IL VOUS PLAIT|SVP|PLEASE|MAINTENANT|NOW)/.test(value);
+}
+function briefingContinuationIntent(text){
+  const value=normalizeSearchText(text).trim();
+  return /^(?:CONTINUE|CONTINUEZ|POURSUIS|POURSUIVEZ|SUITE|VAS Y|ALLEZ Y|REPRENDS|REPRENEZ|GO AHEAD|CARRY ON|NEXT|RESUME)(?:\s+(?:LE|LA|THE)?\s*BRIEF(?:ING)?)?$/.test(value)||
+    /\b(?:CONTINUE|POURSUIS|REPRENDS|CARRY ON|RESUME)\b.{0,20}\b(?:BRIEF|BRIEFING|OFP)\b/.test(value);
 }
 function updateOperationalWorkflowUI(){
   const rotation=$('workflow-rotation'),ofpStep=$('workflow-ofp'),briefing=$('workflow-briefing'),summary=$('workflow-summary');
@@ -3148,10 +3154,10 @@ function triggerWeightedScenario(f){
   const detail=window.OPS_CORE.scenarioDetail(scenario.id);
   const groundNow=[0,4].includes(S.phase),target=detail.phase==='ground'&&!groundNow?(S.rotationPlan[S.rotationIndex+1]||f):f;
   const sectorPrefix=target===f?'SECTOR':'NEXT SECTOR';
-  const facts=[`${scenario.id} ${scenario.title}`,`${sectorPrefix} ${target.dep}-${target.arr}`,...detail.facts];
+  const facts=[`${sectorPrefix} ${target.dep}-${target.arr}`,...detail.facts].slice(0,3);
   if(scenario.category==='slot')facts.push(`CURRENT CTOT REFERENCE ${formatAbsTime(target.depMinuteOfDay+15)}Z`);
   if(scenario.category==='handling')facts.push(`ARRIVAL HANDLING ${target.arr} ${target.arrAp?.handling||'TO BE CONFIRMED'}`);
-  const message=window.OPS_CORE.formatAcars({category:scenario.category,priority:detail.priority,flightNo:target.flightNo,time:utcNow(),lines:facts,action:detail.action,reply:detail.priority==='INFO'?'NIL':detail.priority==='ADVISORY'?'ACK IF RECEIVED':'ACK OR ADVISE',source:'OPS SCENARIO ENGINE'});
+  const message=window.OPS_CORE.formatAcars({category:scenario.category,priority:detail.priority,flightNo:target.flightNo,time:utcNow(),lines:facts,action:detail.priority==='INFO'?'':detail.action,reply:detail.priority==='INFO'?'NIL':detail.priority==='ADVISORY'?'ACK':'ACK OR ADVISE',source:`OPS SCENARIO ${scenario.id}`});
   window.OPS_CORE.recordEvent(S.opsMemory,{type:'SCENARIO',source:'scenario',flightNo:target.flightNo,scenarioId:scenario.id,severity:scenario.severity,summary:scenario.title});
   if(detail.priority!=='INFO')window.OPS_CORE.addAction(S.opsMemory,{category:scenario.category,priority:detail.priority,flightNo:target.flightNo,summary:detail.action,scenarioId:scenario.id});
   addAcars('ops',detail.priority,message,detail.priority==='URGENT');
@@ -3192,6 +3198,53 @@ function applyOperationalChange(action,f){
 }
 
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+const opsFollowUpTimers=new Map();
+
+function followUpResult(item){
+  const kind=String(item.kind||'ops').toLowerCase(),f=S.rotationPlan?.find(leg=>leg.flightNo===item.flightNo)||S.currentFlight;
+  if(kind.includes('handling')){
+    const handling=f?.arrAp?.handling||'TO BE CONFIRMED',parking=f?.arrAp?.parking||'TO BE CONFIRMED';
+    return{title:'HANDLING UPDATE',lines:[`ARRIVAL HANDLING ${f?.arr||'---'} ${handling}`,`PARKING ${parking}`],action:/CONFIRM/i.test(`${handling} ${parking}`)?'HANDLING CONFIRMATION REMAINS OPEN':'REVIEW ARRIVAL ARRANGEMENTS'};
+  }
+  if(kind.includes('pax')||kind.includes('client'))return{title:'PASSENGER UPDATE',lines:[`FINAL FILED LOAD ${f?.pax?.length??0} PAX`,item.subject],action:'ADVISE OPS OF ANY FURTHER CHANGE'};
+  if(kind.includes('weather'))return{title:'WEATHER UPDATE',lines:[`ARRIVAL WEATHER REVIEW REQUESTED FOR ${f?.arr||'---'}`,item.subject],action:'REQUEST CURRENT ARRIVAL PACKAGE'};
+  if(kind.includes('technical')||kind.includes('camo'))return{title:'TECHNICAL UPDATE',lines:['TECHNICAL FOLLOW-UP RECORDED',item.subject],action:'CONFIRM TECH LOG STATUS BEFORE FURTHER ACTION'};
+  return{title:'OPS FOLLOW-UP',lines:['REQUESTED OPS FOLLOW-UP COMPLETED',item.subject],action:'CONTACT OPS IF FURTHER DETAIL IS REQUIRED'};
+}
+
+function armOpsFollowUp(item){
+  if(!item||item.status!=='PENDING'||opsFollowUpTimers.has(item.id))return;
+  const delay=Math.max(250,new Date(item.dueAt).getTime()-Date.now());
+  const timer=setTimeout(()=>{opsFollowUpTimers.delete(item.id);deliverOpsFollowUp(item.id);},delay);opsFollowUpTimers.set(item.id,timer);
+}
+
+function scheduleOpsFollowUp(spec={}){
+  if(!window.OPS_CORE)return null;S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);
+  const subject=sanitizeAcarsField(spec.subject||'OPS COORDINATION',120);
+  const duplicate=S.opsMemory.followUps.find(item=>item.status==='PENDING'&&item.flightNo===(spec.flightNo||S.currentFlight?.flightNo||'')&&item.subject===subject);if(duplicate)return duplicate;
+  const item=window.OPS_CORE.scheduleFollowUp(S.opsMemory,{kind:spec.kind||'ops',subject,delaySeconds:spec.delaySeconds||45,flightNo:spec.flightNo||S.currentFlight?.flightNo||'',channel:spec.channel||'CALL',dispatcher:spec.dispatcher||S.dispatcher?.id||'',priority:spec.priority||'ADVISORY'});
+  armOpsFollowUp(item);saveSession();return item;
+}
+
+function deliverOpsFollowUp(id){
+  if(!window.OPS_CORE)return;S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);const item=S.opsMemory.followUps.find(entry=>entry.id===id);if(!item||item.status!=='PENDING')return;
+  if(S.callActive){item.dueAt=new Date(Date.now()+30000).toISOString();armOpsFollowUp(item);saveSession();return;}
+  const result=followUpResult(item);window.OPS_CORE.resolveFollowUp(S.opsMemory,id,result.title);saveSession();
+  const payload={flightNo:item.flightNo,title:result.title,reason:result.lines.join('. '),urgent:item.priority==='URGENT',detail:{priority:item.priority},followUpId:id};
+  if(item.channel==='CALL'&&[0,4].includes(S.phase))showIncomingOpsCall(payload);
+  else addAcars('ops',item.priority,opsAcarsBlock({category:result.title,priority:item.priority,flightNo:item.flightNo,lines:result.lines,action:result.action,reply:'ACK',source:'OPS COORDINATION'}),item.priority==='URGENT');
+}
+
+function rearmOpsFollowUps(){
+  if(!window.OPS_CORE)return;S.opsMemory=window.OPS_CORE.ensureMemory(S.opsMemory);S.opsMemory.followUps.filter(item=>item.status==='PENDING').forEach(armOpsFollowUp);
+}
+
+function maybeScheduleSpokenFollowUp(reply){
+  const value=normalizeSearchText(reply);if(!/\b(?:JE TE RAPPELLE|ON TE RAPPELLE|JE VAIS TE RAPPELER|JE REVIENS VERS TOI|JE (?:VAIS )?CONTACTE?R?|JE (?:VAIS )?VERIFIE?R?|I.?LL CALL YOU BACK|I WILL CALL YOU BACK|I.?LL CHECK)\b/.test(value))return null;
+  const kind=/HANDLING|FBO/.test(value)?'handling':/PAX|PASSAGER|CLIENT/.test(value)?'pax':/METEO|WEATHER|METAR|TAF/.test(value)?'weather':/CAMO|TECHNI/.test(value)?'technical':'ops';
+  return scheduleOpsFollowUp({kind,subject:`${S.currentFlight?.flightNo||'VOL'} · ${kind.toUpperCase()} · INFORMATION DEMANDÉE`,delaySeconds:30+Math.floor(Math.random()*61),channel:'CALL'});
+}
+
 function showIncomingOpsCall(payload={}){
   if(S.callActive||S.incomingCall)return;
   if(![0,4].includes(S.phase)&&!payload.urgent){
@@ -3259,11 +3312,21 @@ function usesAppleTouchAudio(){
     (navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 }
 
+function naturalInboundReason(payload,lang='fr'){
+  const value=normalizeSearchText(`${payload?.title||''} ${payload?.reason||''}`),flight=payload?.flightNo||S.currentFlight?.flightNo||'';
+  if(/PAX|PASSENGER|CLIENT/.test(value))return lang==='en'?`a passenger update concerning flight ${flight}`:`une mise à jour passagers concernant le vol ${flight}`;
+  if(/HANDLING|FBO|PARKING|STAND/.test(value))return lang==='en'?`a ground-handling update for flight ${flight}`:`une mise à jour handling concernant le vol ${flight}`;
+  if(/WEATHER|METEO|RUNWAY/.test(value))return lang==='en'?`an arrival weather update for flight ${flight}`:`une évolution météo à l’arrivée du vol ${flight}`;
+  if(/TECHNICAL|CAMO|DEFECT/.test(value))return lang==='en'?`a technical coordination item for flight ${flight}`:`un point de coordination technique concernant le vol ${flight}`;
+  if(/CTOT|SLOT|ATC/.test(value))return lang==='en'?`an ATC regulation update for flight ${flight}`:`une mise à jour de régulation ATC concernant le vol ${flight}`;
+  return lang==='en'?`an operational update concerning flight ${flight}`:`une mise à jour opérationnelle concernant le vol ${flight}`;
+}
+
 async function initiateCall(type,options={}){
   if(!S.pilot){alert('Prenez votre service d abord');return;}
   const inbound=Boolean(options.incoming),inboundPayload=options.payload||S.incomingCall;
   unlockVoicePlayback();
-  S.callType=type;S.callActive=true;S.incomingCall=null;S.convHistory=[];S.briefingStage=null;
+  S.callType=type;S.callActive=true;S.incomingCall=null;S.activeCallContext=inbound?inboundPayload:null;S.convHistory=[];S.briefingStage=null;
   // Safari iPad/iPhone g\u00E8re mal la lecture TTS lorsqu un flux getUserMedia
   // reste ouvert. Sur ces appareils, la reconnaissance active donc le micro
   // seulement pendant les tours de parole du pilote (mode semi-duplex).
@@ -3297,7 +3360,7 @@ async function initiateCall(type,options={}){
   $('call-stat').textContent=S.language==='en'?'CONNECTED':'EN COMMUNICATION';
   const lang=S.language;
   const greet=inbound
-    ?(lang==='en'?`${d.name} from ${currentOperator().name} operations. I’m calling about ${String(inboundPayload?.title||'an operational update').toLowerCase()}. Do you have a moment?`:`${d.name} aux opérations ${currentOperator().name}. Je t’appelle au sujet de ${String(inboundPayload?.title||'une information opérationnelle').toLowerCase()}. Tu as une minute ?`)
+    ?(lang==='en'?`${d.name} from ${currentOperator().name} operations. I’m calling about ${naturalInboundReason(inboundPayload,'en')}. Do you have a moment?`:`${d.name} aux opérations ${currentOperator().name}. Je t’appelle pour ${naturalInboundReason(inboundPayload,'fr')}. Tu as une minute ?`)
     :(lang==='en'?`${d.name}, ${currentOperator().name} dispatch, go ahead Captain.`:`${d.name}, dispatch ${currentOperator().name}, je t\u2019\u00E9coute.`);
   addTx('ops',d.name,greet);await speak(greet);
   if(inboundPayload&&window.OPS_CORE){
@@ -3350,7 +3413,7 @@ function handleBriefingResponse(rotation,options={}){
   }
 }
 
-async function callAI(systemPrompt,userMsg){
+async function callAI(systemPrompt,userMsg,options={}){
   try{
     if(S.callController)S.callController.abort();
     const controller=new AbortController();
@@ -3365,7 +3428,7 @@ async function callAI(systemPrompt,userMsg){
       signal:controller.signal,
       body:JSON.stringify({
         model:'claude-haiku-4-5-20251001',
-        max_tokens:180,
+        max_tokens:Math.max(80,Math.min(220,Number(options.maxTokens)||180)),
         system:`${systemPrompt}\nR\u00C8GLE DE SORTIE ABSOLUE: \u00E9cris seulement les mots r\u00E9ellement prononc\u00E9s par le dispatcher. Aucune didascalie, indication de ton, \u00E9motion, geste, pause, bruitage, nom de locuteur, ast\u00E9risque, crochet ou parenth\u00E8se de mise en sc\u00E8ne. N explique jamais comment la phrase doit \u00EAtre dite. Fais des phrases courtes et naturelles. Adapte subtilement tes paroles \u00E0 la situation et \u00E0 l \u00E9tat apparent du pilote: rassure sans dramatiser, reconnais une difficult\u00E9 avant de proposer une action, sois plus direct en urgence et plus chaleureux lors d un \u00E9change normal. Exprime cette sensibilit\u00E9 uniquement par le choix des mots, le rythme des phrases et la ponctuation.`,
         messages:msgs
       })
@@ -3543,8 +3606,17 @@ function aviationForSpeech(text){
   return out;
 }
 
+function enforceFrenchCallRegister(text){
+  if(S.language!=='fr')return String(text||'');
+  const replacements=[
+    [/\bje vous écoute\b/gi,"je t’écoute"],[/\bje vous rappelle\b/gi,"je te rappelle"],[/\bje vous confirme\b/gi,"je te confirme"],
+    [/\bvous êtes\b/gi,'tu es'],[/\bvous avez\b/gi,'tu as'],[/\bvous allez\b/gi,'tu vas'],[/\bvous pouvez\b/gi,'tu peux'],[/\bvous voulez\b/gi,'tu veux'],[/\bvous devez\b/gi,'tu dois'],[/\bvous restez\b/gi,'tu restes'],[/\bvous confirmez\b/gi,'tu confirmes'],[/\bvous envisagez\b/gi,'tu envisages'],[/\bdites-moi\b/gi,'dis-moi'],[/\bvotre\b/gi,'ton'],[/\bvos\b/gi,'tes'],[/\bavec vous\b/gi,'avec toi'],[/\bpour vous\b/gi,'pour toi']
+  ];
+  return replacements.reduce((value,[pattern,replacement])=>value.replace(pattern,replacement),String(text||''));
+}
+
 function cleanAssistantDialogue(text){
-  return String(text||'')
+  return enforceFrenchCallRegister(String(text||'')
     .replace(/<[^>]*>/g,' ')
     .replace(/\*\*?[^*\n]+\*\*?/g,' ')
     .replace(/\[[^\]]*\]/g,' ')
@@ -3556,7 +3628,8 @@ function cleanAssistantDialogue(text){
     .replace(/\s+([,.;!?])/g,'$1')
     .replace(/[ \t]{2,}/g,' ')
     .replace(/\n{3,}/g,'\n\n')
-    .trim();
+    .replace(/\b(?:dans cette simulation|comme il s agit d une simulation|pour un vol réel|données non certifiées)[^.?!]*[.?!]?/gi,' ')
+    .trim());
 }
 
 function cleanForSpeech(text) {
@@ -3921,15 +3994,71 @@ function briefingTopicsFromMessage(text){
   if(/ROUTE|TRAJET|ROTATION|SECTEUR|LEG|ESCALE/.test(value))topics.push('rotation');
   return topics;
 }
-function recordBriefingInteraction(text){
+const BRIEFING_SECTIONS=[
+  {id:'mission',topic:'mission and load',instruction:'Présente le vol, les aérodromes, les horaires, le type de mission et la charge commerciale. Deux ou trois phrases.'},
+  {id:'route',topic:'route',instruction:'Résume la route ATS, le niveau initial, la distance et le cost index. Ne lis pas chaque point de route si elle est longue. Deux ou trois phrases.'},
+  {id:'fuel',topic:'fuel and masses',instruction:'Présente block fuel, trip fuel, ZFW et TOW disponibles. Explique uniquement les écarts ou remarques réellement présents. Deux ou trois phrases.'},
+  {id:'weather',topic:'weather',instruction:'Présente la météo départ, arrivée, alternate et en route ou SIGMET disponibles. Donne les conditions puis les évolutions utiles, sans dire que la météo est indisponible si des données figurent dans le dossier. Trois ou quatre phrases.'},
+  {id:'notams_runway',topic:'notams and runway analysis',instruction:'Présente les NOTAM opérationnellement importants puis la runway analysis départ et arrivée: pistes, masses, vent, surface, vitesses et limitations disponibles. Ne récite pas les champs absents. Trois ou quatre phrases.'},
+  {id:'threats_ground',topic:'threats and ground coordination',instruction:'Termine par le handling, parking, contraintes OPS, menaces et points à surveiller réellement présents. Donne une synthèse finale claire et demande si le pilote veut approfondir un point. Trois ou quatre phrases.'}
+];
+
+function ensureBriefingState(f=operationalFlight(),reset=false){
+  if(!f)return null;
+  const revision=Number(S.rotationRevision||0),invalid=Number(f.briefing?.revision??-1)!==revision;
+  if(reset||!f.briefing||invalid){
+    f.briefing={startedAt:new Date().toISOString(),completedAt:null,topics:[],revision,sequence:{version:1,index:0,covered:[],lastSection:null}};
+  }
+  if(!f.briefing.sequence){
+    // Les versions antérieures validaient parfois le briefing dès la première
+    // réponse. On invalide uniquement ce marqueur ancien, sans toucher à l'OFP.
+    f.briefing.completedAt=null;
+    f.briefing.sequence={version:1,index:0,covered:[],lastSection:null};
+  }
+  f.briefing.sequence.covered=Array.isArray(f.briefing.sequence.covered)?f.briefing.sequence.covered:[];
+  return f.briefing;
+}
+
+function recordBriefingInteraction(text,{completed=false,section=null}={}){
   const f=S.currentFlight;if(!f)return;
-  if(!f.briefing)f.briefing={startedAt:new Date().toISOString(),completedAt:null,topics:[],revision:S.rotationRevision||0};
-  f.briefing.completedAt=f.briefing.completedAt||utcNow();
-  f.briefing.revision=S.rotationRevision||0;
-  f.briefing.topics=[...new Set([...(f.briefing.topics||[]),...briefingTopicsFromMessage(text)])];
+  const briefing=ensureBriefingState(f);
+  briefing.revision=S.rotationRevision||0;
+  briefing.topics=[...new Set([...(briefing.topics||[]),...briefingTopicsFromMessage(text),...(section?[section.topic]:[])])];
+  if(section){
+    briefing.sequence.lastSection=section.id;
+    briefing.sequence.covered=[...new Set([...(briefing.sequence.covered||[]),section.id])];
+    briefing.sequence.index=Math.max(Number(briefing.sequence.index||0),BRIEFING_SECTIONS.findIndex(item=>item.id===section.id)+1);
+  }
+  if(completed)briefing.completedAt=new Date().toISOString();
   updateOperationalWorkflowUI();
   renderRotationPlan();
   saveSession();
+}
+
+async function runBriefingSequence(f,baseSystem,{restart=false}={}){
+  const briefing=ensureBriefingState(f,restart),sequence=briefing.sequence;
+  if(Number(sequence.index)>=BRIEFING_SECTIONS.length){
+    const done=S.language==='en'?'The complete briefing is already recorded. Tell me which point you want to review.':'Le briefing complet est déjà enregistré. Dis-moi simplement quel point tu veux reprendre.';
+    addTx('ops',S.dispatcher.name,done);await speak(done);return;
+  }
+  while(S.callActive&&Number(sequence.index)<BRIEFING_SECTIONS.length){
+    const section=BRIEFING_SECTIONS[Number(sequence.index)],number=Number(sequence.index)+1;
+    $('mic-tip').textContent=`Briefing OFP · ${number}/${BRIEFING_SECTIONS.length} · ${section.topic}`;
+    const sectionSystem=`${baseSystem} BRIEFING SÉQUENCÉ: tu présentes uniquement la section ${number} sur ${BRIEFING_SECTIONS.length}, ${section.topic}. ${section.instruction} Commence directement par les informations utiles. N annonce pas le numéro de section. N utilise ni listes, ni titres, ni avertissement générique. Ne termine pas au milieu d une phrase. La section suivante sera générée séparément.`;
+    const prompt=S.language==='en'?`Continue the formal OFP briefing with ${section.topic}.`:`Poursuis le briefing OFP avec ${section.topic}.`;
+    const reply=await callAI(sectionSystem,prompt,{maxTokens:210});
+    if(!S.callActive)return;
+    if(!reply){
+      $('mic-tip').textContent=S.language==='en'?'Briefing paused — say “continue”':'Briefing suspendu — dis « continue »';
+      return;
+    }
+    rememberOperationalVoice('dispatcher',reply);addTx('ops',S.dispatcher.name,reply);
+    await speak(reply);
+    if(!S.callActive)return;
+    recordBriefingInteraction(prompt,{section,completed:number===BRIEFING_SECTIONS.length});
+    await sleep(260);
+  }
+  S.briefingStage='interactive';
 }
 
 function importedOFPWeatherContext(icao){
@@ -4050,13 +4179,17 @@ async function startAutoListen(fromIpadButton=false){
     $('mic-tip').textContent=S.language==='en'?'Operations is preparing a reply…':'Les OPS préparent leur réponse…';
     const liveContextPromise=requestedLiveContext(text);
     const dossierUpdate=await processDossierUpdateFromMessage(text,'APPEL OPS / \u00C9QUIPAGE',inputAnalysis);
-    const wantsBriefing=briefingRequestIntent(text),briefingFlight=operationalFlight();
-    let briefingJustStarted=false,briefingUnavailable=false;
+    const wantsBriefing=briefingRequestIntent(text),continueBriefing=briefingContinuationIntent(text),briefingFlight=operationalFlight();
+    let briefingJustStarted=false,briefingUnavailable=false,shouldRunBriefingSequence=false;
     if(wantsBriefing){
       if(importedOFPReady(briefingFlight)){
         briefingJustStarted=S.callType!=='briefing'&&!currentBriefingReady(briefingFlight);
         S.callType='briefing';S.briefingStage=briefingJustStarted?'opening':'interactive';
       }else briefingUnavailable=true;
+    }
+    if(importedOFPReady(briefingFlight)&&(briefingJustStarted||(S.callType==='briefing'&&continueBriefing))){
+      const briefing=ensureBriefingState(briefingFlight);
+      shouldRunBriefingSequence=!briefing.completedAt&&Number(briefing.sequence?.index||0)<BRIEFING_SECTIONS.length;
     }
     // Toute révision opérationnelle qui périme l'OFP suspend le briefing formel.
     if(S.callType==='briefing'&&!importedOFPReady(briefingFlight)){
@@ -4066,22 +4199,29 @@ async function startAutoListen(fromIpadButton=false){
     let sys=CALL_SYS[S.callType]?.[lang]?.(S.dispatcher,{pilot:S.pilot,rank:S.rank,mode:S.mode},S.aircraft)||CALL_SYS.free[lang](S.dispatcher,{pilot:S.pilot,rank:S.rank});
     const dispatcherProfile=window.OPS_CORE?.DISPATCHER_PROFILES?.[S.dispatcher?.id];
     if(dispatcherProfile)sys+=` DISPATCHER OPERATIONAL PROFILE: specialty ${dispatcherProfile.specialties.join(', ')}; current operational constraints ${dispatcherProfile.constraints.join(', ')}. These constraints influence coordination time and the information requested, but never justify inventing a refusal or ignoring a confirmed crew decision.`;
-    sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Reply only in ${lang==='en'?'English':'French'}. This is a spoken telephone exchange between aviation colleagues. In French, use a natural professional tu form and you may address the pilot by first name; never sound ceremonial or administrative. This spoken-call register is deliberately different from ACARS, where messages remain standardized and addressed to the crew or flight number. A confirmed crew decision may modify the structured dossier through the application engine. Never claim that dispatch is unable to modify routing or the flight file; report only the engine result supplied below. Ignore any contradictory historical identity. INTERPRÉTATION DE LA PAROLE: intention ${inputAnalysis.intent}, texte normalisé ${inputAnalysis.normalized}. ${airportReferenceContext(inputAnalysis.normalized)} ${persistentOpsContext()}`;
+    if(S.activeCallContext)sys+=` PRIORITÉ CONTEXTUELLE: cet appel a été initié par les OPS, pas par le pilote. Motif déjà connu: ${S.activeCallContext.title||'mise à jour OPS'}; détail ${S.activeCallContext.reason||'non précisé'}; vol concerné ${S.activeCallContext.flightNo||S.currentFlight?.flightNo}. Ne demande jamais au pilote pourquoi il appelle. Ne redemande pas une position ou une phase déjà déclarée. Explique le motif, puis pose uniquement la question opérationnelle encore nécessaire.`;
+    sys+=` ACTIVE IDENTITY: ${currentOperator().name}, ICAO code ${currentOperator().icao}, radio callsign ${currentOperator().telephony}, operation ${operationLabel(S.operationType)}. Phase connue ${phaseLabel(S.phase)}, position déclarée ${S.position||S.currentFlight?.dep||'non renseignée'}. Reply only in ${lang==='en'?'English':'French'}. This is a spoken telephone exchange between aviation colleagues. In French, use only a natural professional tu form: never switch to vous within the call. You may address the pilot by first name sparingly; never sound ceremonial or administrative. Never mention that the environment is a simulation and never repeat generic certification disclaimers. This spoken-call register is deliberately different from ACARS, where messages remain standardized and addressed to the crew or flight number. A confirmed crew decision may modify the structured dossier through the application engine. Never claim that dispatch is unable to modify routing or the flight file; report only the engine result supplied below. Ignore any contradictory historical identity. INTERPRÉTATION DE LA PAROLE: intention ${inputAnalysis.intent}, texte normalisé ${inputAnalysis.normalized}. ${airportReferenceContext(inputAnalysis.normalized)} ${persistentOpsContext()}`;
     if(S.currentFlight)sys+=` ${rotationContextForAI()} Le moteur structur\u00E9 de l application est seul autoris\u00E9 \u00E0 modifier ces donn\u00E9es. Ne confirme que son r\u00E9sultat. Si le dossier indique qu un briefing a d\u00E9j\u00E0 eu lieu, reprends la conversation sans recommencer toute la pr\u00E9sentation.`;
     if(S.callType==='briefing'&&importedOFPReady(briefingFlight))sys+=` ${formalBriefingOFPContext(briefingFlight)}`;
     if(dossierUpdate.message)sys+=` R\u00C9SULTAT DU MOTEUR DOSSIER: ${dossierUpdate.message} Confirme exactement ce r\u00E9sultat au pilote; ne pr\u00E9tends jamais avoir appliqu\u00E9 autre chose.`;
     if(briefingUnavailable){
       sys+=` Le pilote demande un briefing formel, mais le secteur courant ne possède pas d OFP SimBrief importé et à jour dans l application. Explique-le en une phrase naturelle: la rotation et le dossier préliminaire sont disponibles, mais il faut préparer puis importer l OFP avant le briefing. Ne prétends pas que le briefing a commencé. Reste disponible pour toute autre demande OPS.`;
     }else if(S.callType==='briefing'){
-      if(briefingJustStarted||S.briefingStage==='opening'){
-        sys+=` L OFP SimBrief du secteur est importé et à jour. Ouvre maintenant le briefing formel. Confirme le numéro de vol, la route et les horaires, puis résume les éléments OFP essentiels réellement présents: route ATS, carburant block et trip, niveau ou cost index, météo et NOTAM lorsqu ils figurent dans le contexte. Trois à cinq phrases naturelles maximum. Termine en demandant au pilote quel point il souhaite approfondir. N invente aucune donnée absente.`;
+      if(shouldRunBriefingSequence){
+        sys+=` L OFP SimBrief du secteur est importé et à jour. Le briefing complet est produit en plusieurs séquences courtes et mémorisées. Respecte strictement la section demandée par le moteur.`;
       }else{
         sys+=` Le briefing est interactif. R\u00E9ponds uniquement \u00E0 la question pos\u00E9e, en une \u00E0 trois phrases courtes. Ne r\u00E9cite jamais tout le dossier et ne donne aucune information non demand\u00E9e.`;
       }
     }
     sys+=` ${await liveContextPromise}`;
+    if(shouldRunBriefingSequence){
+      await runBriefingSequence(briefingFlight,sys);
+      updateOperationalWorkflowUI();saveSession();S.processingSpeech=false;
+      if(S.callActive)setTimeout(startAutoListen,300);
+      return;
+    }
     const reply=await callAI(sys,text);
-    if(reply&&S.callActive){rememberOperationalVoice('dispatcher',reply);addTx('ops',S.dispatcher.name,reply);await speak(reply);}
+    if(reply&&S.callActive){rememberOperationalVoice('dispatcher',reply);maybeScheduleSpokenFollowUp(reply);addTx('ops',S.dispatcher.name,reply);await speak(reply);}
     if(S.callType==='briefing'&&importedOFPReady(briefingFlight))recordBriefingInteraction(text);
     if(S.briefingStage==='opening')S.briefingStage='interactive';
     updateOperationalWorkflowUI();
@@ -4116,6 +4256,7 @@ function beginIpadReply(){
 function endCall(){
   S.callActive=false;
   S.incomingCall=null;
+  S.activeCallContext=null;
   S.listenRestartPending=false;
   $('incoming-actions').classList.remove('on');
   $('ipad-reply').classList.remove('on');
@@ -4158,10 +4299,35 @@ function opsAcarsBlock({category='OPS',priority='INFO',flightNo,lines=[],action=
   return window.OPS_CORE?.formatAcars({category,priority,flightNo:flightNo||S.currentFlight?.flightNo||`${currentOperator().icao}---`,time:utcNow(),lines,action,reply,source})||lines.join(' // ');
 }
 
-function normalizeOpsAcarsReply(text,{category='OPS',priority='INFO',flightNo}={}){
-  const clean=String(text||'').replace(/```/g,'').trim();if(!clean)return '';
-  if(/^\s*[A-Z _/-]+\s+(?:MESSAGE|UPDATE\s+\d+)\s*\/\/\s*(?:INFO|ADVISORY|ACTION|PROPOSAL|REVISION|URGENT)/i.test(clean)&&/\bFLT\s+/i.test(clean))return clean.toUpperCase();
-  return opsAcarsBlock({category,priority,flightNo,lines:[clean],reply:priority==='INFO'?'NIL':'ACK OR ADVISE',source:'OPS ANALYSIS OF CREW MESSAGE'});
+function sanitizeAcarsField(value,max=140){
+  return String(value||'').replace(/```(?:json)?/gi,' ').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').replace(/^[-–—: ]+|[-–—: ]+$/g,'').trim().slice(0,max);
+}
+
+function acarsCategoryFor(type,intent){
+  if(intent==='weather_request')return 'WEATHER';
+  if(intent==='notam_request')return 'NOTAM';
+  if(intent==='status_report')return 'FLIGHT WATCH';
+  if(intent==='fuel_report'||intent==='fuel_explanation')return 'FUEL';
+  if(intent==='acknowledgement')return 'ACKNOWLEDGEMENT';
+  return({RDY:'DEPARTURE',REQ:'REQUEST',DLA:'DELAY',WX:'WEATHER',FUEL:'FUEL',PAX:'LOAD',TECH:'TECHNICAL',URG:'EMERGENCY',FLT:'FLIGHT WATCH',UPD:'FLIGHT WATCH',ATC:'ATC'})[type]||'OPS';
+}
+
+function structuredOpsAcarsReply(text,{category='OPS',priority='INFO',flightNo,source='OPS ANALYSIS'}={}){
+  const parsed=parseJsonObject(text)||{};
+  const allowedPriorities=new Set(['INFO','ADVISORY','ACTION','PROPOSAL','REVISION','URGENT']);
+  const enforced=String(priority||'INFO').toUpperCase();
+  const selected=allowedPriorities.has(enforced)?enforced:'INFO';
+  const facts=Array.isArray(parsed.facts)?parsed.facts.map(value=>sanitizeAcarsField(value)).filter(Boolean).slice(0,3):[];
+  if(parsed.impact&&facts.length<3)facts.push(`IMPACT: ${sanitizeAcarsField(parsed.impact,110)}`);
+  if(!facts.length){
+    const fallback=sanitizeAcarsField(parsed.fact||parsed.message||cleanAssistantDialogue(text),180)
+      .replace(/\b(?:INFO|ADVISORY|ACTION|PROPOSAL|REVISION|URGENT)\s+(?:MESSAGE|UPDATE)\b/gi,'')
+      .replace(/\bFLT\s+[A-Z0-9-]+\s*\/\/\s*\d{2}:?\d{2}Z?\b/gi,'').trim();
+    facts.push(fallback||'MESSAGE RECEIVED');
+  }
+  const action=selected==='INFO'?'':sanitizeAcarsField(parsed.action,110);
+  const reply=selected==='INFO'?'NIL':sanitizeAcarsField(parsed.reply,60)||'ACK OR ADVISE';
+  return opsAcarsBlock({category:sanitizeAcarsField(parsed.category||category,28),priority:selected,flightNo,lines:facts,action,reply,source:sanitizeAcarsField(source,70)});
 }
 
 function addAcars(from,code,text,urgent=false){
@@ -4231,19 +4397,25 @@ async function sendAcars(){
     const acarsContext=S.currentFlight
       ? `${rotationContextForAI()} ${airportReferenceContext(inputAnalysis.normalized)} ${persistentOpsContext()} INTERPRÉTATION DU MESSAGE: intention ${inputAnalysis.intent}, texte normalisé ${inputAnalysis.normalized}. Phase d\u00E9clar\u00E9e: ${PHASE_LABELS[S.phase]}. Heure actuelle ${utcNow()}.`
       : `Aucun vol courant. ${airportReferenceContext(txt)} Heure actuelle ${utcNow()}.`;
+    const forcedPriority=dossierUpdate.applied?'REVISION':(inputAnalysis.emergency||type==='URG')?'URGENT':['REQ','DLA','TECH'].includes(type)?'ACTION':['weather_request','notam_request'].includes(inputAnalysis.intent)?'ADVISORY':'INFO';
+    const responseSource=inputAnalysis.atc?'CREW REPORT / ATC NETWORK':inputAnalysis.intent==='weather_request'?'LIVE WEATHER OR OFP SNAPSHOT':'CREW MESSAGE';
     const res=await fetch(`${OPS_PROXY}/ai`,{
       method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,
       body:JSON.stringify({
-        model:'claude-haiku-4-5-20251001',max_tokens:120,
-        system:`Tu es ${S.dispatcher?.name||'dispatcher'}, dispatcher de ${currentOperator().name}, ${currentOperator().fullName}. Type d exploitation: ${operationLabel(S.operationType)}. Réponds uniquement en ${S.language==='en'?'anglais':'français'}. Adresse toujours le message au numéro de vol ${flt} ou à l équipage; ne tutoie jamais le pilote et n utilise jamais son prénom dans un message ACARS. Tu assures le suivi déclaratif du vol sans connexion MSFS. Synthétise les messages du pilote dans leur ordre chronologique, tiens compte des heures déclarées et de la phase déduite, puis réponds uniquement au dernier message. N invente jamais une position, une heure de passage, une météo ou un événement non transmis. Format imposé: ligne 1 CATEGORIE MESSAGE // PRIORITE; ligne 2 FLT ${flt} // HEURE ZULU; puis une à trois lignes factuelles; ACTION si nécessaire; REPLY si nécessaire; SOURCE pour toute donnée équipage, ATC/VATSIM/IVAO, OFP ou météo live. Aucune salutation, aucun prénom, aucun paragraphe narratif. Adapte le vocabulaire à l exploitation: mission et handling à la demande, programme et rotation en transport régulier, manifeste et chargement en cargo. Le moteur dossier a retourné: ${dossierUpdate.message||'aucune modification explicite appliquée'}. Si une révision est appliquée, confirme le numéro de révision et son contenu. Ne dis jamais que le dispatcher ne peut pas modifier le routing ou le dossier: seul le résultat du moteur structuré fait foi. Si une information essentielle manque, demande-la. Si URG, active le protocole urgence. Mode: ${S.mode}. ${acarsContext} ${liveContext} ${EASA}`,
-        messages:S.acarsHistory.slice(0,historyCutoff).slice(-12)
+        model:'claude-haiku-4-5-20251001',max_tokens:180,
+        system:`Tu es le moteur de synthèse ACARS de ${currentOperator().name}. Réponds en JSON brut uniquement, sans Markdown: {"category":"","facts":["",""],"impact":"","action":"","reply":"","follow_up":{"required":false,"kind":"","delay_seconds":0,"subject":""}}. Langue des phrases: ${S.language==='en'?'anglais':'français'}, avec les abréviations aéronautiques usuelles. Maximum trois faits courts. Aucun en-tête, aucune heure, aucune priorité, aucun numéro de vol: l application les ajoute. Aucun prénom, aucune salutation, aucun tutoiement. Ne répète pas le message équipage mot pour mot. Ne promets jamais de rappel, contact handling ou confirmation ultérieure sauf si follow_up.required vaut true. Une coordination future est une action interne OPS et non une donnée déjà confirmée. N invente ni position, ni heure, ni météo, ni délai. Ne crée jamais une heure limite antérieure à l heure actuelle. N écris jamais que ceci est une simulation. Le moteur dossier a retourné: ${dossierUpdate.message||'aucune modification explicite appliquée'}. ${acarsContext} ${liveContext} ${EASA}`,
+        messages:S.acarsHistory.slice(0,historyCutoff).slice(-8)
       })
     });
     clearTimeout(timer);
     if(!res.ok)throw new Error(`Proxy HTTP ${res.status}`);
     const data=await res.json();
     const reply=data.content?.[0]?.text;
-    if(reply){const priority=dossierUpdate.applied?'REVISION':inputAnalysis.emergency?'URGENT':'INFO';addAcars('ops',priority,normalizeOpsAcarsReply(reply,{category:type,priority,flightNo:flt}),priority==='URGENT');}
+    if(reply){
+      addAcars('ops',forcedPriority,structuredOpsAcarsReply(reply,{category:acarsCategoryFor(type,inputAnalysis.intent),priority:forcedPriority,flightNo:flt,source:responseSource}),forcedPriority==='URGENT');
+      const structured=parseJsonObject(reply),followUp=structured?.follow_up;
+      if(followUp?.required)scheduleOpsFollowUp({kind:sanitizeAcarsField(followUp.kind||'ops',30),subject:sanitizeAcarsField(followUp.subject||structured.action||'OPS COORDINATION',120),delaySeconds:Math.max(15,Math.min(600,Number(followUp.delay_seconds)||60)),flightNo:flt,channel:'ACARS',priority:'ADVISORY'});
+    }
   }catch(e){console.error(e);addAcars('ops','ALERT','LIAISON OPS INDISPONIBLE \u2014 R\u00C9ESSAYEZ',true);}
 }
 

@@ -31,7 +31,9 @@
   function nowIso(){return new Date().toISOString();}
   function clean(value){
     return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase()
-      .replace(/[’']/g,' ').replace(/[^A-Z0-9.,:?/\-\s]/g,' ').replace(/\s+/g,' ').trim();
+      .replace(/[’']/g,' ').replace(/[^A-Z0-9.,:?/\-\s]/g,' ').replace(/\s+/g,' ').trim()
+      .replace(/\bPACS\b/g,'PAX').replace(/\bQUEL\s+(WHISKY|WHISKEY)\b/g,'KILO $1')
+      .replace(/\b(?:ZULOU|ZOULOU)\b/g,'ZULU').replace(/\b(\d{1,2})H(\d{2})\s+LOU\b/g,'$1H$2 ZULU');
   }
   function parseDigitSequence(value){
     const words=clean(value).split(/\s+/),digits=[];
@@ -129,12 +131,13 @@
   }
 
   function createMemory(seed={}){
-    return Object.assign({version:1,createdAt:nowIso(),updatedAt:nowIso(),facts:{},events:[],openActions:[],amendments:[],voiceTurns:[],scenarioState:{lastId:null,majorCount:0,lastAt:0}},seed||{});
+    return Object.assign({version:2,createdAt:nowIso(),updatedAt:nowIso(),facts:{},events:[],openActions:[],followUps:[],amendments:[],voiceTurns:[],scenarioState:{lastId:null,majorCount:0,lastAt:0}},seed||{});
   }
   function ensureMemory(value){
     const memory=value&&typeof value==='object'?value:createMemory();
     memory.facts=memory.facts||{};memory.events=Array.isArray(memory.events)?memory.events:[];
     memory.openActions=Array.isArray(memory.openActions)?memory.openActions:[];
+    memory.followUps=Array.isArray(memory.followUps)?memory.followUps:[];
     memory.amendments=Array.isArray(memory.amendments)?memory.amendments:[];
     memory.voiceTurns=Array.isArray(memory.voiceTurns)?memory.voiceTurns:[];
     memory.scenarioState=memory.scenarioState||{lastId:null,majorCount:0,lastAt:0};
@@ -182,6 +185,22 @@
     memory=ensureMemory(memory);const action=[...memory.openActions].reverse().find(item=>item.status!=='CLOSED');
     return action?closeAction(memory,action.id,result):null;
   }
+  function scheduleFollowUp(memory,spec={}){
+    memory=ensureMemory(memory);const delay=Math.max(5,Math.min(600,Number(spec.delaySeconds)||45));
+    const item={id:`FUP-${Date.now()}-${Math.random().toString(36).slice(2,5)}`,createdAt:nowIso(),dueAt:new Date(Date.now()+delay*1000).toISOString(),status:'PENDING',kind:spec.kind||'ops',subject:spec.subject||'OPS COORDINATION',flightNo:spec.flightNo||'',channel:spec.channel||'CALL',dispatcher:spec.dispatcher||'',priority:spec.priority||'ADVISORY'};
+    memory.followUps.push(item);if(memory.followUps.length>30)memory.followUps=memory.followUps.slice(-30);
+    addAction(memory,{id:`ACT-${item.id}`,category:'follow_up',priority:item.priority,flightNo:item.flightNo,summary:item.subject,followUpId:item.id});
+    recordEvent(memory,{type:'FOLLOW_UP_SCHEDULED',source:'ops_plan',flightNo:item.flightNo,summary:item.subject,followUpId:item.id,dueAt:item.dueAt});return item;
+  }
+  function dueFollowUps(memory,at=Date.now()){
+    return ensureMemory(memory).followUps.filter(item=>item.status==='PENDING'&&new Date(item.dueAt).getTime()<=at);
+  }
+  function resolveFollowUp(memory,id,result='COMPLETED'){
+    memory=ensureMemory(memory);const item=memory.followUps.find(entry=>entry.id===id);if(!item)return null;
+    item.status='COMPLETED';item.completedAt=nowIso();item.result=result;
+    const action=memory.openActions.find(entry=>entry.followUpId===id&&entry.status!=='CLOSED');if(action)closeAction(memory,action.id,result);
+    recordEvent(memory,{type:'FOLLOW_UP_COMPLETED',source:'ops_plan',flightNo:item.flightNo,summary:`${item.subject}: ${result}`,followUpId:id});return item;
+  }
   function createAmendment(memory,flight,changeSet,meta={}){
     memory=ensureMemory(memory);const revision=memory.amendments.length+1;
     const amendment={
@@ -198,19 +217,19 @@
   function compactContext(memory){
     memory=ensureMemory(memory);const facts=Object.entries(memory.facts).slice(-12).map(([key,item])=>`${key}=${JSON.stringify(item.value)} (${item.source}, ${item.at})`).join('; ');
     const actions=memory.openActions.filter(item=>item.status!=='CLOSED').slice(-8).map(item=>`${item.id} ${item.category||item.priority}: ${item.summary||item.title||''} [${item.status}]`).join('; ');
+    const followUps=memory.followUps.filter(item=>item.status==='PENDING').slice(-5).map(item=>`${item.id} ${item.subject}, due ${item.dueAt}, channel ${item.channel}`).join('; ');
     const turns=memory.voiceTurns.slice(-6).map(item=>`${item.flightNo?`[${item.flightNo}] `:''}${item.role}: ${item.text}`).join(' | ');
     const amendments=memory.amendments.slice(-3).map(item=>`${item.id} ${item.kind} ${item.status}: ${item.reason}`).join('; ');
-    return `MÉMOIRE OPS PERSISTANTE. FAITS: ${facts||'aucun'}. ACTIONS OUVERTES: ${actions||'aucune'}. AMENDEMENTS: ${amendments||'aucun'}. DERNIERS ÉCHANGES VOCAUX: ${turns||'aucun'}.`;
+    return `MÉMOIRE OPS PERSISTANTE. FAITS: ${facts||'aucun'}. ACTIONS OUVERTES: ${actions||'aucune'}. SUIVIS PROGRAMMÉS: ${followUps||'aucun'}. AMENDEMENTS: ${amendments||'aucun'}. DERNIERS ÉCHANGES VOCAUX: ${turns||'aucun'}.`;
   }
   function formatAcars(message={}){
-    const priority=String(message.priority||'INFO').toUpperCase(),category=String(message.category||'OPS').toUpperCase();
-    const title=`${category} ${message.sequence?`UPDATE ${String(message.sequence).padStart(2,'0')}`:'MESSAGE'} // ${priority}`;
-    const header=`FLT ${message.flightNo||'---'} // ${message.time||'----Z'}`;
+    const category=String(message.category||'OPS').toUpperCase();
+    const title=`${category}${message.sequence?` UPDATE ${String(message.sequence).padStart(2,'0')}`:''} // ${message.flightNo||'---'}`;
     const lines=(message.lines||[]).filter(Boolean).map(line=>String(line).trim().toUpperCase());
     if(message.action)lines.push(`ACTION: ${String(message.action).toUpperCase()}`);
     if(message.reply)lines.push(`REPLY: ${String(message.reply).toUpperCase()}`);
     if(message.source)lines.push(`SOURCE: ${String(message.source).toUpperCase()}`);
-    return[title,header,...lines].join('\n');
+    return[title,...lines].join('\n');
   }
 
   const SCENARIOS={
@@ -248,22 +267,22 @@
     SCH06:{phase:'ground',priority:'ACTION',facts:['NETWORK REGULATION OR CTOT IS ACTIVE'],action:'REPORT ANY ATC REVISION OR START-UP APPROVAL'},
     SCH07:{phase:'ground',priority:'ADVISORY',facts:['INBOUND AIRCRAFT DELAY AFFECTS THE ROTATION'],action:'STANDBY FOR UPDATED BOARDING AND OFF-BLOCK TARGET'},
     SCH08:{phase:'ground',priority:'REVISION',facts:['FLEET CONTROL IS STUDYING AN AIRCRAFT SWAP'],action:'DO NOT ACCEPT A NEW AIRCRAFT UNTIL FORMALLY CONFIRMED',call:true},
-    SCH09:{phase:'ground',priority:'URGENT',facts:['A TURNAROUND TECHNICAL DEFECT REQUIRES CAMO REVIEW'],action:'REPORT TECH LOG WORDING AND HOLD DEPARTURE',call:true},
+    SCH09:{phase:'ground',priority:'ACTION',facts:['A TURNAROUND TECHNICAL DEFECT REQUIRES CAMO REVIEW'],action:'REPORT TECH LOG WORDING AND HOLD DEPARTURE',call:true},
     SCH10:{phase:'any',priority:'ADVISORY',facts:['DESTINATION WEATHER OR RUNWAY CONFIGURATION IS CHANGING'],action:'REQUEST CURRENT ARRIVAL PACKAGE WHEN REQUIRED'},
     SCH11:{phase:'ground',priority:'ACTION',facts:['CREW CONTROL IS REVIEWING DUTY OR CREW COVERAGE'],action:'CONFIRM CREW STATUS AND LATEST ACCEPTABLE OFF-BLOCK',call:true},
-    SCH12:{phase:'ground',priority:'URGENT',facts:['IRREGULAR OPERATIONS RECOVERY PLAN IS BEING BUILT'],action:'HOLD CURRENT PLAN AND CONTACT OPS',call:true},
+    SCH12:{phase:'ground',priority:'ACTION',facts:['IRREGULAR OPERATIONS RECOVERY PLAN IS BEING BUILT'],action:'HOLD CURRENT PLAN AND CONTACT OPS',call:true},
 
     CGO01:{phase:'ground',priority:'INFO',facts:['CARGO TURNAROUND AND DOCUMENTATION NOMINAL'],action:'REPORT LOAD COMPLETE'},
     CGO02:{phase:'ground',priority:'ADVISORY',facts:['BOOKED FREIGHT HAS NOT YET REACHED THE AIRCRAFT'],action:'REPORT LATEST LOAD-CLOSE TIME'},
     CGO03:{phase:'ground',priority:'REVISION',facts:['LOAD CONTROL REPORTS A PAYLOAD OR PIECE-COUNT CHANGE'],action:'CONFIRM FINAL FIGURES BEFORE LOADSHEET'},
     CGO04:{phase:'ground',priority:'ACTION',facts:['A ULD IS MISSING OR REPORTED DAMAGED'],action:'CONFIRM ULD ID AND AIRWORTHINESS STATUS',call:true},
-    CGO05:{phase:'ground',priority:'URGENT',facts:['DANGEROUS GOODS DOCUMENTATION REQUIRES REVIEW'],action:'HOLD LOADING AND CONTACT LOAD CONTROL',call:true},
+    CGO05:{phase:'ground',priority:'ACTION',facts:['DANGEROUS GOODS DOCUMENTATION REQUIRES REVIEW'],action:'HOLD LOADING AND CONTACT LOAD CONTROL',call:true},
     CGO06:{phase:'ground',priority:'ACTION',facts:['SECURITY INSPECTION HAS BEEN REQUESTED'],action:'DO NOT CLOSE LOAD UNTIL SECURITY RELEASE'},
     CGO07:{phase:'ground',priority:'ACTION',facts:['CUSTOMS OR MANIFEST RELEASE IS PENDING'],action:'STANDBY FOR FORMAL RELEASE',call:true},
     CGO08:{phase:'ground',priority:'ADVISORY',facts:['TEMPERATURE-CONTROLLED SHIPMENT REQUIRES MONITORING'],action:'REPORT LOADING TIME AND COMPARTMENT STATUS'},
     CGO09:{phase:'ground',priority:'ADVISORY',facts:['GROUND LOADING EQUIPMENT IS UNSERVICEABLE'],action:'REPORT REVISED LOAD-COMPLETE ESTIMATE'},
     CGO10:{phase:'ground',priority:'ACTION',facts:['CTOT CONFLICTS WITH HUB SORT OR CONNECTION BANK'],action:'REPORT ATC STATUS AND LOAD-CLOSE LIMIT'},
-    CGO11:{phase:'any',priority:'URGENT',facts:['CURFEW WEATHER OR AIRPORT CLOSURE MAY AFFECT ARRIVAL'],action:'REQUEST RECOVERY OPTIONS FROM OPS',call:true},
+    CGO11:{phase:'any',priority:'ACTION',facts:['CURFEW WEATHER OR AIRPORT CLOSURE MAY AFFECT ARRIVAL'],action:'REQUEST RECOVERY OPTIONS FROM OPS',call:true},
     CGO12:{phase:'any',priority:'REVISION',facts:['CARGO REROUTE OR TECHNICAL STOP IS UNDER REVIEW'],action:'HOLD ORIGINAL PLAN UNTIL A FORMAL REVISION IS ISSUED',call:true},
 
     BUS01:{phase:'ground',priority:'INFO',facts:['QUICK TURN HANDLING AND CLIENT PROGRAM NOMINAL'],action:'REPORT READY STATUS'},
@@ -272,12 +291,12 @@
     BUS04:{phase:'ground',priority:'PROPOSAL',facts:['CLIENT REQUESTS A DESTINATION CHANGE'],action:'HOLD CURRENT DOSSIER WHILE OPS CHECKS FEASIBILITY',call:true},
     BUS05:{phase:'ground',priority:'ADVISORY',facts:['AN EMPTY POSITIONING SECTOR MAY BE REQUIRED'],action:'STANDBY FOR CONFIRMED ROUTING'},
     BUS06:{phase:'ground',priority:'ACTION',facts:['FBO OR HANDLING AVAILABILITY IS CONSTRAINED'],action:'CONFIRM ACCEPTABLE SERVICE WINDOW',call:true},
-    BUS07:{phase:'ground',priority:'URGENT',facts:['PERMIT CUSTOMS OR IMMIGRATION CLEARANCE IS NOT CONFIRMED'],action:'HOLD DEPARTURE UNTIL RELEASE',call:true},
+    BUS07:{phase:'ground',priority:'ACTION',facts:['PERMIT CUSTOMS OR IMMIGRATION CLEARANCE IS NOT CONFIRMED'],action:'HOLD DEPARTURE UNTIL RELEASE',call:true},
     BUS08:{phase:'ground',priority:'ADVISORY',facts:['CATERING OR GROUND TRANSPORT TIMING HAS CHANGED'],action:'CONFIRM CLIENT-READY TIME'},
     BUS09:{phase:'ground',priority:'ADVISORY',facts:['DESTINATION PARKING OR HANGAR CAPACITY IS LIMITED'],action:'STANDBY FOR FBO CONFIRMATION'},
-    BUS10:{phase:'any',priority:'URGENT',facts:['RUNWAY LIGHTING OR WEATHER LIMIT MAY AFFECT DESTINATION SUITABILITY'],action:'REVIEW ALTERNATE AND REPORT CREW INTENTION',call:true},
+    BUS10:{phase:'any',priority:'ACTION',facts:['RUNWAY LIGHTING OR WEATHER LIMIT MAY AFFECT DESTINATION SUITABILITY'],action:'REVIEW ALTERNATE AND REPORT CREW INTENTION',call:true},
     BUS11:{phase:'ground',priority:'ACTION',facts:['DUTY REST OR OVERNIGHT CONSTRAINT AFFECTS THE PROGRAM'],action:'CONFIRM CREW LIMIT AND REST REQUIREMENT',call:true},
-    BUS12:{phase:'any',priority:'URGENT',facts:['TECHNICAL DIVERSION OR RECOVERY SUPPORT IS REQUIRED'],action:'CONTACT OPS WITH POSITION FUEL AND CREW INTENTION',call:true}
+    BUS12:{phase:'any',priority:'ACTION',facts:['TECHNICAL DIVERSION OR RECOVERY SUPPORT IS REQUIRED'],action:'CONTACT OPS WITH POSITION FUEL AND CREW INTENTION',call:true}
   };
   function scenarioObjects(type){
     return(SCENARIOS[type]||SCENARIOS.scheduled).map(row=>({id:row[0],operationType:type,title:row[1],category:row[2],severity:row[3],dispatcher:row[4],allowedPhases:row[3]==='routine'?[0,4]:[0,2,3,4]}));
@@ -302,6 +321,6 @@
   function scenarioDetail(id){return SCENARIO_DETAILS[id]||{phase:'any',priority:'INFO',facts:['OPERATIONAL UPDATE'],action:'ACKNOWLEDGE'};}
 
   global.OPS_CORE={VERSION,SOURCE_PRIORITY,DISPATCHER_PROFILES,SCENARIOS,SCENARIO_DETAILS,clean,recoverIcaoSequences,analyzeUtterance,
-    createMemory,ensureMemory,recordEvent,setFact,absorbCrewReport,rememberVoiceTurn,addAction,closeAction,acknowledgeLatestAction,
+    createMemory,ensureMemory,recordEvent,setFact,absorbCrewReport,rememberVoiceTurn,addAction,closeAction,acknowledgeLatestAction,scheduleFollowUp,dueFollowUps,resolveFollowUp,
     createAmendment,compactContext,formatAcars,scenarioObjects,chooseScenario,scenarioDetail};
 })(typeof window!=='undefined'?window:globalThis);
