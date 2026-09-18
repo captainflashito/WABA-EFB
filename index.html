@@ -470,14 +470,19 @@ html,body{width:100%;max-width:none;margin:0}
 .account-pill{height:30px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:7px;padding:0 10px;font:600 8px var(--font-b);cursor:pointer;display:flex;align-items:center;gap:7px}
 .account-pill::before{content:'TL';width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--blue);color:#fff;font-size:7px}
 .account-modal{position:fixed;inset:0;z-index:400;background:rgba(7,18,23,.58);display:none;align-items:center;justify-content:center;padding:20px}
-.account-modal.on{display:flex}.account-sheet{width:min(440px,100%);background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden}
+.account-modal.on{display:flex}.account-sheet{width:min(620px,100%);max-height:min(820px,calc(100dvh - 32px));background:var(--bg2);border:1px solid var(--border);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column}
 .account-head{display:flex;justify-content:space-between;align-items:center;padding:18px;border-bottom:1px solid var(--border)}
 .account-head strong{font-size:16px}.account-close{border:0;background:transparent;color:var(--text2);font-size:22px;cursor:pointer}
-.account-body{padding:18px}.account-identity{display:flex;gap:12px;align-items:center;margin-bottom:18px}.account-avatar{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700}
+.account-body{padding:18px;overflow:auto}.account-identity{display:flex;gap:12px;align-items:center;margin-bottom:18px}.account-avatar{width:44px;height:44px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-weight:700}
 .account-email{font-size:11px;color:var(--text2);margin-top:3px}.subscription-box{border:1px solid var(--border);border-radius:9px;padding:14px;background:var(--bg3)}
 .subscription-top{display:flex;justify-content:space-between;align-items:center}.subscription-plan{font-size:16px;font-weight:700}.subscription-state{font-size:9px;color:var(--green);font-weight:700}.subscription-copy{font-size:10px;line-height:1.55;color:var(--text2);margin:8px 0 12px}
 .subscription-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.account-note{margin-top:12px;font-size:9px;line-height:1.5;color:var(--text3)}
 .subscription-box .usage{height:6px;background:var(--bg4);border-radius:4px;overflow:hidden;margin:0 0 13px}.subscription-box .usage i{display:block;height:100%;background:var(--blue)}
+.setup-title-action{margin-left:auto;border:1px solid var(--border);background:var(--bg3);color:var(--blue);border-radius:7px;padding:7px 9px;font:700 8px var(--font-b);cursor:pointer}
+.planning-box{width:100%;margin:4px 0 13px;padding:13px;border:1px solid var(--border);border-radius:10px;background:var(--bg3)}
+.planning-title{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:11px}.planning-title strong{font-size:12px}.planning-title small{display:block;margin-top:3px;color:var(--text3);font-size:9px;line-height:1.4}.planning-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.planning-airports{grid-column:1/3}.planning-preview{margin-top:9px;min-height:30px;padding:8px 9px;border:1px dashed var(--border2);border-radius:7px;color:var(--text2);font-size:9px;line-height:1.5}.planning-preview.ok{border-color:rgba(47,128,96,.45);color:var(--green)}.planning-preview.warn{border-color:rgba(168,97,34,.5);color:var(--orange)}
+.account-section{margin-top:14px;padding-top:14px;border-top:1px solid var(--border)}.account-section-title{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:9px}.account-section-title strong{font-size:12px}.account-section-title span{font-size:8px;color:var(--text3)}
+.account-profile-form{display:grid;grid-template-columns:1fr auto;gap:8px}.account-profile-form .fi{min-height:40px}.company-profile-list{display:grid;gap:8px}.company-profile-empty{padding:13px;border:1px dashed var(--border2);border-radius:8px;color:var(--text3);font-size:9px;line-height:1.5}.company-profile-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px;border:1px solid var(--border);border-radius:9px;background:var(--bg3)}.company-profile-card strong{display:block;font-size:11px}.company-profile-meta{margin-top:4px;color:var(--text2);font-size:8px;line-height:1.45}.company-profile-actions{display:flex;gap:5px}.company-profile-actions button{border:1px solid var(--border);background:var(--bg2);color:var(--text2);border-radius:6px;padding:6px 7px;font:700 7px var(--font-b);cursor:pointer}.company-profile-actions .danger{color:var(--red)}
 .lang-toggle{height:30px;min-width:34px;border:1px solid var(--border);background:var(--bg3);color:var(--text);border-radius:7px;padding:0 8px;font:700 8px var(--font-b);cursor:pointer}
 .simbrief-card{border-left:3px solid #176B87}.simbrief-intro{font-size:10px;line-height:1.55;color:var(--text2);margin:-2px 0 13px}
 .simbrief-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px}
@@ -511,13 +516,13 @@ html,body{width:100%;max-width:none;margin:0}
   #page-acars{grid-column:2;grid-row:3}.acars-msgs{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}.acars-in{padding-left:max(24px,calc((100% - 900px)/2));padding-right:max(24px,calc((100% - 900px)/2))}
   .setup-ov,.boot-ov,.call-ov{max-width:none}.setup-ov>*{max-width:720px}.setup-ov{padding-top:30px}.setup-logo{font-size:25px}.setup-sub{margin-bottom:12px}.setup-tagline{margin-bottom:14px}.aircraft-specs{grid-template-columns:repeat(6,minmax(0,1fr))}
 }
-@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}.ofp-runway-grid{grid-template-columns:1fr}}
+@media(max-width:620px){.account-pill{width:30px;padding:0;font-size:0}.account-pill::before{margin:auto}.voice-pill{display:none}.subscription-actions{grid-template-columns:1fr}.simbrief-grid{grid-template-columns:1fr 1fr}.simbrief-extra{grid-template-columns:1fr 1fr}.simbrief-extra .simbrief-reason{grid-column:1/3}.simbrief-import{grid-template-columns:1fr}.simbrief-actions{grid-template-columns:1fr}.ofp-grid{grid-template-columns:1fr 1fr}.ofp-runway-grid{grid-template-columns:1fr}.planning-grid{grid-template-columns:1fr}.planning-airports{grid-column:auto}.setup-title-action{font-size:0;padding:7px}.setup-title-action::after{content:'+';font-size:14px}.company-profile-card{grid-template-columns:1fr}.company-profile-actions{justify-content:flex-end}}
 </style>
-<script src="data/aircraft-catalog.js?v=22"></script>
-<script src="data/operator-catalog.js?v=22"></script>
-<script src="data/operator-profiles.js?v=22"></script>
-<script src="data/i18n.js?v=22"></script>
-<script src="data/ops-core.js?v=22"></script>
+<script src="data/aircraft-catalog.js?v=23"></script>
+<script src="data/operator-catalog.js?v=23"></script>
+<script src="data/operator-profiles.js?v=23"></script>
+<script src="data/i18n.js?v=23"></script>
+<script src="data/ops-core.js?v=23"></script>
 </head>
 <body>
 
@@ -531,7 +536,7 @@ html,body{width:100%;max-width:none;margin:0}
   </div>
   <div class="setup-origin" id="setup-origin">OP&#xC9;RATEUR &#xB7; EXPLOITATION &#xB7; FLOTTE</div>
   <div class="setup-tagline" id="setup-tagline">Configurez votre environnement op&#xE9;rationnel.</div>
-  <div class="setup-form-title"><span>01</span><div><strong data-i18n="duty_title">Prise de service</strong><small data-i18n="duty_subtitle">Identification &#xE9;quipage et fen&#xEA;tre de duty</small></div></div>
+  <div class="setup-form-title"><span>01</span><div><strong data-i18n="duty_title">Prise de service</strong><small data-i18n="duty_subtitle">Identification &#xE9;quipage et fen&#xEA;tre de duty</small></div><button class="setup-title-action" type="button" data-i18n="company_profiles" onclick="openAccountPanel()">PROFILS COMPAGNIE</button></div>
   <input type="hidden" id="s-operator" value="custom"/>
   <div class="fg" style="width:100%;margin-bottom:13px">
     <label class="fl" data-i18n="language">Langue</label>
@@ -582,6 +587,48 @@ html,body{width:100%;max-width:none;margin:0}
     <label class="fl" data-i18n="aircraft">Avion</label>
     <select class="fi" id="s-ac" onchange="renderAircraftSpecs()"></select>
     <div class="aircraft-specs" id="aircraft-specs" aria-live="polite"></div>
+  </div>
+  <div class="planning-box">
+    <div class="planning-title"><div><strong data-i18n="desired_programme">Programme souhaité</strong><small data-i18n="desired_programme_help">L’algorithme respecte l’avion, le duty et les terrains compatibles.</small></div></div>
+    <div class="planning-grid">
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl" data-i18n="programme_type">Type de programme</label>
+        <select class="fi" id="s-range-profile" onchange="previewPlanningPreferences()">
+          <option value="auto" data-i18n="programme_auto">Automatique selon l’avion</option>
+          <option value="short" data-i18n="programme_short">Court-courrier</option>
+          <option value="medium" data-i18n="programme_medium">Moyen-courrier</option>
+          <option value="long" data-i18n="programme_long">Long-courrier</option>
+          <option value="mixed" data-i18n="programme_mixed">Mixte</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl" data-i18n="return_to_base">Retour à la base</label>
+        <select class="fi" id="s-return-policy" onchange="previewPlanningPreferences()">
+          <option value="possible" data-i18n="return_possible">Si le duty le permet</option>
+          <option value="required" data-i18n="return_required">Obligatoire</option>
+          <option value="none" data-i18n="return_not_required">Non imposé</option>
+        </select>
+      </div>
+      <div class="fg planning-airports" style="margin-bottom:0">
+        <label class="fl" data-i18n="preferred_airports">Aéroports souhaités (codes OACI)</label>
+        <input class="fi" id="s-preferred-airports" maxlength="80" placeholder="Ex. KJFK, CYYZ, EGLL" data-i18n-placeholder="preferred_airports_placeholder" autocapitalize="characters" oninput="previewPlanningPreferences()"/>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl" data-i18n="destination_priority">Priorité des destinations</label>
+        <select class="fi" id="s-airport-priority" onchange="previewPlanningPreferences()">
+          <option value="preferred" data-i18n="destinations_preferred">Préférées si possible</option>
+          <option value="required" data-i18n="destinations_required">Obligatoires</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl" data-i18n="service_order">Ordre de desserte</label>
+        <select class="fi" id="s-airport-order" onchange="previewPlanningPreferences()">
+          <option value="optimized" data-i18n="order_optimized">Optimisé par les OPS</option>
+          <option value="entered" data-i18n="order_entered">Dans l’ordre saisi</option>
+        </select>
+      </div>
+    </div>
+    <div class="planning-preview" id="airport-preference-preview" aria-live="polite" data-i18n="no_destination_required">Aucune destination imposée : les OPS construiront le programme.</div>
   </div>
   <div class="fg">
     <label class="fl" data-i18n="registration_optional">Immatriculation (facultative)</label>
@@ -965,16 +1012,22 @@ html,body{width:100%;max-width:none;margin:0}
 <!-- TOAST -->
 <div class="account-modal" id="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-title" onclick="if(event.target===this)closeAccountPanel()">
   <div class="account-sheet">
-    <div class="account-head"><strong id="account-title">Mon compte</strong><button class="account-close" onclick="closeAccountPanel()" aria-label="Fermer">&times;</button></div>
+    <div class="account-head"><strong id="account-title" data-i18n="my_account">Mon compte</strong><button class="account-close" onclick="closeAccountPanel()" aria-label="Fermer">&times;</button></div>
     <div class="account-body">
-      <div class="account-identity"><div class="account-avatar" id="account-avatar">TL</div><div><strong id="account-name">Compte de démonstration</strong><div class="account-email">Connexion sécurisée à venir</div></div></div>
+      <div class="account-identity"><div class="account-avatar" id="account-avatar">TL</div><div><strong id="account-name">Profil local</strong><div class="account-email">Enregistré uniquement sur cet appareil</div></div></div>
+      <div class="account-profile-form"><input class="fi" id="account-display-name" maxlength="40" placeholder="Votre nom d’affichage" data-i18n-placeholder="display_name"/><button class="btn btn-blue" data-i18n="save" onclick="saveLocalAccountIdentity()">ENREGISTRER</button></div>
+      <div class="account-section">
+        <div class="account-section-title"><strong data-i18n="company_profiles">Profils compagnie</strong><span id="company-profile-count">0 profil</span></div>
+        <div class="company-profile-list" id="company-profile-list"></div>
+        <button class="btn btn-sec" style="width:100%;margin-top:9px" data-i18n="save_current_configuration" onclick="saveCurrentCompanyProfile()">ENREGISTRER LA CONFIGURATION ACTUELLE</button>
+      </div>
       <div class="subscription-box">
         <div class="subscription-top"><span class="subscription-plan">Offre Pilot</span><span class="subscription-state">MODE APERÇU</span></div>
-        <div class="subscription-copy">Rotations complètes, ACARS, météo et voix OPS. Cette interface est prête à recevoir ultérieurement l’authentification et la facturation.</div>
+        <div class="subscription-copy">Rotations complètes, ACARS, météo et voix OPS. La structure de compte est prête à être reliée ultérieurement à une authentification et une facturation.</div>
         <div class="usage"><i style="width:18%"></i></div>
         <div class="subscription-actions"><button class="btn btn-sec" onclick="showToast('Gestion du profil disponible lors de la connexion des comptes')">GÉRER LE PROFIL</button><button class="btn btn-blue" onclick="showToast('Portail de paiement disponible lors de la connexion Stripe')">GÉRER L’ABONNEMENT</button></div>
       </div>
-      <div class="account-note">Aucun paiement réel n’est activé dans cette version. Les clés et les droits d’accès resteront gérés côté serveur.</div>
+      <div class="account-note">Pour cette première étape, le compte et les profils compagnie restent privés dans le navigateur. Ils ne sont pas encore synchronisés entre le Mac et l’iPad. Aucun paiement réel n’est activé.</div>
     </div>
   </div>
 </div>
@@ -1257,10 +1310,12 @@ Le commandant de bord conserve l'autorit\u00E9 finale. En cas d'urgence r\u00E9e
 const S = {
   pilot:null, rank:null, aircraft:null, registration:'', dutyDate:null, dutyStart:null, dutyEnd:null, dutyMinutes:0,
   operatorId:'general',customOperator:null,operationType:'scheduled',
+  planningPreferences:{rangeProfile:'auto',preferredAirports:[],airportPriority:'preferred',airportOrder:'optimized',returnPolicy:'possible'},
+  accountProfile:null,
   language:'fr',simbriefPilotId:'',
   mode:'normal', phase:0, dispatcher:null,
   currentFlight:null, sessionFlights:[], callType:null, callActive:false,
-  rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],
+  rotationPlan:[], rotationIndex:0, rotationType:null,rotationRevision:0,rotationHistory:[],planningError:'',
   opsMemory:null,
   inFlight:false, acarsUnread:0, micGranted:false, micActive:false,
   recognition:null, processingSpeech:false,
@@ -1273,7 +1328,7 @@ let sessionResetting=false;
 function sessionSnapshot(){
   return{
     version:4,savedAt:new Date().toISOString(),
-    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,language:S.language,simbriefPilotId:S.simbriefPilotId,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
+    pilot:S.pilot,rank:S.rank,aircraft:S.aircraft,registration:S.registration,operatorId:S.operatorId,customOperator:S.customOperator,operationType:S.operationType,planningPreferences:normalizePlanningPreferences(S.planningPreferences),language:S.language,simbriefPilotId:S.simbriefPilotId,dutyDate:S.dutyDate,dutyStart:S.dutyStart,dutyEnd:S.dutyEnd,dutyMinutes:S.dutyMinutes,
     mode:S.mode,phase:S.phase,dispatcherId:S.dispatcher?.id||null,
     currentFlight:S.currentFlight,sessionFlights:S.sessionFlights,
     rotationPlan:S.rotationPlan,rotationIndex:S.rotationIndex,rotationType:S.rotationType,
@@ -1304,17 +1359,18 @@ function applyRestoredPhase(n){
 function restoreSession(){
   let saved;
   try{saved=JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY)||'null');}catch{return false;}
-  if(!saved||![1,2,3].includes(saved.version)||!saved.pilot)return false;
+  if(!saved||![1,2,3,4].includes(saved.version)||!saved.pilot)return false;
   if(saved.version===1){
     if(saved.aircraft==='B737')saved.aircraft='B738';
     else if(saved.aircraft==='B738'&&saved.operationType==='business')saved.aircraft='BBJ2';
     if(saved.aircraft==='AT45')saved.aircraft='AT46';
   }
-  saved.version=3;
+  saved.version=4;
   if(!AIRCRAFT_DATA[saved.aircraft])return false;
   saved.dutyDate=saved.dutyDate||new Date().toISOString().slice(0,10);
   saved.operatorId=saved.operatorId==='custom'&&saved.customOperator?'custom':OPERATORS[saved.operatorId]?saved.operatorId:'general';
   saved.operationType=['business','scheduled','cargo'].includes(saved.operationType)?saved.operationType:'scheduled';
+  saved.planningPreferences=normalizePlanningPreferences(saved.planningPreferences);
   saved.language=saved.language==='en'?'en':'fr';
   saved.simbriefPilotId=String(saved.simbriefPilotId||localStorage.getItem('ops_center_simbrief_pilot_id')||'').replace(/\D/g,'').slice(0,12);
   saved.rotationRevision=Number(saved.rotationRevision)||0;
@@ -1505,6 +1561,7 @@ async function loadAirportDatabase(){
     showToast(`${t('embedded_database')} (${AIRPORTS.length.toLocaleString(uiLocale())})`,5000);
   }finally{
     if(button){button.disabled=false;button.textContent=t('start_duty');}
+    previewPlanningPreferences();
   }
 }
 async function loadWorldMap(){
@@ -1542,6 +1599,80 @@ $('utc-clock').textContent=utcNow();
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
 // DUTY SETUP
 // \u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550\u2550
+const DEFAULT_PLANNING_PREFERENCES={rangeProfile:'auto',preferredAirports:[],airportPriority:'preferred',airportOrder:'optimized',returnPolicy:'possible'};
+function normalizePlanningPreferences(value={}){
+  const input=value&&typeof value==='object'?value:{};
+  return{
+    rangeProfile:['auto','short','medium','long','mixed'].includes(input.rangeProfile)?input.rangeProfile:'auto',
+    preferredAirports:[...new Set((Array.isArray(input.preferredAirports)?input.preferredAirports:[]).map(code=>String(code||'').trim().toUpperCase()).filter(code=>/^[A-Z]{4}$/.test(code)))].slice(0,8),
+    airportPriority:['preferred','required'].includes(input.airportPriority)?input.airportPriority:'preferred',
+    airportOrder:['optimized','entered'].includes(input.airportOrder)?input.airportOrder:'optimized',
+    returnPolicy:['possible','required','none'].includes(input.returnPolicy)?input.returnPolicy:'possible'
+  };
+}
+function parsePreferredAirportInput(value){
+  return [...new Set(String(value||'').toUpperCase().split(/[^A-Z]+/).filter(Boolean))].slice(0,8);
+}
+function planningPreferencesFromForm(){
+  return normalizePlanningPreferences({
+    rangeProfile:$('s-range-profile')?.value,
+    preferredAirports:parsePreferredAirportInput($('s-preferred-airports')?.value),
+    airportPriority:$('s-airport-priority')?.value,
+    airportOrder:$('s-airport-order')?.value,
+    returnPolicy:$('s-return-policy')?.value
+  });
+}
+function rangeBandForAircraft(code=S.aircraft,requested=S.planningPreferences?.rangeProfile||'auto'){
+  const ac=AIRCRAFT_DATA[code];if(!ac)return{profile:'auto',minNm:0,maxNm:0};
+  let profile=requested;
+  if(profile==='auto'){
+    if(ac.range_nm>=5000||((ac.mtow||0)>=250000&&ac.categories?.includes('scheduled')))profile='long';
+    else if(ac.range_nm<=1250||ac.cruise_kt<330)profile='short';
+    else profile='mixed';
+  }
+  const usable=Math.max(100,Math.floor(ac.range_nm*.78));
+  const bands={
+    short:{minNm:60,maxNm:Math.min(900,usable)},
+    medium:{minNm:450,maxNm:Math.min(2800,usable)},
+    long:{minNm:Math.min(1800,Math.max(900,usable*.42)),maxNm:usable},
+    mixed:{minNm:100,maxNm:usable}
+  };
+  return{profile,...bands[profile]};
+}
+function distanceBetweenAirports(from,to){
+  const a=getAP(from),b=getAP(to);return a&&b?distNM(a.lat,a.lon,b.lat,b.lon):Infinity;
+}
+function airportFitsPlanningLeg(from,to,preferences=S.planningPreferences,aircraft=S.aircraft){
+  const band=rangeBandForAircraft(aircraft,preferences?.rangeProfile),distance=distanceBetweenAirports(from,to);
+  return Number.isFinite(distance)&&distance>=band.minNm&&distance<=band.maxNm;
+}
+function validatePlanningPreferences(preferences,base,aircraft){
+  const prefs=normalizePlanningPreferences(preferences),valid=[],issues=[];
+  let previous=base;
+  for(const code of prefs.preferredAirports){
+    const ap=getAP(code);
+    if(!/^[A-Z]{4}$/.test(code)||!ap){issues.push({code,reason:'UNKNOWN'});continue;}
+    const compatibility=airportCompatibility(ap,aircraft);
+    if(!compatibility.ok){issues.push({code,reason:compatibility.reason});continue;}
+    const from=prefs.airportOrder==='entered'?previous:base;
+    if(!airportFitsPlanningLeg(from,code,prefs,aircraft)){issues.push({code,reason:'RANGE_PROFILE'});continue;}
+    valid.push(code);previous=code;
+  }
+  return{preferences:{...prefs,preferredAirports:valid},issues,blocking:prefs.airportPriority==='required'&&issues.length>0};
+}
+function planningProfileLabel(profile){
+  const labels=S.language==='en'?{auto:'Automatic',short:'Short haul',medium:'Medium haul',long:'Long haul',mixed:'Mixed'}:{auto:'Automatique',short:'Court-courrier',medium:'Moyen-courrier',long:'Long-courrier',mixed:'Mixte'};
+  return labels[profile]||profile;
+}
+function previewPlanningPreferences(){
+  const box=$('airport-preference-preview');if(!box)return;
+  const prefs=planningPreferencesFromForm(),aircraft=$('s-ac')?.value,base=String($('s-custom-base')?.value||'').trim().toUpperCase();
+  if(!prefs.preferredAirports.length){box.className='planning-preview';box.textContent=S.language==='en'?'No required destination: operations will build the programme.':'Aucune destination imposée : les OPS construiront le programme.';return;}
+  const check=validatePlanningPreferences(prefs,base,aircraft),accepted=check.preferences.preferredAirports.map(airportLabel);
+  const rejected=check.issues.map(item=>`${item.code} (${item.reason==='RANGE_PROFILE'?(S.language==='en'?'outside selected range':'hors rayon choisi'):item.reason==='UNKNOWN'?(S.language==='en'?'unknown':'inconnu'):(S.language==='en'?'incompatible runway':'terrain incompatible')})`);
+  box.className=`planning-preview ${check.issues.length?'warn':'ok'}`;
+  box.textContent=[`${planningProfileLabel(prefs.rangeProfile)} · ${accepted.length?accepted.join(' → '):(S.language==='en'?'no compatible airport':'aucun terrain compatible')}`,rejected.length?`${S.language==='en'?'Rejected':'Écarté'}: ${rejected.join(', ')}`:''].filter(Boolean).join(' · ');
+}
 function currentOperator(){return S.operatorId==='custom'&&S.customOperator?S.customOperator:(OPERATORS[S.operatorId]||OPERATORS.general);}
 function operationalFlight(){return S.currentFlight||S.rotationPlan?.[S.rotationIndex]||null;}
 function importedOFPReady(f=operationalFlight()){return !!(f?.simbrief?.ofp&&['imported','locked','locked-amended'].includes(f.simbrief.status));}
@@ -1608,6 +1739,7 @@ function previewCustomOperator(){
     box.className='operator-profile-match on';
     box.innerHTML=S.language==='en'?'<strong>Unrecognised code</strong> · the generic operating model will be used.':'<strong>Code non reconnu</strong> · le modèle d’exploitation générique sera utilisé.';
   }else{box.className='operator-profile-match';box.textContent='';}
+  previewPlanningPreferences();
 }
 
 function refreshOperationSetup(){
@@ -1674,6 +1806,7 @@ function renderAircraftSpecs(){
   ];
   box.innerHTML=specs.map(([label,value])=>`<div class="aircraft-spec"><span>${label}</span><strong title="${value}">${value}</strong></div>`).join('');
   previewCustomOperator();
+  previewPlanningPreferences();
 }
 
 function updateBrandIdentity(){
@@ -1685,12 +1818,89 @@ function updateBrandIdentity(){
   document.documentElement.style.setProperty('--blue',op.accent);
 }
 
+const ACCOUNT_STORAGE_KEY='ops_center_account_v1';
+function loadLocalAccount(){
+  let account=null;
+  try{account=JSON.parse(localStorage.getItem(ACCOUNT_STORAGE_KEY)||'null');}catch{}
+  if(!account||account.version!==1)account={version:1,id:`LOCAL-${Date.now()}`,displayName:'',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),companyProfiles:[]};
+  account.companyProfiles=Array.isArray(account.companyProfiles)?account.companyProfiles.filter(item=>item&&item.id&&item.operator):[];
+  S.accountProfile=account;return account;
+}
+function persistLocalAccount(){
+  if(!S.accountProfile)loadLocalAccount();
+  S.accountProfile.updatedAt=new Date().toISOString();
+  try{localStorage.setItem(ACCOUNT_STORAGE_KEY,JSON.stringify(S.accountProfile));return true;}catch{return false;}
+}
+function accountDisplayName(){return S.accountProfile?.displayName||S.pilot||'';}
+function accountInitials(name=accountDisplayName()){
+  return String(name||'LOCAL').trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase()||'LO';
+}
+function renderCompanyProfiles(){
+  const list=$('company-profile-list'),profiles=S.accountProfile?.companyProfiles||[];if(!list)return;
+  list.replaceChildren();$('company-profile-count').textContent=`${profiles.length} profil${profiles.length>1?'s':''}`;
+  if(!profiles.length){const empty=document.createElement('div');empty.className='company-profile-empty';empty.textContent=S.language==='en'?'No company profile saved on this device yet.':'Aucun profil compagnie enregistré sur cet appareil.';list.appendChild(empty);return;}
+  profiles.forEach(profile=>{
+    const card=document.createElement('div');card.className='company-profile-card';
+    const info=document.createElement('div'),title=document.createElement('strong'),meta=document.createElement('div');
+    title.textContent=`${profile.operator.name} · ${profile.operator.icao}`;
+    meta.className='company-profile-meta';meta.textContent=`${operationLabel(profile.operationType)} · ${AIRCRAFT_DATA[profile.aircraft]?.name||profile.aircraft} · BASE ${profile.operator.base} · ${planningProfileLabel(profile.planningPreferences?.rangeProfile||'auto')}`;
+    info.append(title,meta);
+    const actions=document.createElement('div');actions.className='company-profile-actions';
+    const use=document.createElement('button');use.type='button';use.textContent=S.language==='en'?'USE':'UTILISER';use.onclick=()=>applyCompanyProfile(profile.id);
+    const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent=S.language==='en'?'DELETE':'SUPPRIMER';remove.onclick=()=>deleteCompanyProfile(profile.id);
+    actions.append(use,remove);card.append(info,actions);list.appendChild(card);
+  });
+}
+function saveLocalAccountIdentity(){
+  if(!S.accountProfile)loadLocalAccount();
+  const name=$('account-display-name').value.trim();
+  if(!name){showToast(S.language==='en'?'Enter a display name':'Saisissez un nom d’affichage',3500);return;}
+  S.accountProfile.displayName=name;persistLocalAccount();
+  $('account-name').textContent=name;$('account-avatar').textContent=accountInitials(name);
+  showToast(S.language==='en'?'Local profile saved':'Profil local enregistré',3500);
+}
+function companyProfileFromCurrentConfiguration(){
+  const active=!!S.pilot;
+  const operator=active?currentOperator():customOperatorFromForm();
+  const operationType=active?S.operationType:$('s-operation').value;
+  const aircraft=active?S.aircraft:$('s-ac').value;
+  const registration=active?S.registration:$('s-registration').value.trim().toUpperCase();
+  const planningPreferences=active?normalizePlanningPreferences(S.planningPreferences):planningPreferencesFromForm();
+  return{id:`COMPANY-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,operator:{...operator,id:'custom',custom:true},operationType,aircraft,registration,planningPreferences,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+}
+function saveCurrentCompanyProfile(){
+  if(!S.accountProfile)loadLocalAccount();
+  const profile=companyProfileFromCurrentConfiguration(),op=profile.operator;
+  if(!op.name||!/^[A-Z]{3}$/.test(op.icao)||!/^[A-Z]{4}$/.test(op.base)||!getAP(op.base)){showToast(S.language==='en'?'Complete a valid company, ICAO code and base first':'Complétez d’abord une compagnie, son code OACI et une base valide',5000);return;}
+  const existing=S.accountProfile.companyProfiles.find(item=>item.operator.icao===op.icao&&item.operationType===profile.operationType);
+  if(existing)Object.assign(existing,profile,{id:existing.id,createdAt:existing.createdAt});
+  else S.accountProfile.companyProfiles.unshift(profile);
+  S.accountProfile.companyProfiles=S.accountProfile.companyProfiles.slice(0,12);
+  persistLocalAccount();renderCompanyProfiles();
+  showToast(existing?(S.language==='en'?'Company profile updated':'Profil compagnie mis à jour'):(S.language==='en'?'Company profile saved':'Profil compagnie enregistré'),4000);
+}
+function applyCompanyProfile(id){
+  const profile=S.accountProfile?.companyProfiles?.find(item=>item.id===id);if(!profile)return;
+  $('s-operator').value='custom';
+  $('s-custom-name').value=profile.operator.name||'';$('s-custom-icao').value=profile.operator.icao||'';$('s-custom-callsign').value=profile.operator.telephony||'';$('s-custom-base').value=profile.operator.base||'';
+  $('s-operation').value=profile.operationType||'scheduled';refreshAircraftOptions();
+  if([...$('s-ac').options].some(option=>option.value===profile.aircraft))$('s-ac').value=profile.aircraft;
+  $('s-registration').value=profile.registration||'';
+  const prefs=normalizePlanningPreferences(profile.planningPreferences);
+  $('s-range-profile').value=prefs.rangeProfile;$('s-preferred-airports').value=prefs.preferredAirports.join(', ');$('s-airport-priority').value=prefs.airportPriority;$('s-airport-order').value=prefs.airportOrder;$('s-return-policy').value=prefs.returnPolicy;
+  renderAircraftSpecs();previewCustomOperator();previewPlanningPreferences();closeAccountPanel();
+  showToast(S.pilot?(S.language==='en'?'Profile prepared for the next duty':'Profil préparé pour le prochain duty'):(S.language==='en'?'Company profile loaded':'Profil compagnie chargé'),4500);
+}
+function deleteCompanyProfile(id){
+  const profile=S.accountProfile?.companyProfiles?.find(item=>item.id===id);if(!profile)return;
+  if(!confirm(S.language==='en'?`Delete ${profile.operator.name} profile?`:`Supprimer le profil ${profile.operator.name} ?`))return;
+  S.accountProfile.companyProfiles=S.accountProfile.companyProfiles.filter(item=>item.id!==id);persistLocalAccount();renderCompanyProfiles();
+}
 function openAccountPanel(){
-  const names=(S.pilot||'Compte de démonstration').trim().split(/\s+/);
-  const initials=S.pilot?names.slice(0,2).map(name=>name[0]).join('').toUpperCase():'DE';
-  $('account-avatar').textContent=initials;
-  $('account-name').textContent=S.pilot||'Compte de démonstration';
-  $('account-modal').classList.add('on');
+  if(!S.accountProfile)loadLocalAccount();
+  const name=accountDisplayName()||(S.language==='en'?'Local profile':'Profil local');
+  $('account-avatar').textContent=accountInitials(name);$('account-name').textContent=name;$('account-display-name').value=S.accountProfile.displayName||S.pilot||'';
+  renderCompanyProfiles();$('account-modal').classList.add('on');
 }
 function closeAccountPanel(){$('account-modal').classList.remove('on');}
 
@@ -1720,6 +1930,12 @@ async function startDuty(){
     showToast(S.language==='en'?`Base ${selectedOperator.base} is not compatible with ${AIRCRAFT_DATA[selectedAircraft]?.name}: runway ${runway}, surface ${surface}. Required planning filter: ${policy.minRunwayFt} ft${policy.hardSurface?', paved':''}.`:`La base ${selectedOperator.base} n’est pas compatible avec ${AIRCRAFT_DATA[selectedAircraft]?.name} : piste ${runway}, revêtement ${surface}. Filtre de planification : ${policy.minRunwayFt} ft${policy.hardSurface?', piste revêtue':''}.`,8000);
     $('s-custom-base')?.focus();return;
   }
+  const planningCheck=validatePlanningPreferences(planningPreferencesFromForm(),selectedOperator.base,selectedAircraft);
+  if(planningCheck.blocking){
+    const details=planningCheck.issues.map(item=>`${item.code}: ${item.reason==='UNKNOWN'?'code inconnu':item.reason==='RANGE_PROFILE'?'hors du rayon sélectionné':'terrain incompatible avec l’avion'}`).join(' · ');
+    showToast(S.language==='en'?`Required destinations cannot be planned: ${details}`:`Les destinations obligatoires ne peuvent pas être planifiées : ${details}`,8000);
+    $('s-preferred-airports').focus();return;
+  }
   S.pilot=fn+' '+ln;
   S.rank=$('s-rank').value;
   S.aircraft=selectedAircraft;
@@ -1727,6 +1943,7 @@ async function startDuty(){
   S.language=$('s-language').value==='en'?'en':'fr';
   S.operatorId=$('s-operator').value;
   S.operationType=$('s-operation').value;
+  S.planningPreferences=planningCheck.preferences;
   S.position=currentOperator().base;
   S.dutyDate=$('s-date').value;
   S.dutyStart=$('s-start').value;
@@ -1748,6 +1965,11 @@ async function startDuty(){
   updateBrandIdentity();updateDispUI();
   setBootProgress(9,S.language==='en'?'BUILDING YOUR ROTATION...':'CONSTRUCTION DE VOTRE ROTATION...');
   const plannedRotation=generateOperationalRotation();
+  if(!plannedRotation&&S.planningError){
+    $('boot-ov').style.display='none';$('setup').style.display='flex';$('status-dot').className='dot';S.pilot=null;
+    showToast(S.language==='en'?`Planning impossible: ${S.planningError}`:`Planification impossible : ${S.planningError}`,8500);
+    return;
+  }
   if(plannedRotation)handleBriefingResponse(plannedRotation,{announce:false});
   // V\u00E9rifie uniquement la voix distante d\u00E8s la prise de service.
   // Le microphone sera ouvert au d\u00E9but de chaque appel OPS.
@@ -1955,9 +2177,10 @@ function weightedBusinessCandidates(origin,candidates){
 
 function chooseBusinessDestination(origin,excluded=[],maxDurationMin=Infinity){
   const ac=AIRCRAFT_DATA[S.aircraft],originAp=getAP(origin);
+  const band=rangeBandForAircraft(S.aircraft);
   const allowed=new Set(routesForAircraft(S.aircraft));
   const pool=AIRPORTS.filter(a=>allowed.has(a.icao)&&a.icao!==origin&&!excluded.includes(a.icao))
-    .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=80&&d<=ac.range_nm*.75;});
+    .filter(a=>{const d=distNM(originAp.lat,originAp.lon,a.lat,a.lon);return d>=band.minNm&&d<=band.maxNm;});
   const candidates=weightedBusinessCandidates(origin,pool);
   for(const ap of candidates){
     const test=buildFlight(origin,ap.icao);
@@ -2141,13 +2364,13 @@ function generateBusinessRotationLegacy(){
 function generateBusinessRotationV2(){
   const base=currentOperator().base,origin=S.position||base;
   const dutyStartAbs=timeToMinutes(S.dutyStart),dutyLimit=dutyStartAbs+S.dutyMinutes,firstDeparture=dutyStartAbs+45;
-  const routePolicy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750;
+  const routePolicy=AIRCRAFT_ROUTE_POLICY[S.aircraft]||AIRCRAFT_ROUTE_POLICY.C750,band=rangeBandForAircraft(S.aircraft);
   // Une mission long-courrier avec nuitée reste possible, mais volontairement rare.
-  if(origin===base&&S.dutyMinutes>=8*60&&Math.random()<routePolicy.longMissionChance){
+  if(origin===base&&S.dutyMinutes>=8*60&&S.planningPreferences.returnPolicy!=='required'&&(band.profile==='long'||Math.random()<routePolicy.longMissionChance)){
     const longMission=generateLongRangeMission(origin,firstDeparture,dutyLimit);if(longMission)return longMission;
   }
   // Le cas fréquent en charter: mise en place, transport client, puis retour avion à la base.
-  if(origin===base&&S.dutyMinutes>=7*60&&Math.random()<.45){
+  if(origin===base&&band.profile!=='long'&&S.dutyMinutes>=7*60&&Math.random()<.45){
     const positioningMission=generatePositioningPickupMission(base,firstDeparture,dutyLimit);if(positioningMission)return positioningMission;
   }
   let plan=null,type='',rejected=[];
@@ -2158,6 +2381,9 @@ function generateBusinessRotationV2(){
     const wait=75+Math.floor(Math.random()*106);
     const outbound=buildFlight(origin,destination,{depMinuteOfDay:firstDeparture,missionRole:'CLIENT \u2014 ALLER',turnaroundMin:wait,groundReason:'ATTENTE CLIENT / ESCALE COMMERCIALE'});
     if(!outbound||outbound.fuel.overCapacity)continue;
+    if(band.profile==='long'&&S.planningPreferences.returnPolicy!=='required'){
+      plan=[outbound];type='MISSION LONG-COURRIER DIRECTE · NUITÉE HORS BASE PLANIFIÉE';continue;
+    }
     // Une partie des rotations dessert deux villes, sans sacrifier le retour base.
     if(Math.random()<.28){
       const secondDeparture=outbound.arrMinuteOfDay+wait;
@@ -2177,6 +2403,7 @@ function generateBusinessRotationV2(){
     const home=buildFlight(origin,base,{depMinuteOfDay:firstDeparture,pax:[],missionRole:'POSITIONING RETOUR BASE',turnaroundMin:30});
     if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit){plan=[home];type='RAPATRIEMENT AVION VERS LA BASE';}
   }
+  if(!plan&&S.planningPreferences.returnPolicy==='required'){S.planningError=`Aucune rotation avec retour ${origin} → ${base} ne tient dans le duty`;return null;}
   if(!plan){const fallback=generateRotation();plan=fallback?[fallback]:[];type='MISSION ALLER SIMPLE \u00B7 NUIT\u00C9E HORS BASE PLANIFI\u00C9E';}
   S.rotationPlan=plan;S.rotationIndex=0;S.rotationType=type;S.rotationRevision=0;
   S.rotationHistory=[{revision:0,at:utcNow(),reason:'\u00C9MISSION INITIALE \u2014 PLANIFICATION CHARTER'}];
@@ -2198,9 +2425,57 @@ function chooseNetworkDestination(origin,pool,excluded=[],limits={}){
   const candidates=[...new Set(pool)].filter(code=>code!==origin&&!excluded.includes(code)&&airportCompatibleWithAircraft(getAP(code))).sort(()=>Math.random()-.5);
   return candidates.find(code=>{
     const ap=getAP(code),distance=distNM(originAp.lat,originAp.lon,ap.lat,ap.lon);
-    const defaultMin=ac.cruise_kt<330?70:180,defaultMax=ac.cruise_kt<330?Math.min(ac.range_nm*.72,750):Math.min(ac.range_nm*.72,2600);
+    const band=rangeBandForAircraft(S.aircraft),defaultMin=band.minNm,defaultMax=band.maxNm;
     return distance>=(limits.minNm??defaultMin)&&distance<=(limits.maxNm??defaultMax);
   })||null;
+}
+
+function orderedPreferredAirports(base,codes,preferences=S.planningPreferences){
+  const remaining=[...codes],ordered=[];let origin=base;
+  if(preferences.airportOrder==='entered')return remaining;
+  while(remaining.length){
+    remaining.sort((a,b)=>distanceBetweenAirports(origin,a)-distanceBetweenAirports(origin,b));
+    const next=remaining.shift();ordered.push(next);origin=next;
+  }
+  return ordered;
+}
+
+function operationTurnaroundMinutes(kind=S.operationType){
+  const ac=AIRCRAFT_DATA[S.aircraft]||{};
+  if(kind==='cargo')return(ac.mtow||0)>=120000?105:70;
+  if(kind==='scheduled')return(ac.mtow||0)<35000?32:(ac.mtow||0)>120000?80:48;
+  return 75;
+}
+
+function generatePreferredAirportRotation(kind=S.operationType){
+  const prefs=normalizePlanningPreferences(S.planningPreferences),base=currentOperator().base;
+  if(!prefs.preferredAirports.length)return null;
+  const dutyStart=timeToMinutes(S.dutyStart),dutyLimit=dutyStart+S.dutyMinutes,turnaround=operationTurnaroundMinutes(kind);
+  const requested=orderedPreferredAirports(base,prefs.preferredAirports,prefs),plan=[];
+  let origin=S.position||base,departure=dutyStart+(kind==='cargo'?35:kind==='scheduled'?50:45);
+  for(const destination of requested){
+    if(destination===origin)continue;
+    if(!airportFitsPlanningLeg(origin,destination,prefs,S.aircraft)){
+      if(prefs.airportPriority==='required'){S.planningError=`${origin} → ${destination} hors du rayon sélectionné`;return null;}
+      continue;
+    }
+    const role=kind==='cargo'?`FRET — DESTINATION DEMANDÉE ${destination}`:kind==='scheduled'?`PROGRAMME PERSONNALISÉ — ${destination}`:`MISSION CLIENT — DESTINATION DEMANDÉE ${destination}`;
+    const leg=buildFlight(origin,destination,{depMinuteOfDay:departure,missionRole:role,turnaroundMin:turnaround,groundReason:kind==='business'?'ATTENTE CLIENT / COORDINATION OPS':null});
+    if(!leg||leg.fuel.overCapacity||leg.arrMinuteOfDay+30>dutyLimit){
+      if(prefs.airportPriority==='required'){S.planningError=`${destination} ne tient pas dans le duty ou les limites avion`;return null;}
+      continue;
+    }
+    plan.push(leg);origin=destination;departure=leg.arrMinuteOfDay+turnaround;
+  }
+  if(!plan.length){S.planningError='Aucune destination souhaitée ne peut être insérée dans ce duty';return null;}
+  if(origin!==base&&prefs.returnPolicy!=='none'){
+    const role=kind==='cargo'?'FRET — RETOUR HUB':kind==='scheduled'?'PROGRAMME PERSONNALISÉ — RETOUR BASE':'POSITIONING RETOUR BASE';
+    const home=airportFitsPlanningLeg(origin,base,{...prefs,rangeProfile:'mixed'},S.aircraft)&&buildFlight(origin,base,{depMinuteOfDay:departure,missionRole:role,turnaroundMin:turnaround,pax:kind==='business'?[]:undefined});
+    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit)plan.push(home);
+    else if(prefs.returnPolicy==='required'){S.planningError=`Le retour ${origin} → ${base} ne tient pas dans le duty`;return null;}
+  }
+  const descriptor=kind==='cargo'?'PROGRAMME CARGO PERSONNALISÉ':kind==='scheduled'?'PROGRAMME RÉGULIER PERSONNALISÉ':'MISSION À LA DEMANDE PERSONNALISÉE';
+  return finishGeneratedRotation(plan,`${descriptor} · ${plan.length} SECTEUR(S)`,`ÉMISSION INITIALE — DESTINATIONS ÉQUIPAGE ${requested.join(' / ')}`);
 }
 
 function profiledScheduledPools(profile){
@@ -2211,24 +2486,24 @@ function profiledScheduledPools(profile){
 
 function generateProfiledScheduledRotation(profile){
   const base=currentOperator().base,dutyStart=timeToMinutes(S.dutyStart),dutyLimit=dutyStart+S.dutyMinutes;
-  const ac=AIRCRAFT_DATA[S.aircraft],wide=(ac.mtow||0)>=120000,pools=profiledScheduledPools(profile);
+  const ac=AIRCRAFT_DATA[S.aircraft],wide=(ac.mtow||0)>=120000,pools=profiledScheduledPools(profile),band=rangeBandForAircraft(S.aircraft);
   const baseIsHub=profile.hubs.includes(base),baseInNetwork=pools.all.includes(base)||baseIsHub;
   let candidatePool;
   if(profile.network==='hub'&&!baseIsHub)candidatePool=profile.hubs;
-  else if(wide&&pools.long.length)candidatePool=Math.random()<.78?pools.long:pools.short;
-  else candidatePool=pools.short;
-  const maxNm=Math.min(ac.range_nm*.72,wide?ac.range_nm*.72:2600);let minNm=wide&&candidatePool===pools.long?900:(ac.cruise_kt<330?70:150);
+  else if(band.profile==='long')candidatePool=pools.long.length?pools.long:pools.all;
+  else if(band.profile==='short')candidatePool=pools.short;
+  else candidatePool=[...new Set([...pools.short,...(band.profile==='mixed'?pools.long:[])])];
+  const maxNm=band.maxNm,minNm=band.minNm;
   const turnaround=(ac.mtow||0)<35000?32:(ac.mtow||0)>120000?80:48;
   let plan=[];
   for(let attempt=0;attempt<40&&!plan.length;attempt++){
-    if(attempt===20&&wide&&pools.long.length){candidatePool=candidatePool===pools.long?pools.short:pools.long;minNm=candidatePool===pools.long?900:150;}
     const destination=chooseNetworkDestination(base,candidatePool,[],{minNm,maxNm});
     if(!destination)break;
     const outbound=buildFlight(base,destination,{depMinuteOfDay:dutyStart+50,missionRole:`PROGRAMME ${profile.name.toUpperCase()} — ALLER`,turnaroundMin:turnaround});
     if(!outbound||outbound.fuel.overCapacity||outbound.arrMinuteOfDay+30>dutyLimit)continue;
     const back=buildFlight(destination,base,{depMinuteOfDay:outbound.arrMinuteOfDay+turnaround,missionRole:`PROGRAMME ${profile.name.toUpperCase()} — RETOUR BASE`,turnaroundMin:turnaround});
     if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan=[outbound,back];
-    else if(wide||!baseInNetwork||!chooseAlternate(destination,base))plan=[outbound];
+    else if(S.planningPreferences.returnPolicy!=='required'&&(wide||band.profile==='long'||!baseInNetwork||!chooseAlternate(destination,base)))plan=[outbound];
   }
   // Sur un réseau court/moyen-courrier de hub, un second aller-retour est
   // possible lorsque le duty le permet. Chaque secteur repasse par le hub.
@@ -2246,10 +2521,10 @@ function generateProfiledScheduledRotation(profile){
 
 function generateGenericScheduledRotation(){
   const base=currentOperator().base,dutyStart=timeToMinutes(S.dutyStart),dutyLimit=dutyStart+S.dutyMinutes;
-  const plan=[];let origin=base,departure=dutyStart+50;
-  const targetLegs=S.dutyMinutes>=8*60?3:2;
+  const plan=[];let origin=base,departure=dutyStart+50;const band=rangeBandForAircraft(S.aircraft);
+  const targetLegs=band.profile==='long'?1:S.dutyMinutes>=8*60?3:2;
   for(let i=0;i<targetLegs;i++){
-    const last=i===targetLegs-1,preferred=last?base:chooseNetworkDestination(origin,SCHEDULED_AIRPORTS,plan.map(leg=>leg.arr));
+    const last=i===targetLegs-1,preferred=last&&band.profile!=='long'?base:chooseNetworkDestination(origin,SCHEDULED_AIRPORTS,plan.map(leg=>leg.arr),band);
     const destination=preferred&&preferred!==origin?preferred:chooseNetworkDestination(origin,SCHEDULED_AIRPORTS);
     if(!destination)break;
     const turnaround=(AIRCRAFT_DATA[S.aircraft]?.mtow||0)<35000?32:(AIRCRAFT_DATA[S.aircraft]?.mtow||0)>120000?75:48;
@@ -2260,24 +2535,25 @@ function generateGenericScheduledRotation(){
   if(plan.length===1&&origin!==base){
     const back=buildFlight(origin,base,{depMinuteOfDay:departure,missionRole:'VOL R\u00C9GULIER \u2014 RETOUR HUB',turnaroundMin:45});
     if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan.push(back);
+    else if(S.planningPreferences.returnPolicy==='required'){S.planningError=`Le retour ${origin} → ${base} ne tient pas dans le duty`;return null;}
   }
   return finishGeneratedRotation(plan,`PROGRAMME R\u00C9GULIER \u00B7 ${plan.length} SECTEUR(S)`,'\u00C9MISSION INITIALE \u2014 PROGRAMME COMMERCIAL');
 }
 
 function generateScheduledRotation(){
+  if(S.planningPreferences?.preferredAirports?.length){const requested=generatePreferredAirportRotation('scheduled');if(requested||S.planningPreferences.airportPriority==='required')return requested;}
   const profile=operationalOperatorProfile();
   return (profile&&generateProfiledScheduledRotation(profile))||generateGenericScheduledRotation();
 }
 
 function generateProfiledCargoRotation(profile){
   const base=currentOperator().base,dutyStart=timeToMinutes(S.dutyStart),dutyLimit=dutyStart+S.dutyMinutes;
-  const ac=AIRCRAFT_DATA[S.aircraft],heavy=(ac.mtow||0)>=120000,pools=profiledScheduledPools(profile),turnaround=heavy?105:70;
-  let candidatePool=heavy&&pools.long.length&&Math.random()<.75?pools.long:pools.short;
-  const limits={minNm:heavy&&candidatePool===pools.long?850:120,maxNm:Math.min(ac.range_nm*.72,heavy?ac.range_nm*.72:2800)};
+  const ac=AIRCRAFT_DATA[S.aircraft],heavy=(ac.mtow||0)>=120000,pools=profiledScheduledPools(profile),turnaround=heavy?105:70,band=rangeBandForAircraft(S.aircraft);
+  let candidatePool=band.profile==='long'?(pools.long.length?pools.long:pools.all):band.profile==='short'?pools.short:[...new Set([...pools.short,...(band.profile==='mixed'?pools.long:[])])];
+  const limits={minNm:band.minNm,maxNm:band.maxNm};
   let plan=[];
   for(let attempt=0;attempt<45&&!plan.length;attempt++){
     const firstDestination=chooseNetworkDestination(base,candidatePool,[],limits);
-    if(!firstDestination&&candidatePool!==pools.short){candidatePool=pools.short;limits.minNm=120;continue;}
     if(!firstDestination)break;
     const first=buildFlight(base,firstDestination,{depMinuteOfDay:dutyStart+35,missionRole:`RÉSEAU ${profile.name.toUpperCase()} — FRET OUTBOUND`,turnaroundMin:turnaround});
     if(!first||first.fuel.overCapacity||first.arrMinuteOfDay+30>dutyLimit)continue;
@@ -2289,7 +2565,7 @@ function generateProfiledCargoRotation(profile){
     }
     const back=buildFlight(firstDestination,base,{depMinuteOfDay:first.arrMinuteOfDay+turnaround,missionRole:'FRET — RETOUR HUB DE TRI',turnaroundMin:turnaround});
     if(back&&!back.fuel.overCapacity&&back.arrMinuteOfDay+30<=dutyLimit)plan=[first,back];
-    else if(heavy)plan=[first];
+    else if(heavy&&S.planningPreferences.returnPolicy!=='required')plan=[first];
   }
   if(!plan.length)return null;
   const tier=profile.inferred?'PROFIL RÉGIONAL':'PROFIL DÉTAILLÉ';
@@ -2298,27 +2574,35 @@ function generateProfiledCargoRotation(profile){
 
 function generateGenericCargoRotation(){
   const base=currentOperator().base,dutyStart=timeToMinutes(S.dutyStart),dutyLimit=dutyStart+S.dutyMinutes;
-  const plan=[];let origin=base,departure=dutyStart+35;
-  const targetLegs=S.dutyMinutes>=9*60?3:2;
+  const plan=[];let origin=base,departure=dutyStart+35;const band=rangeBandForAircraft(S.aircraft);
+  const targetLegs=band.profile==='long'?1:S.dutyMinutes>=9*60?3:2;
   for(let i=0;i<targetLegs;i++){
-    const last=i===targetLegs-1,destination=last&&origin!==base?base:chooseNetworkDestination(origin,CARGO_HUBS,plan.map(leg=>leg.arr));
+    const last=i===targetLegs-1,destination=last&&origin!==base&&band.profile!=='long'?base:chooseNetworkDestination(origin,CARGO_HUBS,plan.map(leg=>leg.arr),band);
     if(!destination||destination===origin)break;
     const role=i===0?'FRET EXPRESS \u2014 OUTBOUND':last?'FRET \u2014 RETOUR HUB':'FRET \u2014 TRIANGULAIRE';
     const leg=buildFlight(origin,destination,{depMinuteOfDay:departure,missionRole:role,turnaroundMin:S.aircraft==='B77F'?110:75});
     if(!leg||leg.fuel.overCapacity||leg.arrMinuteOfDay+30>dutyLimit)break;
     plan.push(leg);origin=leg.arr;departure=leg.arrMinuteOfDay+leg.turnaroundMin;
   }
+  if(plan.length===1&&origin!==base&&S.planningPreferences.returnPolicy==='required'){
+    const home=buildFlight(origin,base,{depMinuteOfDay:departure,missionRole:'FRET \u2014 RETOUR HUB DE TRI',turnaroundMin:75});
+    if(home&&!home.fuel.overCapacity&&home.arrMinuteOfDay+30<=dutyLimit)plan.push(home);
+    else{S.planningError=`Le retour ${origin} → ${base} ne tient pas dans le duty`;return null;}
+  }
   return finishGeneratedRotation(plan,`ROTATION CARGO \u00B7 ${plan.length} SECTEUR(S)`,'\u00C9MISSION INITIALE \u2014 PROGRAMME FRET');
 }
 
 function generateCargoRotation(){
+  if(S.planningPreferences?.preferredAirports?.length){const requested=generatePreferredAirportRotation('cargo');if(requested||S.planningPreferences.airportPriority==='required')return requested;}
   const profile=operationalOperatorProfile();
   return (profile&&generateProfiledCargoRotation(profile))||generateGenericCargoRotation();
 }
 
 function generateOperationalRotation(){
+  S.planningError='';
   if(S.operationType==='scheduled')return generateScheduledRotation();
   if(S.operationType==='cargo')return generateCargoRotation();
+  if(S.planningPreferences?.preferredAirports?.length){const requested=generatePreferredAirportRotation('business');if(requested||S.planningPreferences.airportPriority==='required')return requested;}
   return generateBusinessRotationV2();
 }
 
